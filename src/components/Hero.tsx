@@ -30,8 +30,8 @@ export const Hero = () => {
           {/* Key Value Props */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             <div className="bg-card/50 backdrop-blur-sm border border-border rounded-lg p-6">
-              <div className="text-2xl font-bold text-accent mb-2">Track</div>
-              <p className="text-sm text-muted-foreground">Auto-sync your bets with BetSync technology</p>
+              <div className="text-2xl font-bold text-accent mb-2">Community</div>
+              <p className="text-sm text-muted-foreground">Share, track and communicate with all your friends bets in one place</p>
             </div>
             <div className="bg-card/50 backdrop-blur-sm border border-border rounded-lg p-6">
               <div className="text-2xl font-bold text-primary mb-2">Compare</div>

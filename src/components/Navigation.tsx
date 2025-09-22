@@ -1,8 +1,17 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -31,12 +40,33 @@ export const Navigation = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-              Sign In
-            </Button>
-            <Button className="fade-gradient">
-              Get Started
-            </Button>
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  Welcome back!
+                </span>
+                <Button 
+                  variant="outline" 
+                  onClick={handleSignOut}
+                  className="border-destructive text-destructive hover:bg-destructive/10"
+                >
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  asChild
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  <Link to="/auth">Sign In</Link>
+                </Button>
+                <Button className="fade-gradient" asChild>
+                  <Link to="/auth">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -69,12 +99,33 @@ export const Navigation = () => {
                 Pricing
               </a>
               <div className="flex flex-col space-y-2 px-3 py-2">
-                <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                  Sign In
-                </Button>
-                <Button className="fade-gradient">
-                  Get Started
-                </Button>
+                {user ? (
+                  <>
+                    <span className="text-sm text-muted-foreground px-3">
+                      Welcome back!
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleSignOut}
+                      className="border-destructive text-destructive hover:bg-destructive/10"
+                    >
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      asChild
+                      className="border-primary text-primary hover:bg-primary/10"
+                    >
+                      <Link to="/auth">Sign In</Link>
+                    </Button>
+                    <Button className="fade-gradient" asChild>
+                      <Link to="/auth">Get Started</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

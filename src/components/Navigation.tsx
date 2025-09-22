@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users } from "lucide-react";
+import { Users, User } from "lucide-react";
 
 export const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,6 +43,12 @@ export const Navigation = () => {
                     <Button variant="ghost" size="sm">
                       <Users className="w-4 h-4 mr-2" />
                       Friends
+                    </Button>
+                  </Link>
+                  <Link to="/profile">
+                    <Button variant="ghost" size="sm">
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
                     </Button>
                   </Link>
                   <span className="text-sm text-muted-foreground">
@@ -110,6 +116,12 @@ export const Navigation = () => {
                         <Button variant="ghost" size="sm" className="w-full justify-start">
                           <Users className="w-4 h-4 mr-2" />
                           Friends
+                        </Button>
+                      </Link>
+                      <Link to="/profile">
+                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                          <User className="w-4 h-4 mr-2" />
+                          Profile
                         </Button>
                       </Link>
                       <span className="text-sm text-muted-foreground px-3">

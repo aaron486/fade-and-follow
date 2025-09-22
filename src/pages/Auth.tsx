@@ -15,6 +15,10 @@ const Auth = () => {
   const [favoriteTeam, setFavoriteTeam] = useState('');
   const [state, setState] = useState('');
   const [preferredSportsbook, setPreferredSportsbook] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [tiktokUrl, setTiktokUrl] = useState('');
+  const [xUrl, setXUrl] = useState('');
+  const [discordUrl, setDiscordUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -50,7 +54,11 @@ const Auth = () => {
       displayName,
       favoriteTeam,
       state,
-      preferredSportsbook
+      preferredSportsbook,
+      instagramUrl,
+      tiktokUrl,
+      xUrl,
+      discordUrl
     });
     
     setLoading(false);
@@ -193,6 +201,54 @@ const Auth = () => {
                       value={preferredSportsbook}
                       onChange={(e) => setPreferredSportsbook(e.target.value)}
                     />
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-muted-foreground">Social Media (Optional)</h4>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="instagram-url">Instagram</Label>
+                      <Input
+                        id="instagram-url"
+                        type="url"
+                        placeholder="https://instagram.com/yourusername"
+                        value={instagramUrl}
+                        onChange={(e) => setInstagramUrl(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="tiktok-url">TikTok</Label>
+                      <Input
+                        id="tiktok-url"
+                        type="url"
+                        placeholder="https://tiktok.com/@yourusername"
+                        value={tiktokUrl}
+                        onChange={(e) => setTiktokUrl(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="x-url">X (Twitter)</Label>
+                      <Input
+                        id="x-url"
+                        type="url"
+                        placeholder="https://x.com/yourusername"
+                        value={xUrl}
+                        onChange={(e) => setXUrl(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="discord-url">Discord</Label>
+                      <Input
+                        id="discord-url"
+                        type="text"
+                        placeholder="your_discord_username#1234"
+                        value={discordUrl}
+                        onChange={(e) => setDiscordUrl(e.target.value)}
+                      />
+                    </div>
                   </div>
                   <Button 
                     type="submit" 

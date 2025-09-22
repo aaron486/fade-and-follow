@@ -19,52 +19,64 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           current_streak: number | null
+          discord_url: string | null
           display_name: string | null
           favorite_team: string | null
           id: string
+          instagram_url: string | null
           losses: number | null
           preferred_sportsbook: string | null
           state: string | null
           streak_type: string | null
+          tiktok_url: string | null
           total_bets: number | null
           updated_at: string
           user_id: string
           username: string | null
           wins: number | null
+          x_url: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           current_streak?: number | null
+          discord_url?: string | null
           display_name?: string | null
           favorite_team?: string | null
           id?: string
+          instagram_url?: string | null
           losses?: number | null
           preferred_sportsbook?: string | null
           state?: string | null
           streak_type?: string | null
+          tiktok_url?: string | null
           total_bets?: number | null
           updated_at?: string
           user_id: string
           username?: string | null
           wins?: number | null
+          x_url?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           current_streak?: number | null
+          discord_url?: string | null
           display_name?: string | null
           favorite_team?: string | null
           id?: string
+          instagram_url?: string | null
           losses?: number | null
           preferred_sportsbook?: string | null
           state?: string | null
           streak_type?: string | null
+          tiktok_url?: string | null
           total_bets?: number | null
           updated_at?: string
           user_id?: string
           username?: string | null
           wins?: number | null
+          x_url?: string | null
         }
         Relationships: []
       }

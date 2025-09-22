@@ -11,6 +11,10 @@ interface SignUpData {
   favoriteTeam?: string;
   state?: string;
   preferredSportsbook?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  xUrl?: string;
+  discordUrl?: string;
 }
 
 interface AuthContextType {
@@ -58,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook }: SignUpData) => {
+  const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook, instagramUrl, tiktokUrl, xUrl, discordUrl }: SignUpData) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -72,7 +76,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             display_name: displayName || username,
             favorite_team: favoriteTeam,
             state,
-            preferred_sportsbook: preferredSportsbook
+            preferred_sportsbook: preferredSportsbook,
+            instagram_url: instagramUrl,
+            tiktok_url: tiktokUrl,
+            x_url: xUrl,
+            discord_url: discordUrl
           }
         }
       });

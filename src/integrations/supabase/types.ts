@@ -20,8 +20,11 @@ export type Database = {
           created_at: string
           current_streak: number | null
           display_name: string | null
+          favorite_team: string | null
           id: string
           losses: number | null
+          preferred_sportsbook: string | null
+          state: string | null
           streak_type: string | null
           total_bets: number | null
           updated_at: string
@@ -34,8 +37,11 @@ export type Database = {
           created_at?: string
           current_streak?: number | null
           display_name?: string | null
+          favorite_team?: string | null
           id?: string
           losses?: number | null
+          preferred_sportsbook?: string | null
+          state?: string | null
           streak_type?: string | null
           total_bets?: number | null
           updated_at?: string
@@ -48,8 +54,11 @@ export type Database = {
           created_at?: string
           current_streak?: number | null
           display_name?: string | null
+          favorite_team?: string | null
           id?: string
           losses?: number | null
+          preferred_sportsbook?: string | null
+          state?: string | null
           streak_type?: string | null
           total_bets?: number | null
           updated_at?: string

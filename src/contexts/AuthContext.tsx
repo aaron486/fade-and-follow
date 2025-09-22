@@ -3,10 +3,20 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface SignUpData {
+  email: string;
+  password: string;
+  username?: string;
+  displayName?: string;
+  favoriteTeam?: string;
+  state?: string;
+  preferredSportsbook?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  signUp: (email: string, password: string, username?: string, displayName?: string) => Promise<{ error: any }>;
+  signUp: (data: SignUpData) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
@@ -48,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, username?: string, displayName?: string) => {
+  const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook }: SignUpData) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -59,7 +69,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           emailRedirectTo: redirectUrl,
           data: {
             username,
-            display_name: displayName || username
+            display_name: displayName || username,
+            favorite_team: favoriteTeam,
+            state,
+            preferred_sportsbook: preferredSportsbook
           }
         }
       });

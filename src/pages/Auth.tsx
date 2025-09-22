@@ -12,6 +12,9 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [favoriteTeam, setFavoriteTeam] = useState('');
+  const [state, setState] = useState('');
+  const [preferredSportsbook, setPreferredSportsbook] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -40,7 +43,15 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await signUp(email, password, username, displayName);
+    const { error } = await signUp({
+      email,
+      password,
+      username,
+      displayName,
+      favoriteTeam,
+      state,
+      preferredSportsbook
+    });
     
     setLoading(false);
   };
@@ -151,6 +162,36 @@ const Auth = () => {
                       placeholder="How others will see you"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="favorite-team">Favorite Team</Label>
+                    <Input
+                      id="favorite-team"
+                      type="text"
+                      placeholder="Your favorite sports team"
+                      value={favoriteTeam}
+                      onChange={(e) => setFavoriteTeam(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      type="text"
+                      placeholder="Your state (e.g., CA, NY, TX)"
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="preferred-sportsbook">Preferred Sportsbook</Label>
+                    <Input
+                      id="preferred-sportsbook"
+                      type="text"
+                      placeholder="Your go-to sportsbook (e.g., DraftKings, FanDuel)"
+                      value={preferredSportsbook}
+                      onChange={(e) => setPreferredSportsbook(e.target.value)}
                     />
                   </div>
                   <Button 

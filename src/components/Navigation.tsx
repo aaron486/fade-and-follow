@@ -45,6 +45,12 @@ export const Navigation = () => {
                       Friends
                     </Button>
                   </Link>
+                  <Link to="/groups">
+                    <Button variant="ghost" size="sm">
+                      <Users className="w-4 h-4 mr-2" />
+                      Groups
+                    </Button>
+                  </Link>
                   <Link to="/profile">
                     <Button variant="ghost" size="sm">
                       <User className="w-4 h-4 mr-2" />
@@ -116,6 +122,12 @@ export const Navigation = () => {
                         <Button variant="ghost" size="sm" className="w-full justify-start">
                           <Users className="w-4 h-4 mr-2" />
                           Friends
+                        </Button>
+                      </Link>
+                      <Link to="/groups">
+                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                          <Users className="w-4 h-4 mr-2" />
+                          Groups
                         </Button>
                       </Link>
                       <Link to="/profile">

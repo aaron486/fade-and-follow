@@ -23,7 +23,7 @@ export const Hero = () => {
               FADE
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-              The social sports betting platform where your picks matter and your streak speaks louder than words
+              Fade is the social media for betting
             </p>
           </div>
           

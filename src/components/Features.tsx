@@ -14,8 +14,8 @@ const features = [
     highlight: "Data-driven insights"
   },
   {
-    title: "Social Betting Groups",
-    description: "Create private groups with friends or join public communities. Share picks, compete on leaderboards, and celebrate wins together.",
+    title: "Community",
+    description: "Share, track and communicate with all your friends bets in one place.",
     icon: "👥",
     highlight: "Community-driven"
   },

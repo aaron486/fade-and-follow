@@ -10,7 +10,7 @@ import { Search, UserPlus, Check, X, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Navigation } from '@/components/Navigation';
+import Navigation from '@/components/Navigation';
 
 interface Profile {
   user_id: string;

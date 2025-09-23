@@ -56,7 +56,7 @@ const Profile = () => {
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // Form state for editing
@@ -126,7 +126,7 @@ const Profile = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setProfileLoading(false);
     }
   };
 
@@ -177,7 +177,7 @@ const Profile = () => {
 
   if (!user) return null;
 
-  if (loading) {
+  if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />

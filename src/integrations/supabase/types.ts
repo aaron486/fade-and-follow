@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      bets: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          market: string
+          notes: string | null
+          odds: number
+          placed_at: string
+          resolved_at: string | null
+          selection: string
+          sport: string
+          stake_units: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          market: string
+          notes?: string | null
+          odds: number
+          placed_at?: string
+          resolved_at?: string | null
+          selection: string
+          sport: string
+          stake_units?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          market?: string
+          notes?: string | null
+          odds?: number
+          placed_at?: string
+          resolved_at?: string | null
+          selection?: string
+          sport?: string
+          stake_units?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friend_requests: {
         Row: {
           created_at: string
@@ -214,7 +265,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_user_betting_stats: {
+        Args: { target_user_id: string }
+        Returns: {
+          current_streak: number
+          losses: number
+          pushes: number
+          roi_percentage: number
+          streak_type: string
+          total_bets: number
+          total_units_wagered: number
+          total_units_won: number
+          win_percentage: number
+          wins: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

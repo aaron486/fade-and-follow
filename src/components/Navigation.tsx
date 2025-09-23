@@ -39,6 +39,12 @@ export const Navigation = () => {
             {!loading && (
               user ? (
                 <>
+                  <Link to="/bets">
+                    <Button variant="ghost" size="sm">
+                      <Users className="w-4 h-4 mr-2" />
+                      My Bets
+                    </Button>
+                  </Link>
                   <Link to="/friends">
                     <Button variant="ghost" size="sm">
                       <Users className="w-4 h-4 mr-2" />
@@ -118,6 +124,12 @@ export const Navigation = () => {
                 {!loading && (
                   user ? (
                     <>
+                      <Link to="/bets">
+                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                          <Users className="w-4 h-4 mr-2" />
+                          My Bets
+                        </Button>
+                      </Link>
                       <Link to="/friends">
                         <Button variant="ghost" size="sm" className="w-full justify-start">
                           <Users className="w-4 h-4 mr-2" />

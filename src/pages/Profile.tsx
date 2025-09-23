@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
+import { BettingStats } from '@/components/BettingStats';
 
 interface UserProfile {
   user_id: string;
@@ -389,78 +390,7 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Bets</CardTitle>
-                  <Target className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{profile.total_bets || 0}</div>
-                  <p className="text-xs text-muted-foreground">All time betting activity</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{calculateWinRate()}%</div>
-                  <p className="text-xs text-muted-foreground">
-                    {profile.wins || 0} wins out of {profile.total_bets || 0} bets
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Current Streak</CardTitle>
-                  <Trophy className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {profile.current_streak || 0}
-                    {profile.streak_type && (
-                      <span className="text-sm ml-1">
-                        {profile.streak_type === 'win' ? 'W' : 'L'}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {profile.streak_type === 'win' ? 'Winning' : 'Losing'} streak
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Detailed Statistics</CardTitle>
-                <CardDescription>Complete betting performance breakdown</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-lg font-semibold text-green-600">{profile.wins || 0}</div>
-                    <div className="text-sm text-muted-foreground">Wins</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-lg font-semibold text-red-600">{profile.losses || 0}</div>
-                    <div className="text-sm text-muted-foreground">Losses</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-lg font-semibold">{profile.total_bets || 0}</div>
-                    <div className="text-sm text-muted-foreground">Total Bets</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-lg font-semibold">{calculateWinRate()}%</div>
-                    <div className="text-sm text-muted-foreground">Win Rate</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <BettingStats userId={profile.user_id} />
           </TabsContent>
 
           <TabsContent value="social" className="space-y-6">

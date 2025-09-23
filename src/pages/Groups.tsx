@@ -49,7 +49,7 @@ interface Friendship {
 }
 
 const Groups = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -67,13 +67,15 @@ const Groups = () => {
   const [showAddMembersDialog, setShowAddMembersDialog] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
     }
     loadGroups();
     loadFriends();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const loadGroups = async () => {
     try {

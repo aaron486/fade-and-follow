@@ -49,7 +49,7 @@ interface UserProfile {
 }
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { userId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -76,11 +76,13 @@ const Profile = () => {
 
   // Redirect if not authenticated
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   // Load profile data
   useEffect(() => {

@@ -41,7 +41,7 @@ interface Friendship {
 }
 
 const Friends = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -53,11 +53,13 @@ const Friends = () => {
 
   // Redirect if not authenticated
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   // Load friend requests and friends on mount
   useEffect(() => {

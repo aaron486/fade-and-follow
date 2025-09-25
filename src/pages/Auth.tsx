@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, User, Settings, Users, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -24,6 +26,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -63,6 +67,26 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  // Fetch teams for selection
+  useEffect(() => {
+    const fetchTeams = async () => {
+      setTeamsLoading(true);
+      const { data, error } = await supabase
+        .from('teams')
+        .select('id, name, league, sport, logo_url')
+        .order('sport')
+        .order('league')
+        .order('name');
+      
+      if (!error && data) {
+        setTeams(data);
+      }
+      setTeamsLoading(false);
+    };
+
+    fetchTeams();
+  }, []);
+
   const nextStep = () => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
@@ -80,7 +104,7 @@ const Auth = () => {
       case 0: // Instagram step
         return instagramUrl.trim() !== '';
       case 1: // Account step
-        return email && password && username;
+        return email && password && username && favoriteTeam;
       case 2: // Personal info step
         return true; // All fields are optional in personal step
       case 3: // Preferences step
@@ -150,6 +174,10 @@ const Auth = () => {
       case 1:
         return (
           <div className="space-y-4">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-semibold mb-2">Create Your Account</h2>
+              <p className="text-muted-foreground">Set up your FADE account and select your favorite team</p>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="signup-email">Email</Label>
               <Input
@@ -184,6 +212,34 @@ const Auth = () => {
                 required
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="favorite-team">Favorite Team</Label>
+              <Select value={favoriteTeam} onValueChange={setFavoriteTeam} required>
+                <SelectTrigger>
+                  <SelectValue placeholder={teamsLoading ? "Loading teams..." : "Select your favorite team"} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      <div className="flex items-center gap-2">
+                        {team.logo_url && (
+                          <img 
+                            src={team.logo_url} 
+                            alt={team.name} 
+                            className="w-5 h-5 object-contain"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <span>{team.name}</span>
+                        <span className="text-muted-foreground text-sm">({team.league})</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         );
       case 2:
@@ -197,16 +253,6 @@ const Auth = () => {
                 placeholder="How others will see you"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="favorite-team">Favorite Team</Label>
-              <Input
-                id="favorite-team"
-                type="text"
-                placeholder="Your favorite sports team"
-                value={favoriteTeam}
-                onChange={(e) => setFavoriteTeam(e.target.value)}
               />
             </div>
             <div className="space-y-2">

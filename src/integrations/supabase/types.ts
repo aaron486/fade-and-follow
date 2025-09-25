@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       bets: {
         Row: {
+          channel_id: string | null
           created_at: string
           event_name: string
           id: string
@@ -28,10 +29,14 @@ export type Database = {
           sport: string
           stake_units: number
           status: string
+          team_id: string | null
+          units: number | null
           updated_at: string
           user_id: string
+          wager_amount: number | null
         }
         Insert: {
+          channel_id?: string | null
           created_at?: string
           event_name: string
           id?: string
@@ -44,10 +49,14 @@ export type Database = {
           sport: string
           stake_units?: number
           status?: string
+          team_id?: string | null
+          units?: number | null
           updated_at?: string
           user_id: string
+          wager_amount?: number | null
         }
         Update: {
+          channel_id?: string | null
           created_at?: string
           event_name?: string
           id?: string
@@ -60,10 +69,28 @@ export type Database = {
           sport?: string
           stake_units?: number
           status?: string
+          team_id?: string | null
+          units?: number | null
           updated_at?: string
           user_id?: string
+          wager_amount?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_bets_channel"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_bets_team"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       channel_members: {
         Row: {

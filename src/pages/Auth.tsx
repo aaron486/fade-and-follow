@@ -365,7 +365,7 @@ const Auth = () => {
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup" onClick={() => setIsSignUp(true)}>Sign Up</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
@@ -406,6 +406,23 @@ const Auth = () => {
                       {loading ? 'Signing In...' : 'Sign In'}
                     </Button>
                   </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="signup">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Join FADE</CardTitle>
+                  <CardDescription>Create your account to get started</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => setIsSignUp(true)}
+                    className="w-full"
+                  >
+                    Start Registration
+                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>

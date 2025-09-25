@@ -261,18 +261,45 @@ const Auth = () => {
       case 2:
         return (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="preferred-sportsbook">Preferred Sportsbook</Label>
-              <Input
-                id="preferred-sportsbook"
-                type="text"
-                placeholder="Your go-to sportsbook (e.g., DraftKings, FanDuel)"
-                value={preferredSportsbook}
-                onChange={(e) => setPreferredSportsbook(e.target.value)}
-              />
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-semibold mb-2">Betting Preferences</h2>
+              <p className="text-muted-foreground">Tell us about your betting style and preferences</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tiktok-url">TikTok</Label>
+              <Label htmlFor="preferred-sportsbook">Preferred Sportsbook</Label>
+              <Select value={preferredSportsbook} onValueChange={setPreferredSportsbook}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Select your preferred sportsbook" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border z-50">
+                  {sportsbooks.map((sportsbook) => (
+                    <SelectItem key={sportsbook} value={sportsbook}>
+                      {sportsbook}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bettor-level">Level of Bettor</Label>
+              <Select value={bettorLevel} onValueChange={setBettorLevel}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Select your betting level" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border z-50">
+                  {bettorLevels.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{level.label}</span>
+                        <span className="text-sm text-muted-foreground">{level.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tiktok-url">TikTok (Optional)</Label>
               <Input
                 id="tiktok-url"
                 type="url"
@@ -282,7 +309,7 @@ const Auth = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="x-url">X (Twitter)</Label>
+              <Label htmlFor="x-url">X (Twitter) (Optional)</Label>
               <Input
                 id="x-url"
                 type="url"
@@ -292,7 +319,7 @@ const Auth = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="discord-url">Discord</Label>
+              <Label htmlFor="discord-url">Discord (Optional)</Label>
               <Input
                 id="discord-url"
                 type="text"

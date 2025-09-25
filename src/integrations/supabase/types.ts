@@ -280,6 +280,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bettor_level: string | null
           created_at: string
           current_streak: number | null
           discord_url: string | null
@@ -301,6 +302,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bettor_level?: string | null
           created_at?: string
           current_streak?: number | null
           discord_url?: string | null
@@ -322,6 +324,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bettor_level?: string | null
           created_at?: string
           current_streak?: number | null
           discord_url?: string | null

@@ -376,6 +376,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_records: {
+        Row: {
+          created_at: string
+          current_streak: number
+          longest_streak: number
+          losses: number
+          pushes: number
+          units_won: number
+          updated_at: string
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          longest_streak?: number
+          losses?: number
+          pushes?: number
+          units_won?: number
+          updated_at?: string
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          longest_streak?: number
+          losses?: number
+          pushes?: number
+          units_won?: number
+          updated_at?: string
+          user_id?: string
+          wins?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -395,6 +431,10 @@ export type Database = {
           win_percentage: number
           wins: number
         }[]
+      }
+      update_user_records_stats: {
+        Args: { target_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {

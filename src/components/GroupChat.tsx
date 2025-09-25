@@ -116,7 +116,7 @@ const GroupChat = () => {
   };
 
   return (
-    <div className="w-80 h-[600px] flex flex-col">
+    <div className="h-full flex flex-col">
       <Card className="flex-1 flex flex-col">
         {/* Chat Header */}
         <CardHeader className="pb-3 border-b">

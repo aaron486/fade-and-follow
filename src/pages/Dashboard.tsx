@@ -31,7 +31,7 @@ const Dashboard = () => {
       <main className="pt-16"> {/* Account for fixed navigation */}
         <div className="flex h-[calc(100vh-4rem)]"> {/* Full height minus nav */}
           {/* Left Sidebar - Profile & Stats */}
-          <div className="flex-shrink-0">
+          <div className="w-80 flex-shrink-0 overflow-y-auto">
             <ProfileSidebar />
           </div>
           
@@ -41,7 +41,7 @@ const Dashboard = () => {
           </div>
           
           {/* Right Sidebar - Group Chat */}
-          <div className="flex-shrink-0 p-4 border-l bg-muted/20">
+          <div className="w-80 flex-shrink-0 border-l bg-muted/20 p-4">
             <GroupChat />
           </div>
         </div>

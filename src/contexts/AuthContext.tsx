@@ -11,6 +11,7 @@ interface SignUpData {
   favoriteTeam?: string;
   state?: string;
   preferredSportsbook?: string;
+  bettorLevel?: string;
   instagramUrl?: string;
   tiktokUrl?: string;
   xUrl?: string;
@@ -85,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook, instagramUrl, tiktokUrl, xUrl, discordUrl }: SignUpData) => {
+  const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook, bettorLevel, instagramUrl, tiktokUrl, xUrl, discordUrl }: SignUpData) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -100,6 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             favorite_team: favoriteTeam,
             state,
             preferred_sportsbook: preferredSportsbook,
+            bettor_level: bettorLevel,
             instagram_url: instagramUrl,
             tiktok_url: tiktokUrl,
             x_url: xUrl,

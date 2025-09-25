@@ -19,6 +19,7 @@ const Auth = () => {
   const [favoriteTeam, setFavoriteTeam] = useState('');
   const [state, setState] = useState('');
   const [preferredSportsbook, setPreferredSportsbook] = useState('');
+  const [bettorLevel, setBettorLevel] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
   const [xUrl, setXUrl] = useState('');
@@ -30,6 +31,28 @@ const Auth = () => {
   const [teamsLoading, setTeamsLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  // Major sportsbooks list
+  const sportsbooks = [
+    'DraftKings',
+    'FanDuel', 
+    'ESPN BET',
+    'BetMGM',
+    'Caesars',
+    'bet365',
+    'PointsBet',
+    'WynnBET',
+    'Barstool Sportsbook',
+    'Hard Rock Bet',
+    'Other'
+  ];
+
+  // Bettor level options
+  const bettorLevels = [
+    { value: 'handicapper', label: 'Handicapper', description: 'Professional sports bettor' },
+    { value: 'social', label: 'Social', description: 'Casual betting with friends' },
+    { value: 'new', label: 'New', description: 'Just getting started' }
+  ];
 
   const steps = [
     { 
@@ -131,6 +154,7 @@ const Auth = () => {
       favoriteTeam,
       state,
       preferredSportsbook,
+      bettorLevel,
       instagramUrl,
       tiktokUrl,
       xUrl,

@@ -29,6 +29,12 @@ const Auth = () => {
 
   const steps = [
     { 
+      id: 'instagram', 
+      title: 'Instagram Handle', 
+      description: 'Connect with your Instagram',
+      icon: Globe
+    },
+    { 
       id: 'account', 
       title: 'Account Setup', 
       description: 'Create your FADE account',
@@ -45,12 +51,6 @@ const Auth = () => {
       title: 'Betting Preferences', 
       description: 'Your betting setup',
       icon: Users
-    },
-    { 
-      id: 'social', 
-      title: 'Social Media', 
-      description: 'Connect your socials (optional)',
-      icon: Globe
     }
   ];
 
@@ -77,13 +77,13 @@ const Auth = () => {
 
   const canProceedToNextStep = () => {
     switch (currentStep) {
-      case 0: // Account step
+      case 0: // Instagram step
+        return instagramUrl.trim() !== '';
+      case 1: // Account step
         return email && password && username;
-      case 1: // Personal info step
+      case 2: // Personal info step
         return true; // All fields are optional in personal step
-      case 2: // Preferences step
-        return true; // All fields are optional
-      case 3: // Social step
+      case 3: // Preferences step
         return true; // All fields are optional
       default:
         return true;
@@ -129,6 +129,27 @@ const Auth = () => {
       case 0:
         return (
           <div className="space-y-4">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-semibold mb-2">What's your Instagram handle?</h2>
+              <p className="text-muted-foreground">Connect with other bettors in the community</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="instagram-handle">Instagram Handle</Label>
+              <Input
+                id="instagram-handle"
+                type="text"
+                placeholder="@yourusername"
+                value={instagramUrl}
+                onChange={(e) => setInstagramUrl(e.target.value)}
+                required
+                className="text-center text-lg py-4"
+              />
+            </div>
+          </div>
+        );
+      case 1:
+        return (
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="signup-email">Email</Label>
               <Input
@@ -165,7 +186,7 @@ const Auth = () => {
             </div>
           </div>
         );
-      case 1:
+      case 2:
         return (
           <div className="space-y-4">
             <div className="space-y-2">
@@ -200,7 +221,7 @@ const Auth = () => {
             </div>
           </div>
         );
-      case 2:
+      case 3:
         return (
           <div className="space-y-4">
             <div className="space-y-2">
@@ -211,24 +232,6 @@ const Auth = () => {
                 placeholder="Your go-to sportsbook (e.g., DraftKings, FanDuel)"
                 value={preferredSportsbook}
                 onChange={(e) => setPreferredSportsbook(e.target.value)}
-              />
-            </div>
-            <div className="text-sm text-muted-foreground">
-              This helps us personalize your betting experience and show relevant promotions.
-            </div>
-          </div>
-        );
-      case 3:
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="instagram-url">Instagram</Label>
-              <Input
-                id="instagram-url"
-                type="url"
-                placeholder="https://instagram.com/yourusername"
-                value={instagramUrl}
-                onChange={(e) => setInstagramUrl(e.target.value)}
               />
             </div>
             <div className="space-y-2">

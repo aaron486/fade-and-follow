@@ -45,12 +45,6 @@ const Auth = () => {
       icon: User
     },
     { 
-      id: 'personal', 
-      title: 'Personal Info', 
-      description: 'Tell us about yourself',
-      icon: Settings
-    },
-    { 
       id: 'preferences', 
       title: 'Betting Preferences', 
       description: 'Your betting setup',
@@ -105,9 +99,7 @@ const Auth = () => {
         return instagramUrl.trim() !== '';
       case 1: // Account step
         return email && password && username && favoriteTeam;
-      case 2: // Personal info step
-        return true; // All fields are optional in personal step
-      case 3: // Preferences step
+      case 2: // Preferences step
         return true; // All fields are optional
       default:
         return true;
@@ -243,31 +235,6 @@ const Auth = () => {
           </div>
         );
       case 2:
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="display-name">Display Name</Label>
-              <Input
-                id="display-name"
-                type="text"
-                placeholder="How others will see you"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                type="text"
-                placeholder="Your state (e.g., CA, NY, TX)"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-              />
-            </div>
-          </div>
-        );
-      case 3:
         return (
           <div className="space-y-4">
             <div className="space-y-2">

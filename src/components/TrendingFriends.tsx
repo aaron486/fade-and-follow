@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Flame, Snowflake, TrendingUp, Trophy } from 'lucide-react';
+import { Flame, Snowflake, TrendingUp, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 interface TrendingFriend {
   user_id: string;
@@ -82,6 +84,17 @@ const mockTrendingFriends: TrendingFriend[] = [
 
 export const TrendingFriends = () => {
   const trendingFriends = mockTrendingFriends;
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const nextFriend = () => {
+    setCurrentIndex((prev) => (prev + 1) % trendingFriends.length);
+  };
+
+  const prevFriend = () => {
+    setCurrentIndex((prev) => (prev - 1 + trendingFriends.length) % trendingFriends.length);
+  };
+
+  const currentFriend = trendingFriends[currentIndex];
 
   const getTrendingReason = (friend: TrendingFriend) => {
     if (friend.current_streak >= 7) {
@@ -126,73 +139,127 @@ export const TrendingFriends = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Flame className="w-5 h-5 text-orange-500" />
-          Trending Friends
+    <Card className="relative overflow-hidden">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Flame className="w-5 h-5 text-orange-500" />
+            Trending Friends
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={prevFriend}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground px-2">
+              {currentIndex + 1}/{trendingFriends.length}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={nextFriend}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {trendingFriends.map((friend) => (
-            <div
-              key={friend.user_id}
-              className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-            >
-              <div className="flex items-center gap-3 flex-1">
-                <Avatar className="w-12 h-12 border-2 border-primary/20">
-                  <AvatarImage src={friend.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary/10">
-                    {(friend.display_name || friend.username || 'U')[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <p className="font-semibold text-sm truncate">
-                      {friend.display_name}
-                    </p>
-                    <span className="text-base flex-shrink-0">
-                      {friend.trend === 'hot' ? '🔥' : '❄️'}
-                    </span>
-                  </div>
-                  <div className="text-muted-foreground truncate">
-                    {getTrendingReason(friend)}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    <span className="text-accent">{friend.wins}W</span> - <span className="text-destructive">{friend.losses}L</span>
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                {Math.abs(friend.current_streak) >= 3 && (
-                  <Badge 
-                    variant={friend.current_streak > 0 ? "default" : "destructive"} 
-                    className="gap-1 text-xs"
-                  >
-                    {friend.current_streak > 0 ? (
-                      <>
-                        <Flame className="w-3 h-3" />
-                        <span className="font-bold">{friend.current_streak}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Snowflake className="w-3 h-3" />
-                        <span className="font-bold">{Math.abs(friend.current_streak)}</span>
-                      </>
-                    )}
-                  </Badge>
-                )}
-                <Badge variant="secondary" className="gap-1 text-xs">
-                  <TrendingUp className="w-3 h-3" />
-                  <span className={friend.win_rate >= 60 ? "text-accent" : ""}>
-                    {friend.win_rate.toFixed(0)}%
-                  </span>
-                </Badge>
-              </div>
+        <div className="flex flex-col items-center text-center space-y-4 py-4">
+          {/* Avatar */}
+          <div className="relative">
+            <Avatar className="w-24 h-24 border-4 border-primary/20">
+              <AvatarImage src={currentFriend.avatar_url || undefined} />
+              <AvatarFallback className="bg-primary/10 text-2xl">
+                {(currentFriend.display_name || currentFriend.username || 'U')[0].toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-2 -right-2 text-3xl">
+              {currentFriend.trend === 'hot' ? '🔥' : '❄️'}
             </div>
-          ))}
+          </div>
+
+          {/* Name */}
+          <div>
+            <h3 className="text-xl font-bold">{currentFriend.display_name}</h3>
+            <p className="text-sm text-muted-foreground">@{currentFriend.username}</p>
+          </div>
+
+          {/* Trending Reason */}
+          <div className="text-center px-4">
+            {getTrendingReason(currentFriend)}
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 w-full max-w-sm pt-4">
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="text-2xl font-bold">
+                <span className="text-accent">{currentFriend.wins}</span>
+                <span className="text-muted-foreground mx-1">-</span>
+                <span className="text-destructive">{currentFriend.losses}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Record</p>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className={`text-2xl font-bold ${currentFriend.win_rate >= 60 ? 'text-accent' : 'text-foreground'}`}>
+                {currentFriend.win_rate.toFixed(0)}%
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Win Rate</p>
+            </div>
+
+            {Math.abs(currentFriend.current_streak) >= 3 && (
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className={`text-2xl font-bold flex items-center justify-center gap-2 ${
+                  currentFriend.current_streak > 0 ? 'text-accent' : 'text-destructive'
+                }`}>
+                  {currentFriend.current_streak > 0 ? (
+                    <>
+                      <Flame className="w-6 h-6" />
+                      {currentFriend.current_streak}
+                    </>
+                  ) : (
+                    <>
+                      <Snowflake className="w-6 h-6" />
+                      {Math.abs(currentFriend.current_streak)}
+                    </>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {currentFriend.current_streak > 0 ? 'Win Streak' : 'Loss Streak'}
+                </p>
+              </div>
+            )}
+
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className={`text-2xl font-bold ${
+                currentFriend.units_won > 0 ? 'text-accent' : 'text-destructive'
+              }`}>
+                {currentFriend.units_won > 0 ? '+' : ''}{currentFriend.units_won.toFixed(1)}u
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Units</p>
+            </div>
+          </div>
+
+          {/* Dots Indicator */}
+          <div className="flex gap-2 pt-2">
+            {trendingFriends.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`h-2 rounded-full transition-all ${
+                  index === currentIndex 
+                    ? 'w-8 bg-primary' 
+                    : 'w-2 bg-muted-foreground/30'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>

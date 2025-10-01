@@ -340,65 +340,87 @@ export const BetsPage = () => {
               {allBets.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center">
-                    <p className="text-muted-foreground mb-2">No bets in database</p>
+                    <p className="text-muted-foreground mb-2">No bets available</p>
                     <p className="text-sm text-muted-foreground">
-                      All bets from the system will appear here. Click any bet to place it.
+                      Check back later for betting opportunities
                     </p>
                   </CardContent>
                 </Card>
               ) : (
-                <>
-                  <div className="text-sm text-muted-foreground mb-3 text-center">
-                    Click any bet to place it
-                  </div>
+                <div className="space-y-2">
                   {allBets.map((bet) => (
                     <Card 
                       key={bet.id}
-                      className="cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:shadow-lg"
-                      onClick={() => handleBetClick(bet)}
+                      className="overflow-hidden hover:shadow-md transition-shadow"
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant="outline">{bet.sport}</Badge>
-                              <Badge 
-                                variant={
-                                  bet.status === 'win' ? 'default' :
-                                  bet.status === 'loss' ? 'destructive' :
-                                  bet.status === 'push' ? 'secondary' :
-                                  'outline'
-                                }
-                              >
-                                {bet.status.toUpperCase()}
-                              </Badge>
+                      <CardContent className="p-0">
+                        {/* Header with Sport and Time */}
+                        <div className="bg-muted/50 px-4 py-2 border-b flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {bet.sport}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {formatTime(bet.placed_at)}
+                            </span>
+                          </div>
+                          <Badge 
+                            variant={
+                              bet.status === 'win' ? 'default' :
+                              bet.status === 'loss' ? 'destructive' :
+                              bet.status === 'push' ? 'secondary' :
+                              'outline'
+                            }
+                            className="text-xs"
+                          >
+                            {bet.status.toUpperCase()}
+                          </Badge>
+                        </div>
+
+                        {/* Game Info and Bet Button */}
+                        <div className="p-4">
+                          <div className="flex items-center justify-between gap-4">
+                            {/* Left: Game Info */}
+                            <div className="flex-1">
+                              <p className="font-semibold text-sm mb-1">
+                                {bet.event_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {bet.market}
+                              </p>
                             </div>
-                            <p className="font-semibold mb-1">{bet.event_name}</p>
-                            <p className="text-sm text-muted-foreground mb-1">
-                              {bet.market}: {bet.selection}
-                            </p>
-                            {bet.notes && (
-                              <p className="text-xs text-muted-foreground italic mt-1">
+
+                            {/* Right: Bet Button */}
+                            <Button
+                              variant="outline"
+                              className="flex-col h-auto py-3 px-6 min-w-[120px] hover:bg-primary hover:text-primary-foreground transition-colors"
+                              onClick={() => handleBetClick(bet)}
+                            >
+                              <div className="text-sm font-semibold mb-1">
+                                {bet.selection}
+                              </div>
+                              <div className="text-lg font-bold">
+                                {formatOdds(bet.odds)}
+                              </div>
+                              <div className="text-xs opacity-80 mt-1">
+                                {bet.stake_units}u
+                              </div>
+                            </Button>
+                          </div>
+
+                          {/* Notes */}
+                          {bet.notes && (
+                            <div className="mt-3 pt-3 border-t">
+                              <p className="text-xs text-muted-foreground italic">
                                 "{bet.notes}"
                               </p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <div className="font-semibold">
-                              {formatOdds(bet.odds)}
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {bet.stake_units}u
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatTime(bet.placed_at)}
+                          )}
                         </div>
                       </CardContent>
                     </Card>
                   ))}
-                </>
+                </div>
               )}
             </TabsContent>
 

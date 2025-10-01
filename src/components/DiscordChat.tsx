@@ -19,6 +19,12 @@ interface TeamChannel {
   icon: string;
 }
 
+interface Group {
+  id: string;
+  name: string;
+  memberCount: number;
+}
+
 interface Message {
   id: string;
   userId: string;
@@ -32,6 +38,11 @@ const fakeUsers: FakeUser[] = [
   { id: '3', name: 'Alex Chen', username: 'alexc', status: 'away' },
   { id: '4', name: 'Emma Davis', username: 'emmad', status: 'offline' },
   { id: '5', name: 'Chris Martinez', username: 'chrism', status: 'online' },
+];
+
+const groups: Group[] = [
+  { id: 'cashdat', name: 'Cash Dat', memberCount: 23 },
+  { id: 'fadekings', name: 'FADE KINGS', memberCount: 47 },
 ];
 
 const teamChannels: TeamChannel[] = [
@@ -51,6 +62,18 @@ const fakeDmMessages: Record<string, Message[]> = {
   ],
 };
 
+const fakeGroupMessages: Record<string, Message[]> = {
+  'cashdat': [
+    { id: 'g1', userId: '1', content: 'Just hit a 5-leg parlay! 💰💰💰', timestamp: new Date(Date.now() - 900000) },
+    { id: 'g2', userId: '5', content: 'Congrats bro! What were your picks?', timestamp: new Date(Date.now() - 800000) },
+    { id: 'g3', userId: '2', content: 'I need to get in on this action', timestamp: new Date(Date.now() - 700000) },
+  ],
+  'fadekings': [
+    { id: 'g4', userId: '3', content: 'Public is all over Lakers tonight... you know what that means 👀', timestamp: new Date(Date.now() - 3600000) },
+    { id: 'g5', userId: '1', content: 'Fade the public = profit', timestamp: new Date(Date.now() - 3500000) },
+  ],
+};
+
 const fakeChannelMessages: Record<string, Message[]> = {
   'lakers': [
     { id: 'c1', userId: '1', content: 'Lakers looking good this season!', timestamp: new Date(Date.now() - 1800000) },
@@ -66,16 +89,20 @@ const fakeChannelMessages: Record<string, Message[]> = {
 };
 
 export const DiscordChat = () => {
-  const [selectedType, setSelectedType] = useState<'dm' | 'channel'>('dm');
+  const [selectedType, setSelectedType] = useState<'dm' | 'channel' | 'group'>('dm');
   const [selectedId, setSelectedId] = useState<string>('1');
   const [messageInput, setMessageInput] = useState('');
 
   const currentMessages = selectedType === 'dm' 
     ? fakeDmMessages[selectedId] || []
+    : selectedType === 'group'
+    ? fakeGroupMessages[selectedId] || []
     : fakeChannelMessages[selectedId] || [];
 
   const selectedItem = selectedType === 'dm'
     ? fakeUsers.find(u => u.id === selectedId)
+    : selectedType === 'group'
+    ? groups.find(g => g.id === selectedId)
     : teamChannels.find(c => c.id === selectedId);
 
   const getStatusColor = (status: FakeUser['status']) => {
@@ -139,6 +166,35 @@ export const DiscordChat = () => {
           </ScrollArea>
         </div>
 
+        {/* Groups Section */}
+        <div className="p-3 border-b">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Groups
+          </h3>
+          <div className="space-y-1">
+            {groups.map((group) => (
+              <button
+                key={group.id}
+                onClick={() => {
+                  setSelectedType('group');
+                  setSelectedId(group.id);
+                }}
+                className={`w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-accent transition-colors ${
+                  selectedType === 'group' && selectedId === group.id ? 'bg-accent' : ''
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Hash className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium truncate">{group.name}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{group.memberCount}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Team Channels Section */}
         <div className="p-3">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -174,6 +230,18 @@ export const DiscordChat = () => {
               <span className="font-semibold">
                 {selectedItem && 'name' in selectedItem ? selectedItem.name : ''}
               </span>
+            </>
+          ) : selectedType === 'group' ? (
+            <>
+              <Hash className="h-5 w-5 text-muted-foreground" />
+              <span className="font-semibold">
+                {selectedItem && 'name' in selectedItem ? selectedItem.name : ''}
+              </span>
+              {selectedItem && 'memberCount' in selectedItem && (
+                <span className="text-sm text-muted-foreground">
+                  {selectedItem.memberCount} members
+                </span>
+              )}
             </>
           ) : (
             <>

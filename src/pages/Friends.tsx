@@ -222,8 +222,8 @@ const Friends = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold fade-text-gradient mb-2">Friends</h1>
-          <p className="text-muted-foreground">Connect with your betting buddies</p>
+          <h1 className="text-4xl font-bold fade-text-gradient mb-2">Messages & Friends</h1>
+          <p className="text-muted-foreground">Chat with friends and manage your betting network</p>
         </div>
 
         <Tabs defaultValue="chat" className="w-full">

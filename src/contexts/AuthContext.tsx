@@ -44,28 +44,75 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
+    let refreshInterval: ReturnType<typeof setInterval>;
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes - only update on actual auth events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+    // Initialize auth and restore session
+    const initAuth = async () => {
+      try {
+        // Restore session on load
+        const { data: { session } } = await supabase.auth.getSession();
+        
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
+          setLoading(false);
+          
+          if (session) {
+            console.log('✅ Session restored:', session.user.email);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error restoring session:', error);
+        if (mounted) {
+          setLoading(false);
         }
       }
-    );
+    };
+
+    // Keep session alive by refreshing token before expiry
+    const keepAlive = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && mounted) {
+          console.log('🔄 Refreshing session...');
+          await supabase.auth.refreshSession();
+        }
+      } catch (error) {
+        console.error('❌ Error refreshing session:', error);
+      }
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
+      console.log('🔔 Auth event:', event);
+
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('✅ Token refreshed successfully');
+      }
+
+      if (event === 'SIGNED_OUT') {
+        console.log('⚠️ User signed out');
+      }
+
+      if (event === 'SIGNED_IN') {
+        console.log('✅ User signed in:', session?.user.email);
+      }
+
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    // Initialize
+    initAuth();
+
+    // Keep session alive - refresh every 5 minutes
+    refreshInterval = setInterval(keepAlive, 5 * 60 * 1000);
 
     return () => {
       mounted = false;
+      clearInterval(refreshInterval);
       subscription.unsubscribe();
     };
   }, []);

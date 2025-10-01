@@ -44,68 +44,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-    let refreshInterval: ReturnType<typeof setInterval>;
 
-    // Initialize auth - get session once
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-          
-          if (session) {
-            console.log('✅ Session restored:', session.user.email);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error restoring session:', error);
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    // Refresh session periodically (every 50 minutes)
-    const keepAlive = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && mounted) {
-          // Only refresh if token expires in less than 55 minutes
-          const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
-          const now = Date.now();
-          const timeUntilExpiry = expiresAt - now;
-          const fiftyFiveMinutes = 55 * 60 * 1000;
-
-          if (timeUntilExpiry < fiftyFiveMinutes && timeUntilExpiry > 0) {
-            await supabase.auth.refreshSession();
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error refreshing session:', error);
-      }
-    };
-
-    // Set up auth state listener
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-
-      // Update state for all events
+      
+      console.log('🔐 Auth event:', event);
+      
+      // Only synchronous state updates
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ User signed in:', session.user.email);
+      } else if (event === 'SIGNED_OUT') {
+        console.log('👋 User signed out');
+      }
     });
 
-    // Initialize
-    initAuth();
-
-    // Keep session alive - check every 50 minutes
-    refreshInterval = setInterval(keepAlive, 50 * 60 * 1000);
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        if (session) {
+          console.log('✅ Session restored:', session.user.email);
+        }
+      }
+    });
 
     return () => {
       mounted = false;
-      clearInterval(refreshInterval);
       subscription.unsubscribe();
     };
   }, []);

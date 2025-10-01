@@ -5,7 +5,8 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import BetStoryViewer from './BetStoryViewer';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { BetForm } from './BetForm';
+import BetImageUpload from './BetImageUpload';
+import BetConfirmation from './BetConfirmation';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface BetStory {
@@ -61,6 +62,8 @@ const BetStoriesBar = () => {
   const { user } = useAuth();
   const [selectedStory, setSelectedStory] = useState<BetStory | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [uploadStep, setUploadStep] = useState<'upload' | 'confirm'>('upload');
+  const [extractedBetDetails, setExtractedBetDetails] = useState<any>(null);
 
   return (
     <>
@@ -136,20 +139,43 @@ const BetStoriesBar = () => {
       )}
 
       {/* Upload Bet Dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+      <Dialog 
+        open={showUploadDialog} 
+        onOpenChange={(open) => {
+          setShowUploadDialog(open);
+          if (!open) {
+            setUploadStep('upload');
+            setExtractedBetDetails(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-2xl font-bold">Share Your Pick</h2>
-              <p className="text-muted-foreground">Let your friends see your latest bet</p>
-            </div>
-            <BetForm
-              onCancel={() => setShowUploadDialog(false)}
-              onSuccess={() => {
+          {uploadStep === 'upload' ? (
+            <BetImageUpload
+              onBetExtracted={(details) => {
+                setExtractedBetDetails(details);
+                setUploadStep('confirm');
+              }}
+              onCancel={() => {
                 setShowUploadDialog(false);
+                setUploadStep('upload');
+                setExtractedBetDetails(null);
               }}
             />
-          </div>
+          ) : (
+            <BetConfirmation
+              betDetails={extractedBetDetails}
+              onCancel={() => {
+                setUploadStep('upload');
+                setExtractedBetDetails(null);
+              }}
+              onSuccess={() => {
+                setShowUploadDialog(false);
+                setUploadStep('upload');
+                setExtractedBetDetails(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>

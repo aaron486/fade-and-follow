@@ -1,0 +1,212 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+
+interface BetConfirmationProps {
+  betDetails: {
+    sport: string;
+    event_name: string;
+    market: string;
+    selection: string;
+    odds: string;
+    stake_units: string;
+    notes?: string;
+  };
+  onCancel: () => void;
+  onSuccess: () => void;
+}
+
+const SPORTS_OPTIONS = [
+  'NFL', 'NBA', 'MLB', 'NHL', 'Soccer', 'Tennis', 'Golf', 'Boxing', 'MMA', 'College Football', 'College Basketball', 'Other'
+];
+
+const MARKET_OPTIONS = [
+  { value: 'ML', label: 'Moneyline' },
+  { value: 'Spread', label: 'Point Spread' },
+  { value: 'Total', label: 'Over/Under' },
+  { value: 'Prop', label: 'Player Prop' },
+  { value: 'Future', label: 'Future Bet' },
+  { value: 'Parlay', label: 'Parlay' },
+];
+
+const BetConfirmation: React.FC<BetConfirmationProps> = ({ betDetails, onCancel, onSuccess }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState(betDetails);
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    const odds = parseFloat(formData.odds);
+    const stakeUnits = parseFloat(formData.stake_units);
+
+    if (isNaN(odds) || isNaN(stakeUnits) || stakeUnits <= 0) {
+      toast({
+        title: 'Invalid Input',
+        description: 'Please enter valid odds and stake amounts.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('bets')
+        .insert([
+          {
+            user_id: user.id,
+            sport: formData.sport,
+            event_name: formData.event_name,
+            market: formData.market,
+            selection: formData.selection,
+            odds: odds,
+            stake_units: stakeUnits,
+            notes: formData.notes || null,
+          },
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Bet Placed!',
+        description: 'Your bet has been successfully recorded.',
+      });
+
+      onSuccess();
+    } catch (error: any) {
+      console.error('Error creating bet:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to place bet. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Confirm Your Bet</h2>
+        <p className="text-muted-foreground">Review and edit the extracted details</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="sport">Sport *</Label>
+            <Select value={formData.sport} onValueChange={(value) => handleChange('sport', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select sport" />
+              </SelectTrigger>
+              <SelectContent>
+                {SPORTS_OPTIONS.map((sport) => (
+                  <SelectItem key={sport} value={sport}>
+                    {sport}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="market">Market Type *</Label>
+            <Select value={formData.market} onValueChange={(value) => handleChange('market', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select market" />
+              </SelectTrigger>
+              <SelectContent>
+                {MARKET_OPTIONS.map((market) => (
+                  <SelectItem key={market.value} value={market.value}>
+                    {market.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="event_name">Event/Game *</Label>
+          <Input
+            id="event_name"
+            value={formData.event_name}
+            onChange={(e) => handleChange('event_name', e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="selection">Your Pick *</Label>
+          <Input
+            id="selection"
+            value={formData.selection}
+            onChange={(e) => handleChange('selection', e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="odds">Odds (American) *</Label>
+            <Input
+              id="odds"
+              type="number"
+              value={formData.odds}
+              onChange={(e) => handleChange('odds', e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="stake_units">Stake (Units) *</Label>
+            <Input
+              id="stake_units"
+              type="number"
+              step="0.1"
+              value={formData.stake_units}
+              onChange={(e) => handleChange('stake_units', e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="notes">Notes (Optional)</Label>
+          <Textarea
+            id="notes"
+            value={formData.notes || ''}
+            onChange={(e) => handleChange('notes', e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Placing Bet...' : 'Confirm & Place Bet'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default BetConfirmation;

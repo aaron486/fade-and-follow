@@ -20,12 +20,23 @@ import {
   Crown,
   Target,
   DollarSign,
-  BarChart3
+  BarChart3,
+  Instagram,
+  Twitter,
+  MessageCircle,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface UserProfile {
   user_id: string;
@@ -35,6 +46,10 @@ interface UserProfile {
   favorite_team: string | null;
   state: string | null;
   preferred_sportsbook: string | null;
+  instagram_url: string | null;
+  tiktok_url: string | null;
+  x_url: string | null;
+  discord_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -75,8 +90,33 @@ const Profile = () => {
     username: '',
     favorite_team: '',
     state: '',
-    preferred_sportsbook: ''
+    preferred_sportsbook: '',
+    instagram_url: '',
+    tiktok_url: '',
+    x_url: '',
+    discord_url: ''
   });
+
+  const US_STATES = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+  ];
+
+  const SPORTSBOOKS = [
+    'DraftKings',
+    'FanDuel',
+    'BetMGM',
+    'Caesars',
+    'BetRivers',
+    'PointsBet',
+    'Barstool',
+    'WynnBET',
+    'Unibet',
+    'BetUS'
+  ];
 
   const isOwnProfile = !userId || userId === user?.id;
 
@@ -120,7 +160,11 @@ const Profile = () => {
           username: data.username || '',
           favorite_team: data.favorite_team || '',
           state: data.state || '',
-          preferred_sportsbook: data.preferred_sportsbook || ''
+          preferred_sportsbook: data.preferred_sportsbook || '',
+          instagram_url: data.instagram_url || '',
+          tiktok_url: data.tiktok_url || '',
+          x_url: data.x_url || '',
+          discord_url: data.discord_url || ''
         });
       }
     } catch (error: any) {
@@ -371,6 +415,50 @@ const Profile = () => {
                         </span>
                       )}
                     </div>
+                    
+                    {/* Social Links */}
+                    <div className="flex items-center gap-3 mt-3">
+                      {profile.instagram_url && (
+                        <a 
+                          href={`https://instagram.com/${profile.instagram_url}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Instagram className="w-5 h-5" />
+                        </a>
+                      )}
+                      {profile.tiktok_url && (
+                        <a 
+                          href={`https://tiktok.com/@${profile.tiktok_url}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <ExternalLink className="w-5 h-5" />
+                        </a>
+                      )}
+                      {profile.x_url && (
+                        <a 
+                          href={`https://x.com/${profile.x_url}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Twitter className="w-5 h-5" />
+                        </a>
+                      )}
+                      {profile.discord_url && (
+                        <a 
+                          href={profile.discord_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <MessageCircle className="w-5 h-5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                   
                   {isOwnProfile && (
@@ -484,80 +572,246 @@ const Profile = () => {
                 <CardTitle>Profile Information</CardTitle>
                 <CardDescription>Manage your profile details</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 {isEditing && isOwnProfile ? (
                   <>
-                    <div className="space-y-2">
-                      <Label htmlFor="display_name">Display Name</Label>
-                      <Input
-                        id="display_name"
-                        value={formData.display_name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, display_name: e.target.value }))}
-                        placeholder="How others see you"
-                      />
+                    {/* Basic Info Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        Basic Information
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="display_name">Display Name</Label>
+                          <Input
+                            id="display_name"
+                            value={formData.display_name}
+                            onChange={(e) => setFormData(prev => ({ ...prev, display_name: e.target.value }))}
+                            placeholder="How others see you"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="username">Username</Label>
+                          <Input
+                            id="username"
+                            value={formData.username}
+                            onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                            placeholder="Your unique username"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input
-                        id="username"
-                        value={formData.username}
-                        onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                        placeholder="Your unique username"
-                      />
+
+                    {/* Betting Preferences Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        Betting Preferences
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="favorite_team">Favorite Team</Label>
+                          <Input
+                            id="favorite_team"
+                            value={formData.favorite_team}
+                            onChange={(e) => setFormData(prev => ({ ...prev, favorite_team: e.target.value }))}
+                            placeholder="e.g., Lakers, Yankees, Cowboys"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="state">State</Label>
+                          <Select
+                            value={formData.state}
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, state: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your state" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {US_STATES.map((state) => (
+                                <SelectItem key={state} value={state}>
+                                  {state}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="preferred_sportsbook">Preferred Sportsbook</Label>
+                          <Select
+                            value={formData.preferred_sportsbook}
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, preferred_sportsbook: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your sportsbook" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SPORTSBOOKS.map((book) => (
+                                <SelectItem key={book} value={book}>
+                                  {book}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="favorite_team">Favorite Team</Label>
-                      <Input
-                        id="favorite_team"
-                        value={formData.favorite_team}
-                        onChange={(e) => setFormData(prev => ({ ...prev, favorite_team: e.target.value }))}
-                        placeholder="Your favorite sports team"
-                      />
+
+                    {/* Social Media Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        Social Media
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="instagram_url" className="flex items-center gap-2">
+                            <Instagram className="w-4 h-4" />
+                            Instagram
+                          </Label>
+                          <Input
+                            id="instagram_url"
+                            value={formData.instagram_url}
+                            onChange={(e) => setFormData(prev => ({ ...prev, instagram_url: e.target.value }))}
+                            placeholder="username (without @)"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="x_url" className="flex items-center gap-2">
+                            <Twitter className="w-4 h-4" />
+                            X (Twitter)
+                          </Label>
+                          <Input
+                            id="x_url"
+                            value={formData.x_url}
+                            onChange={(e) => setFormData(prev => ({ ...prev, x_url: e.target.value }))}
+                            placeholder="username (without @)"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="tiktok_url" className="flex items-center gap-2">
+                            <ExternalLink className="w-4 h-4" />
+                            TikTok
+                          </Label>
+                          <Input
+                            id="tiktok_url"
+                            value={formData.tiktok_url}
+                            onChange={(e) => setFormData(prev => ({ ...prev, tiktok_url: e.target.value }))}
+                            placeholder="username (without @)"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="discord_url" className="flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4" />
+                            Discord Server
+                          </Label>
+                          <Input
+                            id="discord_url"
+                            value={formData.discord_url}
+                            onChange={(e) => setFormData(prev => ({ ...prev, discord_url: e.target.value }))}
+                            placeholder="https://discord.gg/..."
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="state">State</Label>
-                      <Input
-                        id="state"
-                        value={formData.state}
-                        onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                        placeholder="Your state (e.g., CA, NY, TX)"
-                      />
+
+                    <div className="flex gap-3 pt-4">
+                      <Button onClick={handleSave} className="flex-1" disabled={saving}>
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setIsEditing(false);
+                          loadProfile();
+                        }}
+                        disabled={saving}
+                      >
+                        Cancel
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="preferred_sportsbook">Preferred Sportsbook</Label>
-                      <Input
-                        id="preferred_sportsbook"
-                        value={formData.preferred_sportsbook}
-                        onChange={(e) => setFormData(prev => ({ ...prev, preferred_sportsbook: e.target.value }))}
-                        placeholder="Your go-to sportsbook"
-                      />
-                    </div>
-                    <Button onClick={handleSave} className="w-full" disabled={saving}>
-                      {saving ? 'Saving...' : 'Save Changes'}
-                    </Button>
                   </>
                 ) : (
-                  <div className="space-y-3">
-                    <div>
-                      <span className="font-medium">Display Name: </span>
-                      <span>{profile.display_name || 'Not set'}</span>
+                  <div className="space-y-6">
+                    {/* Basic Info */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        Basic Information
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-muted-foreground">Display Name</span>
+                          <p className="font-medium">{profile.display_name || 'Not set'}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm text-muted-foreground">Username</span>
+                          <p className="font-medium">{profile.username || 'Not set'}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-medium">Username: </span>
-                      <span>{profile.username || 'Not set'}</span>
+
+                    {/* Betting Preferences */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        Betting Preferences
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-muted-foreground">Favorite Team</span>
+                          <p className="font-medium">{profile.favorite_team || 'Not set'}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm text-muted-foreground">State</span>
+                          <p className="font-medium">{profile.state || 'Not set'}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-sm text-muted-foreground">Preferred Sportsbook</span>
+                          <p className="font-medium">{profile.preferred_sportsbook || 'Not set'}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-medium">Favorite Team: </span>
-                      <span>{profile.favorite_team || 'Not set'}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">State: </span>
-                      <span>{profile.state || 'Not set'}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Preferred Sportsbook: </span>
-                      <span>{profile.preferred_sportsbook || 'Not set'}</span>
-                    </div>
+
+                    {/* Social Media */}
+                    {(profile.instagram_url || profile.tiktok_url || profile.x_url || profile.discord_url) && (
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                          Social Media
+                        </h3>
+                        <div className="flex gap-4">
+                          {profile.instagram_url && (
+                            <a 
+                              href={`https://instagram.com/${profile.instagram_url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                            >
+                              <Instagram className="w-4 h-4" />
+                              @{profile.instagram_url}
+                            </a>
+                          )}
+                          {profile.x_url && (
+                            <a 
+                              href={`https://x.com/${profile.x_url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                            >
+                              <Twitter className="w-4 h-4" />
+                              @{profile.x_url}
+                            </a>
+                          )}
+                          {profile.tiktok_url && (
+                            <a 
+                              href={`https://tiktok.com/@${profile.tiktok_url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              @{profile.tiktok_url}
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

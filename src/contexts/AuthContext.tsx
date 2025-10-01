@@ -51,15 +51,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('🔐 Auth event:', event);
       
-      // Only synchronous state updates
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (event === 'SIGNED_IN' && session?.user) {
+      // Handle specific error events
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('🔄 Token refreshed successfully');
+      } else if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in:', session.user.email);
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
       }
+      
+      // Only synchronous state updates
+      setSession(session);
+      setUser(session?.user ?? null);
     });
 
     // THEN check for existing session
@@ -72,6 +75,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session) {
           console.log('✅ Session restored:', session.user.email);
         }
+      }
+    }).catch((error) => {
+      console.error('❌ Session restore error:', error);
+      if (mounted) {
+        setLoading(false);
       }
     });
 

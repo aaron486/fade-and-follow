@@ -80,7 +80,8 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate('/');
+      // Use replace to avoid adding to history
+      navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
 
@@ -136,7 +137,7 @@ const Auth = () => {
     const { error } = await signIn(email, password);
     
     if (!error) {
-      navigate('/');
+      navigate('/dashboard', { replace: true });
     }
     
     setLoading(false);

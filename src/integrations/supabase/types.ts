@@ -458,6 +458,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      are_users_friends: {
+        Args: { _user1_id: string; _user2_id: string }
+        Returns: boolean
+      }
       calculate_user_betting_stats: {
         Args: { target_user_id: string }
         Returns: {

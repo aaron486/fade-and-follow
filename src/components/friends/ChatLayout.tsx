@@ -204,6 +204,27 @@ const ChatLayout = () => {
         sessionExists: !!session
       });
 
+      // Verify friendship exists
+      const { data: friendship, error: friendshipError } = await supabase
+        .from('friendships')
+        .select('id')
+        .or(`and(user1_id.eq.${session.user.id},user2_id.eq.${friendUserId}),and(user1_id.eq.${friendUserId},user2_id.eq.${session.user.id})`)
+        .maybeSingle();
+
+      if (friendshipError) {
+        console.error('Error checking friendship:', friendshipError);
+        throw friendshipError;
+      }
+
+      if (!friendship) {
+        toast({
+          title: "Not Friends",
+          description: "You can only chat with your friends. Send them a friend request first!",
+          variant: "destructive",
+        });
+        return null;
+      }
+
       // Check if direct chat already exists
       const { data: existingChats } = await supabase
         .from('channel_members')

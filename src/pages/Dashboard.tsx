@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
+import ProfileSidebar from '@/components/ProfileSidebar';
 import { DiscordChat } from '@/components/DiscordChat';
 import { FeedContent } from '@/components/FeedContent';
 import BetStoriesBar from '@/components/BetStoriesBar';
@@ -31,7 +32,12 @@ const Dashboard = () => {
       
       <main className="pt-16">
         <div className="flex h-[calc(100vh-4rem)]">
-          {/* Main Content Area - Full Width */}
+          {/* Left Sidebar - Profile & Stats */}
+          <div className="w-72 flex-shrink-0 overflow-y-auto border-r p-4">
+            <ProfileSidebar />
+          </div>
+
+          {/* Main Content Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Top Bars - Stories & Live Odds */}
             <div className="flex-shrink-0">

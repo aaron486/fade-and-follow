@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import ProfileSidebar from '@/components/ProfileSidebar';
 import { DiscordChat } from '@/components/DiscordChat';
 import { FeedContent } from '@/components/FeedContent';
+import { BottomNav } from '@/components/BottomNav';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
+import { BettingStats } from '@/components/BettingStats';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
+  const [activeView, setActiveView] = useState('chat');
 
   if (loading) {
     return (
@@ -26,40 +29,61 @@ const Dashboard = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  const renderView = () => {
+    switch (activeView) {
+      case 'profile':
+        return (
+          <div className="max-w-2xl mx-auto p-6">
+            <ProfileSidebar />
+          </div>
+        );
+      case 'feed':
+        return (
+          <div className="max-w-4xl mx-auto p-4">
+            <FeedContent />
+          </div>
+        );
+      case 'chat':
+        return <DiscordChat />;
+      case 'groups':
+        return (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Groups</h2>
+              <p className="text-muted-foreground">Group management coming soon</p>
+            </div>
+          </div>
+        );
+      case 'stats':
+        return (
+          <div className="max-w-4xl mx-auto p-6">
+            <BettingStats userId={user.id} />
+          </div>
+        );
+      default:
+        return <DiscordChat />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16">
       <Navigation />
       
       <main className="pt-16">
-        <div className="flex h-[calc(100vh-4rem)]">
-          {/* Left Sidebar - Profile & Stats */}
-          <div className="w-56 flex-shrink-0 overflow-y-auto border-r p-3">
-            <ProfileSidebar />
-          </div>
+        {/* Top Bars - Stories & Live Odds */}
+        <div className="flex-shrink-0">
+          <BetStoriesBar />
+          <LiveOddsBar />
+        </div>
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Top Bars - Stories & Live Odds */}
-            <div className="flex-shrink-0">
-              <BetStoriesBar />
-              <LiveOddsBar />
-            </div>
-            
-            {/* Chat and Feed Layout */}
-            <div className="flex-1 flex overflow-hidden">
-              {/* Chat (Main Focus - Larger) */}
-              <div className="flex-[3] flex flex-col overflow-hidden border-r">
-                <DiscordChat />
-              </div>
-              
-              {/* Right - AI Feed */}
-              <div className="w-80 flex-shrink-0 flex flex-col overflow-hidden p-4">
-                <FeedContent />
-              </div>
-            </div>
-          </div>
+        {/* Full Screen Content Area */}
+        <div className="h-[calc(100vh-12rem)] overflow-hidden">
+          {renderView()}
         </div>
       </main>
+
+      {/* Bottom Navigation */}
+      <BottomNav activeView={activeView} onViewChange={setActiveView} />
     </div>
   );
 };

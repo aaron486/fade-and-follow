@@ -1,0 +1,221 @@
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface Odds {
+  name: string;
+  price: number;
+  point?: number;
+}
+
+interface Market {
+  key: string;
+  outcomes: Odds[];
+}
+
+interface Bookmaker {
+  key: string;
+  title: string;
+  markets: Market[];
+}
+
+interface OddsEvent {
+  id: string;
+  sport_key: string;
+  sport_title: string;
+  commence_time: string;
+  home_team: string;
+  away_team: string;
+  bookmakers: Bookmaker[];
+}
+
+const SPORTS = [
+  { value: 'upcoming', label: 'All Upcoming' },
+  { value: 'americanfootball_nfl', label: 'NFL' },
+  { value: 'basketball_nba', label: 'NBA' },
+  { value: 'baseball_mlb', label: 'MLB' },
+  { value: 'icehockey_nhl', label: 'NHL' },
+  { value: 'soccer_epl', label: 'EPL' },
+];
+
+const LiveOddsBar = () => {
+  const [events, setEvents] = useState<OddsEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSport, setSelectedSport] = useState('upcoming');
+
+  const fetchOdds = async (sport: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-betting-odds', {
+        body: { sport }
+      });
+
+      if (error) {
+        console.error('Error fetching odds:', error);
+        return;
+      }
+
+      if (data?.events) {
+        setEvents(data.events.slice(0, 10)); // Show first 10 events
+      }
+    } catch (error) {
+      console.error('Error fetching odds:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOdds(selectedSport);
+    // Refresh every 5 minutes
+    const interval = setInterval(() => fetchOdds(selectedSport), 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [selectedSport]);
+
+  const formatOdds = (price: number) => {
+    return price > 0 ? `+${price}` : price;
+  };
+
+  const getSpreadOutcome = (market: Market) => {
+    return market.outcomes.find(o => o.name !== 'Over' && o.name !== 'Under');
+  };
+
+  if (loading) {
+    return (
+      <div className="border-b bg-card/50 backdrop-blur-sm p-4">
+        <div className="flex items-center gap-4 mb-3">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-10 w-48" />
+        </div>
+        <div className="flex gap-4">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-24 w-64 flex-shrink-0" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-b bg-card/50 backdrop-blur-sm">
+      <div className="p-4 pb-2">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary animate-pulse" />
+            <h3 className="font-semibold text-sm">Live Betting Lines</h3>
+          </div>
+          <Select value={selectedSport} onValueChange={setSelectedSport}>
+            <SelectTrigger className="w-48 h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SPORTS.map(sport => (
+                <SelectItem key={sport.value} value={sport.value}>
+                  {sport.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <ScrollArea className="w-full whitespace-nowrap">
+        <div className="flex gap-3 p-4 pt-0">
+          {events.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8 w-full">
+              <p className="text-sm">No upcoming games found for this sport</p>
+            </div>
+          ) : (
+            events.map((event) => {
+              const bookmaker = event.bookmakers[0]; // Get first bookmaker
+              if (!bookmaker) return null;
+
+              const spreadMarket = bookmaker.markets.find(m => m.key === 'spreads');
+              const totalsMarket = bookmaker.markets.find(m => m.key === 'totals');
+              const h2hMarket = bookmaker.markets.find(m => m.key === 'h2h');
+
+              const homeSpread = spreadMarket?.outcomes.find(o => o.name === event.home_team);
+              const awaySpread = spreadMarket?.outcomes.find(o => o.name === event.away_team);
+              const over = totalsMarket?.outcomes.find(o => o.name === 'Over');
+              const homeML = h2hMarket?.outcomes.find(o => o.name === event.home_team);
+              const awayML = h2hMarket?.outcomes.find(o => o.name === event.away_team);
+
+              return (
+                <div
+                  key={event.id}
+                  className="flex-shrink-0 w-80 bg-background/50 border rounded-lg p-3 hover:bg-accent/5 transition-colors"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">
+                        {event.sport_title}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(event.commence_time).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    {/* Away Team */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium truncate flex-1">{event.away_team}</span>
+                      <div className="flex items-center gap-2 text-xs">
+                        {awaySpread && (
+                          <span className="font-mono bg-muted px-2 py-1 rounded">
+                            {awaySpread.point > 0 ? '+' : ''}{awaySpread.point} ({formatOdds(awaySpread.price)})
+                          </span>
+                        )}
+                        {awayML && (
+                          <span className="font-mono font-semibold text-primary">
+                            {formatOdds(awayML.price)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Home Team */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium truncate flex-1">{event.home_team}</span>
+                      <div className="flex items-center gap-2 text-xs">
+                        {homeSpread && (
+                          <span className="font-mono bg-muted px-2 py-1 rounded">
+                            {homeSpread.point > 0 ? '+' : ''}{homeSpread.point} ({formatOdds(homeSpread.price)})
+                          </span>
+                        )}
+                        {homeML && (
+                          <span className="font-mono font-semibold text-primary">
+                            {formatOdds(homeML.price)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Total */}
+                    {over && (
+                      <div className="flex items-center justify-between text-xs pt-1 border-t">
+                        <span className="text-muted-foreground">Total</span>
+                        <span className="font-mono">
+                          O/U {over.point} ({formatOdds(over.price)})
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-muted-foreground pt-1">
+                      via {bookmaker.title}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
+  );
+};
+
+export default LiveOddsBar;

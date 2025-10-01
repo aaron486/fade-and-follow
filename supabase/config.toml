@@ -2,3 +2,6 @@ project_id = "btteqktyhnyeycmognox"
 
 [functions.extract-bet-from-image]
 verify_jwt = false
+
+[functions.get-betting-odds]
+verify_jwt = false

@@ -6,6 +6,7 @@ import ProfileSidebar from '@/components/ProfileSidebar';
 import BettingFeed from '@/components/BettingFeed';
 import GroupChat from '@/components/GroupChat';
 import BetStoriesBar from '@/components/BetStoriesBar';
+import LiveOddsBar from '@/components/LiveOddsBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Users, TrendingUp, User } from 'lucide-react';
 
@@ -42,6 +43,9 @@ const Dashboard = () => {
           <div className="flex-1 flex flex-col">
             {/* Bet Stories Bar */}
             <BetStoriesBar />
+            
+            {/* Live Odds Bar */}
+            <LiveOddsBar />
             
             <Tabs defaultValue="bets" className="flex-1 flex flex-col">
               <div className="border-b bg-card">

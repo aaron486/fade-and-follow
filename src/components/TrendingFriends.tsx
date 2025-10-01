@@ -1,15 +1,17 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Flame, Snowflake, TrendingUp, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { useState, useRef } from 'react';
 
 interface TrendingFriend {
   user_id: string;
   username: string;
   display_name: string;
   avatar_url: string | null;
+  team: string;
+  best_bet_sport: string;
   current_streak: number;
   wins: number;
   losses: number;
@@ -25,6 +27,8 @@ const mockTrendingFriends: TrendingFriend[] = [
     username: 'sharpshooter23',
     display_name: 'Sharp Shooter',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sharpshooter',
+    team: 'Lakers',
+    best_bet_sport: 'NBA',
     current_streak: 7,
     wins: 28,
     losses: 12,
@@ -37,6 +41,8 @@ const mockTrendingFriends: TrendingFriend[] = [
     username: 'parlayking',
     display_name: 'Parlay King',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=parlayking',
+    team: 'Cowboys',
+    best_bet_sport: 'NFL',
     current_streak: 5,
     wins: 22,
     losses: 15,
@@ -49,6 +55,8 @@ const mockTrendingFriends: TrendingFriend[] = [
     username: 'fadetheodds',
     display_name: 'Fade Master',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=fadetheodds',
+    team: 'Red Sox',
+    best_bet_sport: 'MLB',
     current_streak: -4,
     wins: 15,
     losses: 20,
@@ -61,6 +69,8 @@ const mockTrendingFriends: TrendingFriend[] = [
     username: 'underdogbettor',
     display_name: 'Underdog Bettor',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=underdogbettor',
+    team: 'Celtics',
+    best_bet_sport: 'NBA',
     current_streak: 6,
     wins: 19,
     losses: 11,
@@ -73,6 +83,8 @@ const mockTrendingFriends: TrendingFriend[] = [
     username: 'propmaster',
     display_name: 'Prop Master',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=propmaster',
+    team: 'Chiefs',
+    best_bet_sport: 'NFL',
     current_streak: 4,
     wins: 25,
     losses: 18,
@@ -85,6 +97,7 @@ const mockTrendingFriends: TrendingFriend[] = [
 export const TrendingFriends = () => {
   const trendingFriends = mockTrendingFriends;
   const [currentIndex, setCurrentIndex] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const nextFriend = () => {
     setCurrentIndex((prev) => (prev + 1) % trendingFriends.length);
@@ -92,6 +105,14 @@ export const TrendingFriends = () => {
 
   const prevFriend = () => {
     setCurrentIndex((prev) => (prev - 1 + trendingFriends.length) % trendingFriends.length);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // TODO: Handle image upload to storage
+      console.log('Upload image:', file);
+    }
   };
 
   const currentFriend = trendingFriends[currentIndex];
@@ -140,126 +161,92 @@ export const TrendingFriends = () => {
 
   return (
     <Card className="relative overflow-hidden">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-500" />
-            Trending Friends
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={prevFriend}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="text-xs text-muted-foreground px-2">
-              {currentIndex + 1}/{trendingFriends.length}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={nextFriend}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center text-center space-y-4 py-4">
-          {/* Avatar */}
-          <div className="relative">
-            <Avatar className="w-24 h-24 border-4 border-primary/20">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          {/* Avatar with Upload */}
+          <div className="relative flex-shrink-0 group">
+            <Avatar className="w-16 h-16 border-2 border-primary/20">
               <AvatarImage src={currentFriend.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary/10 text-2xl">
+              <AvatarFallback className="bg-primary/10 text-lg">
                 {(currentFriend.display_name || currentFriend.username || 'U')[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-2 -right-2 text-3xl">
-              {currentFriend.trend === 'hot' ? '🔥' : '❄️'}
-            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Upload className="w-5 h-5 text-white" />
+            </button>
+            <Input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
           </div>
 
-          {/* Name */}
-          <div>
-            <h3 className="text-xl font-bold">{currentFriend.display_name}</h3>
-            <p className="text-sm text-muted-foreground">@{currentFriend.username}</p>
-          </div>
-
-          {/* Trending Reason */}
-          <div className="text-center px-4">
-            {getTrendingReason(currentFriend)}
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 w-full max-w-sm pt-4">
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="text-2xl font-bold">
-                <span className="text-accent">{currentFriend.wins}</span>
-                <span className="text-muted-foreground mx-1">-</span>
-                <span className="text-destructive">{currentFriend.losses}</span>
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-sm truncate">{currentFriend.display_name}</h3>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={prevFriend}
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={nextFriend}
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Record</p>
+            </div>
+            
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
+              <span className="truncate">🏈 {currentFriend.team}</span>
+              <span>•</span>
+              <span>{currentFriend.best_bet_sport}</span>
             </div>
 
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className={`text-2xl font-bold ${currentFriend.win_rate >= 60 ? 'text-accent' : 'text-foreground'}`}>
-                {currentFriend.win_rate.toFixed(0)}%
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Win Rate</p>
-            </div>
-
-            {Math.abs(currentFriend.current_streak) >= 3 && (
-              <div className="bg-muted/50 rounded-lg p-4">
-                <div className={`text-2xl font-bold flex items-center justify-center gap-2 ${
-                  currentFriend.current_streak > 0 ? 'text-accent' : 'text-destructive'
-                }`}>
-                  {currentFriend.current_streak > 0 ? (
-                    <>
-                      <Flame className="w-6 h-6" />
-                      {currentFriend.current_streak}
-                    </>
-                  ) : (
-                    <>
-                      <Snowflake className="w-6 h-6" />
-                      {Math.abs(currentFriend.current_streak)}
-                    </>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {currentFriend.current_streak > 0 ? 'Win Streak' : 'Loss Streak'}
-                </p>
-              </div>
-            )}
-
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className={`text-2xl font-bold ${
-                currentFriend.units_won > 0 ? 'text-accent' : 'text-destructive'
-              }`}>
+            <div className="flex items-center gap-3 text-xs">
+              <span>
+                <span className="text-accent font-semibold">{currentFriend.wins}</span>
+                <span className="text-muted-foreground mx-0.5">-</span>
+                <span className="text-destructive font-semibold">{currentFriend.losses}</span>
+              </span>
+              <span className="text-muted-foreground">•</span>
+              <span className={currentFriend.win_rate >= 60 ? 'text-accent font-semibold' : ''}>
+                {currentFriend.win_rate.toFixed(0)}% WR
+              </span>
+              <span className="text-muted-foreground">•</span>
+              <span className={currentFriend.units_won > 0 ? 'text-accent font-semibold' : 'text-destructive font-semibold'}>
                 {currentFriend.units_won > 0 ? '+' : ''}{currentFriend.units_won.toFixed(1)}u
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Units</p>
+              </span>
             </div>
           </div>
+        </div>
 
-          {/* Dots Indicator */}
-          <div className="flex gap-2 pt-2">
-            {trendingFriends.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentIndex 
-                    ? 'w-8 bg-primary' 
-                    : 'w-2 bg-muted-foreground/30'
-                }`}
-              />
-            ))}
-          </div>
+        {/* Dots Indicator */}
+        <div className="flex justify-center gap-1.5 mt-3">
+          {trendingFriends.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`h-1.5 rounded-full transition-all ${
+                index === currentIndex 
+                  ? 'w-6 bg-primary' 
+                  : 'w-1.5 bg-muted-foreground/30'
+              }`}
+            />
+          ))}
         </div>
       </CardContent>
     </Card>

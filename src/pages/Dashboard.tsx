@@ -49,17 +49,17 @@ const Dashboard = () => {
             
             {/* Three Column Layout */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Center - AI Feed (Main Focus) */}
+              {/* Center - Chat (Main Focus) */}
               <div className="flex-1 flex flex-col overflow-hidden p-4 border-r">
-                <FeedContent />
-              </div>
-              
-              {/* Right - Chat */}
-              <div className="w-96 flex-shrink-0 flex flex-col overflow-hidden p-4">
-                <h2 className="text-xl font-bold mb-4">Chat</h2>
+                <h2 className="text-2xl font-bold mb-4">Chat</h2>
                 <div className="flex-1 overflow-hidden">
                   <ChatLayout />
                 </div>
+              </div>
+              
+              {/* Right - AI Feed */}
+              <div className="w-96 flex-shrink-0 flex flex-col overflow-hidden p-4">
+                <FeedContent />
               </div>
             </div>
           </div>

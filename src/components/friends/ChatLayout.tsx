@@ -201,110 +201,64 @@ const ChatLayout = () => {
         return null;
       }
 
-      console.log('Creating direct chat:', {
-        currentUserId: user.id,
-        friendUserId,
-      });
-
-      // Verify friendship exists
-      const { data: friendship, error: friendshipError } = await supabase
-        .from('friendships')
-        .select('id')
-        .or(`and(user1_id.eq.${user.id},user2_id.eq.${friendUserId}),and(user1_id.eq.${friendUserId},user2_id.eq.${user.id})`)
-        .maybeSingle();
-
-      if (friendshipError) {
-        console.error('Error checking friendship:', friendshipError);
-        throw friendshipError;
-      }
-
-      if (!friendship) {
-        toast({
-          title: "Not Friends",
-          description: "You can only chat with your friends. Send them a friend request first!",
-          variant: "destructive",
-        });
-        return null;
-      }
-
-      // Check if direct chat already exists
-      const { data: existingChats } = await supabase
+      // Check if DM already exists between these two users
+      const { data: myChannels } = await supabase
         .from('channel_members')
-        .select('channel_id, channels!inner(type)')
+        .select('channel_id')
         .eq('user_id', user.id);
 
-      if (existingChats) {
-        for (const chat of existingChats) {
-          if (chat.channels?.type === 'direct') {
-            // Check if this direct chat includes the friend
+      if (myChannels && myChannels.length > 0) {
+        for (const { channel_id } of myChannels) {
+          const { data: channelData } = await supabase
+            .from('channels')
+            .select('type')
+            .eq('id', channel_id)
+            .eq('type', 'direct')
+            .single();
+
+          if (channelData) {
             const { data: members } = await supabase
               .from('channel_members')
               .select('user_id')
-              .eq('channel_id', chat.channel_id);
+              .eq('channel_id', channel_id);
 
             const memberIds = members?.map(m => m.user_id) || [];
-            if (memberIds.includes(friendUserId) && memberIds.includes(user.id)) {
-              // Direct chat already exists, select it
-              console.log('Found existing direct chat:', chat.channel_id);
-              const existingConv = conversations.find(c => c.channelId === chat.channel_id);
+            if (memberIds.length === 2 && memberIds.includes(friendUserId)) {
+              // Found existing DM
+              loadingRef.current = false;
+              await loadConversations();
+              const existingConv = conversations.find(c => c.channelId === channel_id);
               if (existingConv) {
                 setSelectedConversation(existingConv);
               }
-              return chat.channel_id;
+              return channel_id;
             }
           }
         }
       }
 
-      // Create new direct chat
-      console.log('Creating new channel with user:', user.id);
+      // Create new DM channel
       const { data: channel, error: channelError } = await supabase
         .from('channels')
         .insert({
-          name: `DM-${user.id}-${friendUserId}`,
+          name: 'DM',
           type: 'direct',
           created_by: user.id,
         })
         .select()
         .single();
 
-      if (channelError) {
-        console.error('Channel creation error:', channelError);
-        throw channelError;
-      }
+      if (channelError) throw channelError;
 
-      console.log('Channel created successfully:', channel.id);
-
-      // Add creator as admin first, then add the friend
-      console.log('Adding creator as admin...');
-      const { error: creatorError } = await supabase
+      // Add both users to channel_members in one operation
+      const { error: membersError } = await supabase
         .from('channel_members')
-        .insert({ 
-          channel_id: channel.id, 
-          user_id: user.id, 
-          role: 'admin' 
-        });
+        .insert([
+          { channel_id: channel.id, user_id: user.id, role: 'admin' },
+          { channel_id: channel.id, user_id: friendUserId, role: 'member' }
+        ]);
 
-      if (creatorError) {
-        console.error('Creator member error:', creatorError);
-        throw creatorError;
-      }
-
-      console.log('Creator added successfully');
-
-      // Now add the friend as a member
-      const { error: friendError } = await supabase
-        .from('channel_members')
-        .insert({ 
-          channel_id: channel.id, 
-          user_id: friendUserId, 
-          role: 'member' 
-        });
-
-      if (friendError) {
-        console.error('Friend member error:', friendError);
-        throw friendError;
-      }
+      if (membersError) throw membersError;
 
       // Reset loading flag before reload
       loadingRef.current = false;

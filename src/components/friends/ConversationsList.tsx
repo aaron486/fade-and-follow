@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,31 +41,26 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const [friendSearchQuery, setFriendSearchQuery] = useState('');
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchingRef = useRef(false);
 
-  useEffect(() => {
-    if (user && friendSearchQuery.length > 0) {
-      searchFriends();
-    } else {
-      setFriends([]);
-    }
-  }, [friendSearchQuery, user]);
-
-  const searchFriends = async () => {
-    if (!user || friendSearchQuery.length < 2) return;
+  const searchFriends = useCallback(async (query: string, userId: string) => {
+    if (!userId || query.length < 2 || searchingRef.current) return;
 
     try {
+      searchingRef.current = true;
       setLoadingFriends(true);
 
       // Get all friendships
       const { data: friendships, error: friendshipsError } = await supabase
         .from('friendships')
         .select('user1_id, user2_id')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
       if (friendshipsError) throw friendshipsError;
 
       const friendIds = friendships?.map(f => 
-        f.user1_id === user.id ? f.user2_id : f.user1_id
+        f.user1_id === userId ? f.user2_id : f.user1_id
       ) || [];
 
       if (friendIds.length === 0) {
@@ -78,7 +73,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
         .from('profiles')
         .select('user_id, username, display_name, avatar_url')
         .in('user_id', friendIds)
-        .or(`username.ilike.%${friendSearchQuery}%,display_name.ilike.%${friendSearchQuery}%`)
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
         .limit(5);
 
       if (profilesError) throw profilesError;
@@ -88,8 +83,41 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
       console.error('Error searching friends:', error);
     } finally {
       setLoadingFriends(false);
+      searchingRef.current = false;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Clear any pending search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!user) {
+      setFriends([]);
+      return;
+    }
+
+    if (friendSearchQuery.length === 0) {
+      setFriends([]);
+      return;
+    }
+
+    if (friendSearchQuery.length < 2) {
+      return;
+    }
+
+    // Debounce search by 300ms
+    searchTimeoutRef.current = setTimeout(() => {
+      searchFriends(friendSearchQuery, user.id);
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [friendSearchQuery, user?.id, searchFriends]);
 
   const handleStartChat = async (friendUserId: string) => {
     const channelId = await onStartDirectChat(friendUserId);

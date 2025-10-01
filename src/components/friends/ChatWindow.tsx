@@ -36,13 +36,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [channelId, setChannelId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
+  const loadingMessagesRef = useRef(false);
 
   // Load messages when conversation changes
   useEffect(() => {
     if (conversation) {
       setMessages([]);
       setChannelId(conversation.channelId);
-      loadMessages();
+      // Don't call loadMessages here - it will be called when channelId updates
     } else {
       setChannelId(null);
       setMessages([]);
@@ -54,6 +55,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
     if (!channelId) return;
 
     console.log('🔌 Setting up realtime for channel:', channelId);
+    
+    // Load messages for this channel
+    if (!loadingMessagesRef.current) {
+      loadMessages();
+    }
     
     // Clean up previous subscription
     if (channelRef.current) {
@@ -117,9 +123,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   };
 
   const loadMessages = async () => {
-    if (!conversation) return;
+    if (!conversation || loadingMessagesRef.current) return;
 
     try {
+      loadingMessagesRef.current = true;
       setLoading(true);
       const currentChannelId = conversation.channelId;
 
@@ -160,6 +167,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
       });
     } finally {
       setLoading(false);
+      loadingMessagesRef.current = false;
     }
   };
 

@@ -35,17 +35,76 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const [loading, setLoading] = useState(false);
   const [channelId, setChannelId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
 
+  // Load messages when conversation changes
   useEffect(() => {
     if (conversation) {
+      setMessages([]);
+      setChannelId(conversation.channelId);
       loadMessages();
-      setupRealtimeSubscription();
+    } else {
+      setChannelId(null);
+      setMessages([]);
+    }
+  }, [conversation?.id]);
+
+  // Set up realtime subscription when channelId changes
+  useEffect(() => {
+    if (!channelId) return;
+
+    console.log('🔌 Setting up realtime for channel:', channelId);
+    
+    // Clean up previous subscription
+    if (channelRef.current) {
+      console.log('🧹 Cleaning up previous subscription');
+      channelRef.current.unsubscribe();
+      channelRef.current = null;
     }
 
+    // Create new subscription
+    const channel = supabase
+      .channel(`messages-${channelId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `channel_id=eq.${channelId}`,
+        },
+        async (payload) => {
+          console.log('📨 New message received');
+          
+          // Fetch the sender profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, display_name, avatar_url')
+            .eq('user_id', payload.new.sender_id)
+            .maybeSingle();
+
+          const newMessage = {
+            ...(payload.new as Message),
+            sender_profile: profile || undefined,
+          };
+
+          setMessages((prev) => [...prev, newMessage]);
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
+      });
+
+    channelRef.current = channel;
+
     return () => {
-      // Cleanup subscription
+      console.log('🧹 Cleaning up subscription on unmount');
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
     };
-  }, [conversation]);
+  }, [channelId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -63,7 +122,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
     try {
       setLoading(true);
       const currentChannelId = conversation.channelId;
-      setChannelId(currentChannelId);
 
       // Load messages
       const { data: messagesData, error: messagesError } = await supabase
@@ -103,46 +161,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const setupRealtimeSubscription = () => {
-    if (!channelId) return;
-
-    const channel = supabase
-      .channel(`messages-${channelId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `channel_id=eq.${channelId}`,
-        },
-        async (payload) => {
-          console.log('📨 New message received:', payload);
-          
-          // Fetch the sender profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username, display_name, avatar_url')
-            .eq('user_id', payload.new.sender_id)
-            .single();
-
-          const newMessage = {
-            ...(payload.new as Message),
-            sender_profile: profile || undefined,
-          };
-
-          setMessages((prev) => [...prev, newMessage]);
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 Realtime subscription status:', status);
-      });
-
-    return () => {
-      channel.unsubscribe();
-    };
   };
 
   const sendMessage = async () => {

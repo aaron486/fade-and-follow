@@ -28,7 +28,13 @@ const ChatLayout = () => {
     if (user) {
       loadConversations();
     }
-  }, [user]);
+    
+    // Clean up on unmount
+    return () => {
+      setConversations([]);
+      setSelectedConversation(null);
+    };
+  }, [user?.id]);
 
   const loadConversations = async () => {
     try {

@@ -7,8 +7,8 @@ interface BottomNavProps {
 
 export const BottomNav = ({ activeView, onViewChange }: BottomNavProps) => {
   const navItems = [
-    { id: 'chat', icon: MessageSquare, label: 'Chat' },
     { id: 'feed', icon: Newspaper, label: 'Feed' },
+    { id: 'chat', icon: MessageSquare, label: 'Chat' },
     { id: 'stats', icon: TrendingUp, label: 'Stats' },
     { id: 'profile', icon: User, label: 'Profile' },
   ];

@@ -8,12 +8,12 @@ import { Flame, Snowflake } from "lucide-react";
 const mockLeaderboardData = [
   { rank: 1, name: "Aaron Hackett", units: "+52.8", streak: "10W", winRate: "78%", roi: "+15.2%" },
   { rank: 2, name: "Samir Bouhmaid", units: "+47.2", streak: "8W", winRate: "73%", roi: "+12.3%" },
-  { rank: 3, name: "SharpShooter", units: "+41.8", streak: "5W", winRate: "69%", roi: "+9.8%" },
-  { rank: 4, name: "FadeGod", units: "+38.5", streak: "12W", winRate: "71%", roi: "+11.1%" },
-  { rank: 5, name: "PropMaster", units: "+35.2", streak: "3L", winRate: "66%", roi: "+8.2%" },
-  { rank: 6, name: "LineHunter", units: "+32.1", streak: "7W", winRate: "68%", roi: "+7.9%" },
-  { rank: 7, name: "BankrollBoss", units: "+29.8", streak: "2W", winRate: "64%", roi: "+6.5%" },
-  { rank: 8, name: "OddsWizard", units: "+27.3", streak: "1L", winRate: "62%", roi: "+5.8%" },
+  { rank: 3, name: "George Cemovich", units: "+41.8", streak: "5W", winRate: "69%", roi: "+9.8%" },
+  { rank: 4, name: "Anthony Hackett", units: "+38.5", streak: "12W", winRate: "71%", roi: "+11.1%" },
+  { rank: 5, name: "Dave Portnoy", units: "+35.2", streak: "3L", winRate: "66%", roi: "+8.2%" },
+  { rank: 6, name: "Lee Corso", units: "+32.1", streak: "7W", winRate: "68%", roi: "+7.9%" },
+  { rank: 7, name: "Urban Meyer", units: "+29.8", streak: "2W", winRate: "64%", roi: "+6.5%" },
+  { rank: 8, name: "Speedy Laroche", units: "+27.3", streak: "4W", winRate: "62%", roi: "+5.8%" },
 ];
 
 export const Leaderboard = () => {

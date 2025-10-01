@@ -71,7 +71,6 @@ export const BetsPage = () => {
   const [friendPicks, setFriendPicks] = useState<FriendPick[]>([]);
   const [userBets, setUserBets] = useState<UserBet[]>([]);
   const [allBets, setAllBets] = useState<UserBet[]>([]);
-  const [selectedBetIds, setSelectedBetIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [showBetForm, setShowBetForm] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{
@@ -147,24 +146,16 @@ export const BetsPage = () => {
     }
   };
 
-  const toggleBetSelection = (betId: string) => {
-    setSelectedBetIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(betId)) {
-        newSet.delete(betId);
-      } else {
-        newSet.add(betId);
-      }
-      return newSet;
+  const handleBetClick = (bet: UserBet) => {
+    setSelectedBet({
+      sport: bet.sport,
+      event_name: bet.event_name,
+      market: bet.market,
+      selection: bet.selection,
+      odds: bet.odds.toString(),
+      stake_units: bet.stake_units.toString(),
+      notes: bet.notes,
     });
-  };
-
-  const selectAllBets = () => {
-    setSelectedBetIds(new Set(allBets.map(bet => bet.id)));
-  };
-
-  const deselectAllBets = () => {
-    setSelectedBetIds(new Set());
   };
 
   const loadFriendPicks = async () => {
@@ -351,91 +342,58 @@ export const BetsPage = () => {
                   <CardContent className="py-8 text-center">
                     <p className="text-muted-foreground mb-2">No bets in database</p>
                     <p className="text-sm text-muted-foreground">
-                      All bets from the system will appear here
+                      All bets from the system will appear here. Click any bet to place it.
                     </p>
                   </CardContent>
                 </Card>
               ) : (
                 <>
-                  <div className="flex gap-2 mb-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={selectAllBets}
-                      disabled={selectedBetIds.size === allBets.length}
-                    >
-                      Select All
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={deselectAllBets}
-                      disabled={selectedBetIds.size === 0}
-                    >
-                      Deselect All
-                    </Button>
-                    {selectedBetIds.size > 0 && (
-                      <Badge variant="secondary" className="ml-auto">
-                        {selectedBetIds.size} selected
-                      </Badge>
-                    )}
+                  <div className="text-sm text-muted-foreground mb-3 text-center">
+                    Click any bet to place it
                   </div>
                   {allBets.map((bet) => (
                     <Card 
                       key={bet.id}
-                      className={`cursor-pointer transition-colors ${
-                        selectedBetIds.has(bet.id) ? 'ring-2 ring-primary' : ''
-                      }`}
-                      onClick={() => toggleBetSelection(bet.id)}
+                      className="cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:shadow-lg"
+                      onClick={() => handleBetClick(bet)}
                     >
                       <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedBetIds.has(bet.id)}
-                            onChange={() => toggleBetSelection(bet.id)}
-                            className="mt-1"
-                            onClick={(e) => e.stopPropagation()}
-                          />
+                        <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Badge variant="outline">{bet.sport}</Badge>
-                                  <Badge 
-                                    variant={
-                                      bet.status === 'win' ? 'default' :
-                                      bet.status === 'loss' ? 'destructive' :
-                                      bet.status === 'push' ? 'secondary' :
-                                      'outline'
-                                    }
-                                  >
-                                    {bet.status.toUpperCase()}
-                                  </Badge>
-                                </div>
-                                <p className="font-semibold mb-1">{bet.event_name}</p>
-                                <p className="text-sm text-muted-foreground mb-1">
-                                  {bet.market}: {bet.selection}
-                                </p>
-                                {bet.notes && (
-                                  <p className="text-xs text-muted-foreground italic mt-1">
-                                    "{bet.notes}"
-                                  </p>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <div className="font-semibold">
-                                  {formatOdds(bet.odds)}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {bet.stake_units}u
-                                </div>
-                              </div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline">{bet.sport}</Badge>
+                              <Badge 
+                                variant={
+                                  bet.status === 'win' ? 'default' :
+                                  bet.status === 'loss' ? 'destructive' :
+                                  bet.status === 'push' ? 'secondary' :
+                                  'outline'
+                                }
+                              >
+                                {bet.status.toUpperCase()}
+                              </Badge>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatTime(bet.placed_at)}
+                            <p className="font-semibold mb-1">{bet.event_name}</p>
+                            <p className="text-sm text-muted-foreground mb-1">
+                              {bet.market}: {bet.selection}
+                            </p>
+                            {bet.notes && (
+                              <p className="text-xs text-muted-foreground italic mt-1">
+                                "{bet.notes}"
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold">
+                              {formatOdds(bet.odds)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {bet.stake_units}u
                             </div>
                           </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatTime(bet.placed_at)}
                         </div>
                       </CardContent>
                     </Card>

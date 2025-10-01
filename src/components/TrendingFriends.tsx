@@ -85,17 +85,43 @@ export const TrendingFriends = () => {
 
   const getTrendingReason = (friend: TrendingFriend) => {
     if (friend.current_streak >= 7) {
-      return '7-game winning streak 🔥';
+      return (
+        <span className="text-xs">
+          <span className="text-accent font-semibold">{friend.current_streak}</span> picks hit in a row 🔥
+        </span>
+      );
     } else if (friend.current_streak >= 5) {
-      return `${friend.current_streak}-game win streak`;
+      return (
+        <span className="text-xs">
+          <span className="text-accent font-semibold">{friend.current_streak}</span> picks hit in a row
+        </span>
+      );
     } else if (friend.current_streak <= -4) {
-      return `${Math.abs(friend.current_streak)}-game losing streak`;
+      return (
+        <span className="text-xs">
+          <span className="text-destructive font-semibold">{Math.abs(friend.current_streak)}</span> picks missed in a row
+        </span>
+      );
+    } else if (friend.current_streak > 0) {
+      return (
+        <span className="text-xs">
+          <span className="text-accent font-semibold">{friend.current_streak}</span> picks hit in a row
+        </span>
+      );
     } else if (friend.win_rate >= 65) {
-      return `${friend.win_rate.toFixed(0)}% win rate this week`;
+      return (
+        <span className="text-xs">
+          <span className="text-accent font-semibold">{friend.win_rate.toFixed(0)}%</span> win rate
+        </span>
+      );
     } else if (friend.units_won >= 15) {
-      return `+${friend.units_won.toFixed(1)} units won`;
+      return (
+        <span className="text-xs">
+          <span className="text-accent font-semibold">+{friend.units_won.toFixed(1)}</span> units won
+        </span>
+      );
     } else {
-      return 'Hot streak active';
+      return <span className="text-xs">Hot streak active</span>;
     }
   };
 
@@ -130,11 +156,11 @@ export const TrendingFriends = () => {
                       {friend.trend === 'hot' ? '🔥' : '❄️'}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <div className="text-muted-foreground truncate">
                     {getTrendingReason(friend)}
-                  </p>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {friend.wins}W - {friend.losses}L
+                    <span className="text-accent">{friend.wins}W</span> - <span className="text-destructive">{friend.losses}L</span>
                   </p>
                 </div>
               </div>
@@ -148,19 +174,21 @@ export const TrendingFriends = () => {
                     {friend.current_streak > 0 ? (
                       <>
                         <Flame className="w-3 h-3" />
-                        {friend.current_streak}W
+                        <span className="font-bold">{friend.current_streak}</span>
                       </>
                     ) : (
                       <>
                         <Snowflake className="w-3 h-3" />
-                        {Math.abs(friend.current_streak)}L
+                        <span className="font-bold">{Math.abs(friend.current_streak)}</span>
                       </>
                     )}
                   </Badge>
                 )}
                 <Badge variant="secondary" className="gap-1 text-xs">
                   <TrendingUp className="w-3 h-3" />
-                  {friend.win_rate.toFixed(0)}%
+                  <span className={friend.win_rate >= 60 ? "text-accent" : ""}>
+                    {friend.win_rate.toFixed(0)}%
+                  </span>
                 </Badge>
               </div>
             </div>

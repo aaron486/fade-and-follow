@@ -473,6 +473,18 @@ export type Database = {
           wins: number
         }[]
       }
+      is_channel_admin: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_channel_member: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_first_channel_member: {
+        Args: { _channel_id: string }
+        Returns: boolean
+      }
       update_user_records_stats: {
         Args: { target_user_id: string }
         Returns: undefined

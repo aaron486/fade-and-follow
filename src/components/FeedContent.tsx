@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedCard } from '@/components/FeedCard';
+import { TrendingFriends } from '@/components/TrendingFriends';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw } from 'lucide-react';
@@ -79,6 +80,11 @@ export const FeedContent = () => {
           <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingFeed ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
+      </div>
+
+      {/* Trending Friends */}
+      <div className="mb-4">
+        <TrendingFriends />
       </div>
 
       {/* Feed Items */}

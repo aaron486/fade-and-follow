@@ -23,9 +23,11 @@ const ChatLayout = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
+  const loadingRef = React.useRef(false);
 
   useEffect(() => {
-    if (user) {
+    // Only load if we have a user and aren't already loading
+    if (user && !loadingRef.current) {
       loadConversations();
     }
     
@@ -33,55 +35,74 @@ const ChatLayout = () => {
     return () => {
       setConversations([]);
       setSelectedConversation(null);
+      loadingRef.current = false;
     };
   }, [user?.id]);
 
   const loadConversations = async () => {
+    // Prevent multiple simultaneous loads
+    if (loadingRef.current || !user) return;
+    
     try {
+      loadingRef.current = true;
       setLoading(true);
 
-      // Load all channels where user is a member
+      // Load all channels where user is a member - simplified query
       const { data: channelMemberships, error: channelsError } = await supabase
         .from('channel_members')
-        .select(`
-          channel_id,
-          channels (
-            id,
-            name,
-            type,
-            created_at
-          )
-        `)
-        .eq('user_id', user?.id);
+        .select('channel_id, channels!inner(id, name, type)')
+        .eq('user_id', user.id);
 
-      if (channelsError) throw channelsError;
+      if (channelsError) {
+        console.error('Error loading channel memberships:', channelsError);
+        throw channelsError;
+      }
+
+      if (!channelMemberships || channelMemberships.length === 0) {
+        setConversations([]);
+        return;
+      }
 
       const allConversations: Conversation[] = [];
+      
+      // Get all channel IDs
+      const channelIds = channelMemberships.map(m => m.channel_id);
+      
+      // Get all other members in ONE query
+      const { data: allMembers } = await supabase
+        .from('channel_members')
+        .select('channel_id, user_id')
+        .in('channel_id', channelIds)
+        .neq('user_id', user.id);
+
+      // Get all unique user IDs for profiles in ONE query
+      const userIds = [...new Set(allMembers?.map(m => m.user_id) || [])];
+      const { data: profiles } = userIds.length > 0 ? await supabase
+        .from('profiles')
+        .select('user_id, username, display_name, avatar_url')
+        .in('user_id', userIds) : { data: [] };
+
+      interface ProfileData {
+        user_id: string;
+        username: string;
+        display_name: string;
+        avatar_url?: string;
+      }
+
+      const profilesMap = new Map<string, ProfileData>(
+        (profiles as ProfileData[] || []).map(p => [p.user_id, p])
+      );
 
       // Process each channel
-      for (const membership of channelMemberships || []) {
-        if (!membership.channels) continue;
-
+      for (const membership of channelMemberships) {
         const channel = membership.channels;
+        if (!channel) continue;
 
         if (channel.type === 'direct') {
-          // For direct chats, get the other user's info
-          const { data: members } = await supabase
-            .from('channel_members')
-            .select('user_id')
-            .eq('channel_id', channel.id)
-            .neq('user_id', user?.id);
-
-          if (members && members.length > 0) {
-            const otherUserId = members[0].user_id;
-            
-            // Fetch the other user's profile
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('user_id, username, display_name, avatar_url')
-              .eq('user_id', otherUserId)
-              .single();
-
+          // Find the other user in this channel
+          const otherMember = allMembers?.find(m => m.channel_id === channel.id);
+          if (otherMember) {
+            const profile = profilesMap.get(otherMember.user_id);
             if (profile) {
               allConversations.push({
                 id: `dm-${channel.id}`,
@@ -94,7 +115,6 @@ const ChatLayout = () => {
             }
           }
         } else {
-          // For group chats
           allConversations.push({
             id: `group-${channel.id}`,
             channelId: channel.id,
@@ -114,6 +134,7 @@ const ChatLayout = () => {
       });
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   };
 
@@ -146,7 +167,9 @@ const ChatLayout = () => {
         description: "Group channel created successfully",
       });
 
-      loadConversations();
+      // Reset loading flag before reload
+      loadingRef.current = false;
+      await loadConversations();
     } catch (error: any) {
       console.error('Error creating channel:', error);
       toast({
@@ -206,6 +229,8 @@ const ChatLayout = () => {
 
       if (membersError) throw membersError;
 
+      // Reset loading flag before reload
+      loadingRef.current = false;
       await loadConversations();
       return channel.id;
     } catch (error: any) {

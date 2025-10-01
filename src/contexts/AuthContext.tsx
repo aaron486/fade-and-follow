@@ -68,19 +68,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Refresh session periodically (every 30 minutes)
+    // Refresh session periodically (every 50 minutes)
     const keepAlive = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && mounted) {
-          // Only refresh if token expires in less than 40 minutes
+          // Only refresh if token expires in less than 55 minutes
           const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
           const now = Date.now();
           const timeUntilExpiry = expiresAt - now;
-          const fortyMinutes = 40 * 60 * 1000;
+          const fiftyFiveMinutes = 55 * 60 * 1000;
 
-          if (timeUntilExpiry < fortyMinutes) {
-            console.log('🔄 Refreshing session (expires soon)...');
+          if (timeUntilExpiry < fiftyFiveMinutes && timeUntilExpiry > 0) {
             await supabase.auth.refreshSession();
           }
         }
@@ -93,8 +92,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
 
-      console.log('🔔 Auth event:', event);
-
       // Update state for all events
       setSession(session);
       setUser(session?.user ?? null);
@@ -103,8 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initialize
     initAuth();
 
-    // Keep session alive - check every 30 minutes
-    refreshInterval = setInterval(keepAlive, 30 * 60 * 1000);
+    // Keep session alive - check every 50 minutes
+    refreshInterval = setInterval(keepAlive, 50 * 60 * 1000);
 
     return () => {
       mounted = false;

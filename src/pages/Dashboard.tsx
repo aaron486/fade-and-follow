@@ -6,6 +6,7 @@ import ProfileSidebar from '@/components/ProfileSidebar';
 import ChatLayout from '@/components/friends/ChatLayout';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
+import FindFriends from '@/components/FindFriends';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -32,8 +33,9 @@ const Dashboard = () => {
       <main className="pt-16">
         <div className="flex h-[calc(100vh-4rem)]">
           {/* Left Sidebar - Profile & Quick Stats */}
-          <div className="w-80 flex-shrink-0 overflow-y-auto border-r">
+          <div className="w-80 flex-shrink-0 overflow-y-auto border-r space-y-4 p-4">
             <ProfileSidebar />
+            <FindFriends />
           </div>
           
           {/* Main Content */}
@@ -46,7 +48,10 @@ const Dashboard = () => {
             
             {/* Chat Feature */}
             <div className="flex-1 overflow-hidden p-4">
-              <ChatLayout />
+              <div className="h-full">
+                <h2 className="text-2xl font-bold mb-4">Chat</h2>
+                <ChatLayout />
+              </div>
             </div>
           </div>
         </div>

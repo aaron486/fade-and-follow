@@ -142,7 +142,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     <div className="w-80 border-r flex flex-col bg-muted/30">
       <div className="p-4 border-b">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-lg">Friends</h2>
+          <h2 className="font-semibold text-lg">Conversations</h2>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline">

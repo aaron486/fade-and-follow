@@ -45,28 +45,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
     let subscription: any;
+    let sessionCheckTimeout: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
-        // Set up listener first to catch any auth events
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-          (event, session) => {
-            if (isMounted) {
-              setSession(session);
-              setUser(session?.user ?? null);
-              setLoading(false);
-            }
-          }
-        );
-        subscription = authListener.subscription;
-
-        // Then get current session only once
+        // Get initial session
         const { data: { session } } = await supabase.auth.getSession();
         if (isMounted) {
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
         }
+
+        // Set up listener with rate limit protection
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            if (!isMounted) return;
+            
+            // Clear any pending session checks
+            clearTimeout(sessionCheckTimeout);
+            
+            // Only update state for specific events to avoid loops
+            if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+              sessionCheckTimeout = setTimeout(() => {
+                if (isMounted) {
+                  setSession(session);
+                  setUser(session?.user ?? null);
+                }
+              }, 100);
+            }
+          }
+        );
+        subscription = authListener.subscription;
       } catch (error) {
         console.error('Error initializing auth:', error);
         if (isMounted) {
@@ -79,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       isMounted = false;
+      clearTimeout(sessionCheckTimeout);
       subscription?.unsubscribe();
     };
   }, []);

@@ -44,10 +44,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let isMounted = true;
+    let subscription: any;
 
-    // Get initial session first
     const initializeAuth = async () => {
       try {
+        // Set up listener first to catch any auth events
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            if (isMounted) {
+              setSession(session);
+              setUser(session?.user ?? null);
+              setLoading(false);
+            }
+          }
+        );
+        subscription = authListener.subscription;
+
+        // Then get current session only once
         const { data: { session } } = await supabase.auth.getSession();
         if (isMounted) {
           setSession(session);
@@ -55,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false);
         }
       } catch (error) {
-        console.error('Error getting session:', error);
+        console.error('Error initializing auth:', error);
         if (isMounted) {
           setLoading(false);
         }
@@ -64,20 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initializeAuth();
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (isMounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
-      }
-    );
-
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 

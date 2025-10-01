@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import Navigation from '@/components/Navigation';
 import ProfileSidebar from '@/components/ProfileSidebar';
 import { DiscordChat } from '@/components/DiscordChat';
 import { FeedContent } from '@/components/FeedContent';
@@ -67,9 +66,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-16">
-      <Navigation />
-      
-      <main className="pt-16">
+      <main>
         {/* Top Bars - Stories & Live Odds */}
         <div className="flex-shrink-0">
           <BetStoriesBar />
@@ -77,7 +74,7 @@ const Dashboard = () => {
         </div>
 
         {/* Full Screen Content Area */}
-        <div className="h-[calc(100vh-12rem)] overflow-hidden">
+        <div className="h-[calc(100vh-10rem)] overflow-hidden">
           {renderView()}
         </div>
       </main>

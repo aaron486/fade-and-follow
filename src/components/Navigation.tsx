@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, User, MessageSquare } from "lucide-react";
+import { Users, User, MessageSquare, Newspaper } from "lucide-react";
 
 export const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -34,6 +34,12 @@ export const Navigation = () => {
                     <Button variant="ghost" size="sm">
                       <Users className="w-4 h-4 mr-2" />
                       My Bets
+                    </Button>
+                  </Link>
+                  <Link to="/feed">
+                    <Button variant="ghost" size="sm">
+                      <Newspaper className="w-4 h-4 mr-2" />
+                      Feed
                     </Button>
                   </Link>
                   <Link to="/friends">
@@ -103,6 +109,12 @@ export const Navigation = () => {
                         <Button variant="ghost" size="sm" className="w-full justify-start">
                           <Users className="w-4 h-4 mr-2" />
                           My Bets
+                        </Button>
+                      </Link>
+                      <Link to="/feed">
+                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                          <Newspaper className="w-4 h-4 mr-2" />
+                          Feed
                         </Button>
                       </Link>
                       <Link to="/friends">

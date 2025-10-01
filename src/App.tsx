@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Bets from "./pages/Bets";
+import Feed from "./pages/Feed";
 import Friends from "./pages/Friends";
 import Groups from "./pages/Groups";
 import Profile from "./pages/Profile";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/bets" element={<Bets />} />
+            <Route path="/feed" element={<Feed />} />
             <Route path="/friends" element={<Friends />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/profile" element={<Profile />} />

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.get-betting-odds]
 verify_jwt = false
+
+[functions.generate-feed]
+verify_jwt = true

@@ -46,10 +46,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
     let refreshInterval: ReturnType<typeof setInterval>;
 
-    // Initialize auth and restore session
+    // Initialize auth - get session once
     const initAuth = async () => {
       try {
-        // Restore session on load
         const { data: { session } } = await supabase.auth.getSession();
         
         if (mounted) {
@@ -69,13 +68,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Keep session alive by refreshing token before expiry
+    // Refresh session periodically (every 30 minutes)
     const keepAlive = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && mounted) {
-          console.log('🔄 Refreshing session...');
-          await supabase.auth.refreshSession();
+          // Only refresh if token expires in less than 40 minutes
+          const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+          const now = Date.now();
+          const timeUntilExpiry = expiresAt - now;
+          const fortyMinutes = 40 * 60 * 1000;
+
+          if (timeUntilExpiry < fortyMinutes) {
+            console.log('🔄 Refreshing session (expires soon)...');
+            await supabase.auth.refreshSession();
+          }
         }
       } catch (error) {
         console.error('❌ Error refreshing session:', error);
@@ -88,18 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('🔔 Auth event:', event);
 
-      if (event === 'TOKEN_REFRESHED') {
-        console.log('✅ Token refreshed successfully');
-      }
-
-      if (event === 'SIGNED_OUT') {
-        console.log('⚠️ User signed out');
-      }
-
-      if (event === 'SIGNED_IN') {
-        console.log('✅ User signed in:', session?.user.email);
-      }
-
+      // Update state for all events
       setSession(session);
       setUser(session?.user ?? null);
     });
@@ -107,8 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initialize
     initAuth();
 
-    // Keep session alive - refresh every 5 minutes
-    refreshInterval = setInterval(keepAlive, 5 * 60 * 1000);
+    // Keep session alive - check every 30 minutes
+    refreshInterval = setInterval(keepAlive, 30 * 60 * 1000);
 
     return () => {
       mounted = false;

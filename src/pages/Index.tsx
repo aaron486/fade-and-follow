@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Navigation from "@/components/Navigation";
 import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
+import BettingFeed from "@/components/BettingFeed";
 import { Leaderboard } from "@/components/Leaderboard";
 import { Footer } from "@/components/Footer";
 
@@ -33,6 +34,13 @@ const Index = () => {
       <main>
         <Hero />
         <Features />
+        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Live Betting Feed</h2>
+            <p className="text-muted-foreground">See what the community is betting on right now</p>
+          </div>
+          <BettingFeed />
+        </section>
         <Leaderboard />
       </main>
       <Footer />

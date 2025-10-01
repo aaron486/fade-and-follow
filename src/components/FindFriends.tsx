@@ -57,36 +57,50 @@ const FindFriends = () => {
 
     setSending(receiverId);
     try {
-      // Check if request already exists
-      const { data: existing } = await supabase
-        .from('friend_requests')
-        .select('id, status')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${user.id})`)
+      // Check if friendship already exists
+      const { data: existingFriendship } = await supabase
+        .from('friendships')
+        .select('id')
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${receiverId}),and(user1_id.eq.${receiverId},user2_id.eq.${user.id})`)
         .maybeSingle();
 
-      if (existing) {
+      if (existingFriendship) {
         toast({
           title: "Already Connected",
-          description: existing.status === 'pending' ? 'Request already sent' : 'You are already friends',
+          description: 'You are already friends',
           variant: "destructive",
         });
         setSending(null);
         return;
       }
 
-      const { error } = await supabase
+      // Auto-accept: Create friend request as accepted
+      const { error: requestError } = await supabase
         .from('friend_requests')
         .insert({
           sender_id: user.id,
           receiver_id: receiverId,
-          status: 'pending',
+          status: 'accepted',
         });
 
-      if (error) throw error;
+      if (requestError) throw requestError;
+
+      // Create friendship immediately
+      const user1Id = user.id < receiverId ? user.id : receiverId;
+      const user2Id = user.id < receiverId ? receiverId : user.id;
+
+      const { error: friendshipError } = await supabase
+        .from('friendships')
+        .insert({
+          user1_id: user1Id,
+          user2_id: user2Id,
+        });
+
+      if (friendshipError) throw friendshipError;
 
       toast({
-        title: "Friend Request Sent!",
-        description: "Waiting for them to accept",
+        title: "Friend Added!",
+        description: "You can now start chatting",
       });
 
       // Remove from search results
@@ -94,7 +108,7 @@ const FindFriends = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to send friend request",
+        description: "Failed to add friend",
         variant: "destructive",
       });
     } finally {

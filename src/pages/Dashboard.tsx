@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import ProfileSidebar from '@/components/ProfileSidebar';
 import { DiscordChat } from '@/components/DiscordChat';
 import { FeedContent } from '@/components/FeedContent';
-import BettingFeed from '@/components/BettingFeed';
+import { BetsPage } from '@/components/BetsPage';
 import { BottomNav } from '@/components/BottomNav';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
@@ -45,8 +45,8 @@ const Dashboard = () => {
         );
       case 'bets':
         return (
-          <div className="h-full overflow-y-auto">
-            <BettingFeed />
+          <div className="h-full">
+            <BetsPage />
           </div>
         );
       case 'chat':

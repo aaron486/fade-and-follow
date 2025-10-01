@@ -6,7 +6,7 @@ import { Users, User } from "lucide-react";
 
 export const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, signOut, loading } = useAuth();
+  const { user, loading } = useAuth();
 
 
   return (
@@ -66,13 +66,6 @@ export const Navigation = () => {
                   <span className="text-sm text-muted-foreground">
                     Welcome back!
                   </span>
-                  <Button 
-                    variant="outline" 
-                    onClick={signOut}
-                    className="border-destructive text-destructive hover:bg-destructive/10"
-                  >
-                    Sign Out
-                  </Button>
                 </>
               ) : (
                 <>
@@ -151,13 +144,6 @@ export const Navigation = () => {
                       <span className="text-sm text-muted-foreground px-3">
                         Welcome back!
                       </span>
-                      <Button 
-                        variant="outline" 
-                        onClick={signOut}
-                        className="border-destructive text-destructive hover:bg-destructive/10"
-                      >
-                        Sign Out
-                      </Button>
                     </>
                   ) : (
                     <>

@@ -23,7 +23,6 @@ interface AuthContextType {
   session: Session | null;
   signUp: (data: SignUpData) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
   loading: boolean;
 }
 
@@ -165,28 +164,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
-      });
-    }
-  };
-
   const value: AuthContextType = {
     user,
     session,
     signUp,
     signIn,
-    signOut,
     loading,
   };
 

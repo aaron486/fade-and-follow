@@ -20,17 +20,8 @@ export const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
-              Features
-            </a>
             <a href="#leaderboard" className="text-muted-foreground hover:text-foreground transition-colors">
               Leaderboard
-            </a>
-            <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors">
-              About
-            </a>
-            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-              Pricing
             </a>
           </div>
 
@@ -101,17 +92,8 @@ export const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden bg-card border-t border-border">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              <a href="#features" className="block px-3 py-2 text-muted-foreground hover:text-foreground transition-colors">
-                Features
-              </a>
               <a href="#leaderboard" className="block px-3 py-2 text-muted-foreground hover:text-foreground transition-colors">
                 Leaderboard
-              </a>
-              <a href="#about" className="block px-3 py-2 text-muted-foreground hover:text-foreground transition-colors">
-                About
-              </a>
-              <a href="#pricing" className="block px-3 py-2 text-muted-foreground hover:text-foreground transition-colors">
-                Pricing
               </a>
               <div className="flex flex-col space-y-2 px-3 py-2">
                 {!loading && (

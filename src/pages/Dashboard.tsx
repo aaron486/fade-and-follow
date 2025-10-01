@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import ProfileSidebar from '@/components/ProfileSidebar';
 import ChatLayout from '@/components/friends/ChatLayout';
+import BettingFeed from '@/components/BettingFeed';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
 import FindFriends from '@/components/FindFriends';
@@ -46,11 +47,22 @@ const Dashboard = () => {
             {/* Live Betting Lines */}
             <LiveOddsBar />
             
-            {/* Chat Feature */}
-            <div className="flex-1 overflow-hidden p-4">
-              <div className="h-full">
+            {/* Chat & Feed Side by Side */}
+            <div className="flex-1 flex overflow-hidden gap-4 p-4">
+              {/* Chat Section */}
+              <div className="flex-1 flex flex-col overflow-hidden">
                 <h2 className="text-2xl font-bold mb-4">Chat</h2>
-                <ChatLayout />
+                <div className="flex-1 overflow-hidden">
+                  <ChatLayout />
+                </div>
+              </div>
+              
+              {/* Feed Section */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <h2 className="text-2xl font-bold mb-4">Live Feed</h2>
+                <div className="flex-1 overflow-y-auto">
+                  <BettingFeed />
+                </div>
               </div>
             </div>
           </div>

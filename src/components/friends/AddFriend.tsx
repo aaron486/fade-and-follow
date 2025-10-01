@@ -55,38 +55,50 @@ const AddFriend = () => {
 
     setSending(receiverId);
     try {
-      // Check if request already exists
-      const { data: existing } = await supabase
-        .from('friend_requests')
-        .select('id, status')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${user.id})`)
-        .single();
+      // Check if friendship already exists
+      const { data: existingFriendship } = await supabase
+        .from('friendships')
+        .select('id')
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${receiverId}),and(user1_id.eq.${receiverId},user2_id.eq.${user.id})`)
+        .maybeSingle();
 
-      if (existing) {
+      if (existingFriendship) {
         toast({
-          title: 'Request already exists',
-          description: existing.status === 'pending' ? 'Friend request already sent' : 'You are already friends',
+          title: 'Already Connected',
+          description: 'You are already friends',
           variant: 'destructive',
         });
         setSending(null);
         return;
       }
 
-      const { error } = await supabase
+      // Auto-accept: Create friend request as accepted
+      const { error: requestError } = await supabase
         .from('friend_requests')
-        .insert([
-          {
-            sender_id: user.id,
-            receiver_id: receiverId,
-            status: 'pending',
-          },
-        ]);
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          status: 'accepted',
+        });
 
-      if (error) throw error;
+      if (requestError) throw requestError;
+
+      // Create friendship immediately
+      const user1Id = user.id < receiverId ? user.id : receiverId;
+      const user2Id = user.id < receiverId ? receiverId : user.id;
+
+      const { error: friendshipError } = await supabase
+        .from('friendships')
+        .insert({
+          user1_id: user1Id,
+          user2_id: user2Id,
+        });
+
+      if (friendshipError) throw friendshipError;
 
       toast({
-        title: 'Friend request sent!',
-        description: 'Waiting for them to accept',
+        title: 'Friend Added!',
+        description: 'You can now start chatting',
       });
 
       setSearchResults(prev => prev.filter(u => u.id !== receiverId));

@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import ProfileSidebar from '@/components/ProfileSidebar';
 import ChatLayout from '@/components/friends/ChatLayout';
-import BettingFeed from '@/components/BettingFeed';
+import { FeedContent } from '@/components/FeedContent';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
 import FindFriends from '@/components/FindFriends';
@@ -57,12 +57,9 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Feed Section */}
+              {/* AI Feed Section */}
               <div className="flex-1 flex flex-col overflow-hidden">
-                <h2 className="text-2xl font-bold mb-4">Live Feed</h2>
-                <div className="flex-1 overflow-y-auto">
-                  <BettingFeed />
-                </div>
+                <FeedContent />
               </div>
             </div>
           </div>

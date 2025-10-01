@@ -1,4 +1,4 @@
-import { MessageSquare, User, Newspaper, TrendingUp, Receipt } from 'lucide-react';
+import { MessageSquare, User, Newspaper, Trophy, Receipt } from 'lucide-react';
 
 interface BottomNavProps {
   activeView: string;
@@ -10,7 +10,7 @@ export const BottomNav = ({ activeView, onViewChange }: BottomNavProps) => {
     { id: 'feed', icon: Newspaper, label: 'Feed' },
     { id: 'bets', icon: Receipt, label: 'Bets' },
     { id: 'chat', icon: MessageSquare, label: 'Chat' },
-    { id: 'stats', icon: TrendingUp, label: 'Stats' },
+    { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' },
     { id: 'profile', icon: User, label: 'Profile' },
   ];
 

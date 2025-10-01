@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedCard } from '@/components/FeedCard';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,10 +27,13 @@ export const FeedContent = () => {
   const { toast } = useToast();
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [isLoadingFeed, setIsLoadingFeed] = useState(false);
+  const loadingRef = useRef(false);
+  const hasLoadedRef = useRef(false);
 
   const loadFeed = async () => {
-    if (!user) return;
+    if (!user || loadingRef.current) return;
 
+    loadingRef.current = true;
     setIsLoadingFeed(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-feed', {
@@ -41,6 +44,7 @@ export const FeedContent = () => {
 
       if (data?.feedItems) {
         setFeedItems(data.feedItems);
+        hasLoadedRef.current = true;
       }
     } catch (error) {
       console.error('Error loading feed:', error);
@@ -51,11 +55,12 @@ export const FeedContent = () => {
       });
     } finally {
       setIsLoadingFeed(false);
+      loadingRef.current = false;
     }
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && !hasLoadedRef.current && !loadingRef.current) {
       loadFeed();
     }
   }, [user]);

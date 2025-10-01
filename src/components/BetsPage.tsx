@@ -49,11 +49,26 @@ interface FriendPick {
   placed_at: string;
 }
 
+interface UserBet {
+  id: string;
+  sport: string;
+  event_name: string;
+  market: string;
+  selection: string;
+  odds: number;
+  stake_units: number;
+  status: string;
+  notes?: string;
+  placed_at: string;
+  resolved_at?: string;
+}
+
 export const BetsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [games, setGames] = useState<Game[]>([]);
   const [friendPicks, setFriendPicks] = useState<FriendPick[]>([]);
+  const [userBets, setUserBets] = useState<UserBet[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBetForm, setShowBetForm] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{
@@ -69,7 +84,8 @@ export const BetsPage = () => {
   useEffect(() => {
     loadGames();
     loadFriendPicks();
-  }, []);
+    loadUserBets();
+  }, [user]);
 
   const loadGames = async () => {
     setLoading(true);
@@ -92,6 +108,23 @@ export const BetsPage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUserBets = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('bets')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('placed_at', { ascending: false });
+
+      if (error) throw error;
+      setUserBets(data || []);
+    } catch (error) {
+      console.error('Error loading user bets:', error);
     }
   };
 
@@ -172,6 +205,7 @@ export const BetsPage = () => {
   const handleBetSuccess = () => {
     setSelectedBet(null);
     setShowBetForm(false);
+    loadUserBets(); // Refresh user's bets
     toast({
       title: "Bet Placed!",
       description: "Your bet has been recorded successfully.",
@@ -257,13 +291,74 @@ export const BetsPage = () => {
             </Card>
           )}
 
-          <Tabs defaultValue="games" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="games">Available Games</TabsTrigger>
+          <Tabs defaultValue="my-bets" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="my-bets">
+                My Bets ({userBets.length})
+              </TabsTrigger>
+              <TabsTrigger value="games">Games</TabsTrigger>
               <TabsTrigger value="friends">
-                Friend Picks ({friendPicks.length})
+                Friends ({friendPicks.length})
               </TabsTrigger>
             </TabsList>
+
+            {/* My Bets Tab */}
+            <TabsContent value="my-bets" className="space-y-3 mt-4">
+              {userBets.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground mb-2">No bets yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Place your first bet to get started!
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                userBets.map((bet) => (
+                  <Card key={bet.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline">{bet.sport}</Badge>
+                            <Badge 
+                              variant={
+                                bet.status === 'win' ? 'default' :
+                                bet.status === 'loss' ? 'destructive' :
+                                bet.status === 'push' ? 'secondary' :
+                                'outline'
+                              }
+                            >
+                              {bet.status.toUpperCase()}
+                            </Badge>
+                          </div>
+                          <p className="font-semibold mb-1">{bet.event_name}</p>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            {bet.market}: {bet.selection}
+                          </p>
+                          {bet.notes && (
+                            <p className="text-xs text-muted-foreground italic mt-1">
+                              "{bet.notes}"
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold">
+                            {formatOdds(bet.odds)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {bet.stake_units}u
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatTime(bet.placed_at)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
 
             {/* Available Games Tab */}
             <TabsContent value="games" className="space-y-3 mt-4">

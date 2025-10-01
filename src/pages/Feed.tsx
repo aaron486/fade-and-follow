@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { FeedCard } from '@/components/FeedCard';
+import { TrendingFriends } from '@/components/TrendingFriends';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw } from 'lucide-react';
@@ -111,6 +112,10 @@ const Feed = () => {
             </div>
           ) : feedItems.length > 0 ? (
             <div className="space-y-4">
+              {/* Friends Activity */}
+              <TrendingFriends />
+              
+              {/* Feed Items */}
               {feedItems.map((item) => (
                 <FeedCard key={item.id} item={item} />
               ))}

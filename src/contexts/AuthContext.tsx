@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
     let subscription: any;
-    let sessionCheckTimeout: NodeJS.Timeout;
+    let sessionCheckTimeout: ReturnType<typeof setTimeout>;
 
     const initializeAuth = async () => {
       try {

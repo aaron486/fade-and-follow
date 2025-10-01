@@ -57,12 +57,12 @@ serve(async (req) => {
       console.error('Error fetching bets:', betsError);
     }
 
-    // Get user stats
+    // Get user stats (handle case where record doesn't exist)
     const { data: stats, error: statsError } = await supabase
       .from('user_records')
       .select('wins, losses, units_won, current_streak')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (statsError) {
       console.error('Error fetching stats:', statsError);
@@ -93,13 +93,15 @@ serve(async (req) => {
             content: `You are an expert sports betting analyst creating personalized betting reports. Generate 3-5 feed items based on the user's profile. Each feed item should include:
 - A compelling headline about recent betting trends or opportunities
 - A concise 2-3 sentence summary with actionable insights
-- 1-3 suggested picks with team names, markets, odds (use realistic American odds like +150 or -110), and reasoning
+- 1-3 suggested picks with team names, markets, odds (as numbers like 150 or -110, NO + symbol), and reasoning
 - A confidence level (high/medium/low)
 - Sample source URLs (use placeholder URLs like https://espn.com, https://covers.com)
 - A relevant category (Line Movement, Team News, Injury Report, Weather Impact, etc.)
 - Current timestamp
 
-Return ONLY valid JSON in this exact format:
+CRITICAL: Return ONLY valid JSON with NO + symbols in odds numbers.
+
+Return in this exact format:
 {
   "feedItems": [
     {
@@ -110,7 +112,7 @@ Return ONLY valid JSON in this exact format:
         {
           "team": "Team Name",
           "market": "Spread/Moneyline/Over-Under",
-          "odds": -110,
+          "odds": 150,
           "reasoning": "why this pick"
         }
       ],

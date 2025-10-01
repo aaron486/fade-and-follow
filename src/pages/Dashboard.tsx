@@ -7,6 +7,7 @@ import BettingFeed from '@/components/BettingFeed';
 import GroupChat from '@/components/GroupChat';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
+import FriendsSection from '@/components/friends/FriendsSection';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Users, TrendingUp, User } from 'lucide-react';
 
@@ -90,12 +91,8 @@ const Dashboard = () => {
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="friends" className="h-full m-0 p-6">
-                  <div className="text-center text-muted-foreground">
-                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-semibold mb-2">Friends Coming Soon</h3>
-                    <p>Connect with other bettors and follow their picks</p>
-                  </div>
+                <TabsContent value="friends" className="h-full m-0">
+                  <FriendsSection />
                 </TabsContent>
                 
                 <TabsContent value="bets" className="h-full m-0">

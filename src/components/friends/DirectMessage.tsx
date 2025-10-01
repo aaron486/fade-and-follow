@@ -55,8 +55,9 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ friend }) => {
           table: 'messages',
           filter: `channel_id=eq.${channelId}`,
         },
-        (payload) => {
-          setMessages(prev => [...prev, payload.new as Message]);
+        (payload: any) => {
+          const newMessage = payload.new as Message;
+          setMessages(prev => [...prev, newMessage]);
           scrollToBottom();
         }
       )
@@ -122,13 +123,13 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ friend }) => {
 
     try {
       const { data, error } = await supabase
-        .from('messages')
+        .from('messages' as any)
         .select('*')
         .eq('channel_id', channelId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      setMessages((data as any) || []);
       scrollToBottom();
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -141,13 +142,13 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ friend }) => {
     setSending(true);
     try {
       const { error } = await supabase
-        .from('messages')
+        .from('messages' as any)
         .insert([
           {
             channel_id: channelId,
             sender_id: user.id,
             content: newMessage.trim(),
-          },
+          } as any,
         ]);
 
       if (error) throw error;

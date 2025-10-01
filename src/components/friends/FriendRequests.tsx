@@ -36,26 +36,37 @@ const FriendRequests = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // First get the requests
+      const { data: requests, error: requestsError } = await supabase
         .from('friend_requests')
-        .select(`
-          id,
-          sender_id,
-          receiver_id,
-          status,
-          created_at,
-          sender_profile:profiles!friend_requests_sender_id_fkey(
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('id, sender_id, receiver_id, status, created_at')
         .eq('receiver_id', user.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setIncomingRequests(data || []);
+      if (requestsError) throw requestsError;
+
+      // Then fetch sender profiles
+      if (requests && requests.length > 0) {
+        const senderIds = requests.map(r => r.sender_id);
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, username, display_name, avatar_url')
+          .in('user_id', senderIds);
+
+        if (profilesError) throw profilesError;
+
+        // Combine data
+        const requestsWithProfiles = requests.map(request => ({
+          ...request,
+          sender_profile: profiles?.find(p => p.user_id === request.sender_id) || {
+            username: 'Unknown',
+            display_name: 'Unknown User',
+          }
+        }));
+
+        setIncomingRequests(requestsWithProfiles as any);
+      }
     } catch (error) {
       console.error('Error fetching friend requests:', error);
     } finally {

@@ -33,7 +33,7 @@ const Dashboard = () => {
       <main className="pt-16">
         <div className="flex h-[calc(100vh-4rem)]">
           {/* Left Sidebar - Profile & Stats */}
-          <div className="w-72 flex-shrink-0 overflow-y-auto border-r p-4">
+          <div className="w-56 flex-shrink-0 overflow-y-auto border-r p-3">
             <ProfileSidebar />
           </div>
 
@@ -47,13 +47,13 @@ const Dashboard = () => {
             
             {/* Chat and Feed Layout */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Chat (Expanded Main Focus) */}
-              <div className="flex-[2] flex flex-col overflow-hidden border-r">
+              {/* Chat (Main Focus - Larger) */}
+              <div className="flex-[3] flex flex-col overflow-hidden border-r">
                 <DiscordChat />
               </div>
               
               {/* Right - AI Feed */}
-              <div className="w-96 flex-shrink-0 flex flex-col overflow-hidden p-4">
+              <div className="w-80 flex-shrink-0 flex flex-col overflow-hidden p-4">
                 <FeedContent />
               </div>
             </div>

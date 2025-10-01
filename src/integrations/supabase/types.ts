@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       bets: {
         Row: {
+          action_type: string | null
           channel_id: string | null
           created_at: string
           event_name: string
@@ -23,6 +24,7 @@ export type Database = {
           market: string
           notes: string | null
           odds: number
+          pick_id: string | null
           placed_at: string
           resolved_at: string | null
           selection: string
@@ -36,6 +38,7 @@ export type Database = {
           wager_amount: number | null
         }
         Insert: {
+          action_type?: string | null
           channel_id?: string | null
           created_at?: string
           event_name: string
@@ -43,6 +46,7 @@ export type Database = {
           market: string
           notes?: string | null
           odds: number
+          pick_id?: string | null
           placed_at?: string
           resolved_at?: string | null
           selection: string
@@ -56,6 +60,7 @@ export type Database = {
           wager_amount?: number | null
         }
         Update: {
+          action_type?: string | null
           channel_id?: string | null
           created_at?: string
           event_name?: string
@@ -63,6 +68,7 @@ export type Database = {
           market?: string
           notes?: string | null
           odds?: number
+          pick_id?: string | null
           placed_at?: string
           resolved_at?: string | null
           selection?: string
@@ -76,6 +82,13 @@ export type Database = {
           wager_amount?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "bets_pick_id_fkey"
+            columns: ["pick_id"]
+            isOneToOne: false
+            referencedRelation: "picks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_bets_channel"
             columns: ["channel_id"]
@@ -314,6 +327,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      picks: {
+        Row: {
+          confidence: string
+          created_at: string
+          event_name: string
+          fades_count: number
+          id: string
+          is_public: boolean
+          market: string
+          odds: number
+          reasoning: string | null
+          resolved_at: string | null
+          selection: string
+          sport: string
+          stake_units: number
+          status: string
+          tails_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: string
+          created_at?: string
+          event_name: string
+          fades_count?: number
+          id?: string
+          is_public?: boolean
+          market: string
+          odds: number
+          reasoning?: string | null
+          resolved_at?: string | null
+          selection: string
+          sport: string
+          stake_units?: number
+          status?: string
+          tails_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          event_name?: string
+          fades_count?: number
+          id?: string
+          is_public?: boolean
+          market?: string
+          odds?: number
+          reasoning?: string | null
+          resolved_at?: string | null
+          selection?: string
+          sport?: string
+          stake_units?: number
+          status?: string
+          tails_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

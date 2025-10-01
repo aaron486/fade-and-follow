@@ -130,6 +130,7 @@ export type Database = {
           created_by: string
           id: string
           name: string
+          type: Database["public"]["Enums"]["chat_type"]
           updated_at: string
         }
         Insert: {
@@ -137,6 +138,7 @@ export type Database = {
           created_by: string
           id?: string
           name: string
+          type?: Database["public"]["Enums"]["chat_type"]
           updated_at?: string
         }
         Update: {
@@ -144,6 +146,7 @@ export type Database = {
           created_by?: string
           id?: string
           name?: string
+          type?: Database["public"]["Enums"]["chat_type"]
           updated_at?: string
         }
         Relationships: []
@@ -476,7 +479,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      chat_type: "direct" | "group"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -603,6 +606,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      chat_type: ["direct", "group"],
+    },
   },
 } as const

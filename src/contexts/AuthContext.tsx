@@ -45,25 +45,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-    let refreshTimestamps: number[] = [];
-    const REFRESH_WINDOW_MS = 60000; // 1 minute window
-    const MAX_REFRESHES_PER_WINDOW = 10;
+    let lastRefreshTime = 0;
+    const MIN_REFRESH_INTERVAL = 30000; // Minimum 30 seconds between refreshes
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      // Track token refreshes with time-based window
+      // Throttle token refresh events
       if (event === 'TOKEN_REFRESHED') {
         const now = Date.now();
-        // Remove timestamps older than the window
-        refreshTimestamps = refreshTimestamps.filter(ts => now - ts < REFRESH_WINDOW_MS);
-        refreshTimestamps.push(now);
+        const timeSinceLastRefresh = now - lastRefreshTime;
         
-        // Only warn if too many refreshes in the time window
-        if (refreshTimestamps.length > MAX_REFRESHES_PER_WINDOW) {
-          console.warn(`⚠️ ${refreshTimestamps.length} token refreshes in ${REFRESH_WINDOW_MS/1000}s - possible loop`);
+        if (timeSinceLastRefresh < MIN_REFRESH_INTERVAL) {
+          console.warn(`⚠️ Token refresh too soon (${timeSinceLastRefresh}ms since last). Ignoring state update.`);
+          return; // Skip this refresh
         }
+        
+        lastRefreshTime = now;
+        console.log('🔄 Token refreshed');
       }
       
       console.log('🔐 Auth event:', event);
@@ -74,10 +74,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in:', session.user.email);
-        refreshTimestamps = []; // Reset counter on successful sign in
+        lastRefreshTime = Date.now(); // Reset on sign in
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
-        refreshTimestamps = [];
+        lastRefreshTime = 0;
       }
     });
 

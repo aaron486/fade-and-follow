@@ -40,54 +40,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     let mounted = true;
+    let refreshCount = 0;
+    const MAX_REFRESHES = 5;
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      console.log('🔐 Auth event:', event);
-      
-      // Handle specific error events
+      // Prevent infinite refresh loops
       if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token refreshed successfully');
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in:', session.user.email);
-      } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out');
+        refreshCount++;
+        if (refreshCount > MAX_REFRESHES) {
+          console.warn('⚠️ Too many token refreshes, stopping to prevent loop');
+          return;
+        }
       }
+      
+      console.log('🔐 Auth event:', event);
       
       // Only synchronous state updates
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ User signed in:', session.user.email);
+        refreshCount = 0; // Reset counter on successful sign in
+      } else if (event === 'SIGNED_OUT') {
+        console.log('👋 User signed out');
+        refreshCount = 0;
+      }
     });
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        
-        if (session) {
-          console.log('✅ Session restored:', session.user.email);
+    // THEN check for existing session (only once)
+    if (!isInitialized) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+          setIsInitialized(true);
+          
+          if (session) {
+            console.log('✅ Session restored:', session.user.email);
+          }
         }
-      }
-    }).catch((error) => {
-      console.error('❌ Session restore error:', error);
-      if (mounted) {
-        setLoading(false);
-      }
-    });
+      }).catch((error) => {
+        console.error('❌ Session restore error:', error);
+        if (mounted) {
+          setLoading(false);
+          setIsInitialized(true);
+        }
+      });
+    }
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isInitialized]);
 
   const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook, bettorLevel, instagramUrl, tiktokUrl, xUrl, discordUrl }: SignUpData) => {
     try {

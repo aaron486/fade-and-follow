@@ -33,33 +33,33 @@ const Dashboard = () => {
       
       <main className="pt-16">
         <div className="flex h-[calc(100vh-4rem)]">
-          {/* Left Sidebar - Profile & Quick Stats */}
-          <div className="w-80 flex-shrink-0 overflow-y-auto border-r space-y-4 p-4">
+          {/* Left Sidebar - Profile & Friends */}
+          <div className="w-64 flex-shrink-0 overflow-y-auto border-r space-y-4 p-4">
             <ProfileSidebar />
             <FindFriends />
           </div>
           
-          {/* Main Content */}
+          {/* Main Content Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Instagram Stories Feature */}
-            <BetStoriesBar />
+            {/* Top Bars - Stories & Live Odds */}
+            <div className="flex-shrink-0">
+              <BetStoriesBar />
+              <LiveOddsBar />
+            </div>
             
-            {/* Live Betting Lines */}
-            <LiveOddsBar />
-            
-            {/* Chat & Feed Side by Side */}
-            <div className="flex-1 flex overflow-hidden gap-4 p-4">
-              {/* Chat Section */}
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <h2 className="text-2xl font-bold mb-4">Chat</h2>
+            {/* Three Column Layout */}
+            <div className="flex-1 flex overflow-hidden">
+              {/* Center - AI Feed (Main Focus) */}
+              <div className="flex-1 flex flex-col overflow-hidden p-4 border-r">
+                <FeedContent />
+              </div>
+              
+              {/* Right - Chat */}
+              <div className="w-96 flex-shrink-0 flex flex-col overflow-hidden p-4">
+                <h2 className="text-xl font-bold mb-4">Chat</h2>
                 <div className="flex-1 overflow-hidden">
                   <ChatLayout />
                 </div>
-              </div>
-              
-              {/* AI Feed Section */}
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <FeedContent />
               </div>
             </div>
           </div>

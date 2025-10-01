@@ -192,23 +192,25 @@ const ChatLayout = () => {
 
   const createDirectChat = async (friendUserId: string) => {
     try {
-      // Verify authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('User not authenticated');
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to start chatting",
+          variant: "destructive",
+        });
+        return null;
       }
 
       console.log('Creating direct chat:', {
-        currentUserId: session.user.id,
+        currentUserId: user.id,
         friendUserId,
-        sessionExists: !!session
       });
 
       // Verify friendship exists
       const { data: friendship, error: friendshipError } = await supabase
         .from('friendships')
         .select('id')
-        .or(`and(user1_id.eq.${session.user.id},user2_id.eq.${friendUserId}),and(user1_id.eq.${friendUserId},user2_id.eq.${session.user.id})`)
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${friendUserId}),and(user1_id.eq.${friendUserId},user2_id.eq.${user.id})`)
         .maybeSingle();
 
       if (friendshipError) {
@@ -229,7 +231,7 @@ const ChatLayout = () => {
       const { data: existingChats } = await supabase
         .from('channel_members')
         .select('channel_id, channels!inner(type)')
-        .eq('user_id', session.user.id);
+        .eq('user_id', user.id);
 
       if (existingChats) {
         for (const chat of existingChats) {
@@ -241,10 +243,10 @@ const ChatLayout = () => {
               .eq('channel_id', chat.channel_id);
 
             const memberIds = members?.map(m => m.user_id) || [];
-            if (memberIds.includes(friendUserId) && memberIds.includes(session.user.id)) {
+            if (memberIds.includes(friendUserId) && memberIds.includes(user.id)) {
               // Direct chat already exists, select it
               console.log('Found existing direct chat:', chat.channel_id);
-              const existingConv = conversations.find(c => c.id === chat.channel_id);
+              const existingConv = conversations.find(c => c.channelId === chat.channel_id);
               if (existingConv) {
                 setSelectedConversation(existingConv);
               }
@@ -254,14 +256,14 @@ const ChatLayout = () => {
         }
       }
 
-      // Create new direct chat using session user ID
-      console.log('Creating new channel with user:', session.user.id);
+      // Create new direct chat
+      console.log('Creating new channel with user:', user.id);
       const { data: channel, error: channelError } = await supabase
         .from('channels')
         .insert({
-          name: `DM-${session.user.id}-${friendUserId}`,
+          name: `DM-${user.id}-${friendUserId}`,
           type: 'direct',
-          created_by: session.user.id,
+          created_by: user.id,
         })
         .select()
         .single();
@@ -279,7 +281,7 @@ const ChatLayout = () => {
         .from('channel_members')
         .insert({ 
           channel_id: channel.id, 
-          user_id: session.user.id, 
+          user_id: user.id, 
           role: 'admin' 
         });
 

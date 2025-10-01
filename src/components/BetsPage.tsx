@@ -61,6 +61,7 @@ interface UserBet {
   notes?: string;
   placed_at: string;
   resolved_at?: string;
+  user_id?: string;
 }
 
 export const BetsPage = () => {
@@ -69,6 +70,8 @@ export const BetsPage = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [friendPicks, setFriendPicks] = useState<FriendPick[]>([]);
   const [userBets, setUserBets] = useState<UserBet[]>([]);
+  const [allBets, setAllBets] = useState<UserBet[]>([]);
+  const [selectedBetIds, setSelectedBetIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [showBetForm, setShowBetForm] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{
@@ -85,6 +88,7 @@ export const BetsPage = () => {
     loadGames();
     loadFriendPicks();
     loadUserBets();
+    loadAllBets();
   }, [user]);
 
   const loadGames = async () => {
@@ -126,6 +130,41 @@ export const BetsPage = () => {
     } catch (error) {
       console.error('Error loading user bets:', error);
     }
+  };
+
+  const loadAllBets = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bets')
+        .select('*')
+        .order('placed_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setAllBets(data || []);
+    } catch (error) {
+      console.error('Error loading all bets:', error);
+    }
+  };
+
+  const toggleBetSelection = (betId: string) => {
+    setSelectedBetIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(betId)) {
+        newSet.delete(betId);
+      } else {
+        newSet.add(betId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllBets = () => {
+    setSelectedBetIds(new Set(allBets.map(bet => bet.id)));
+  };
+
+  const deselectAllBets = () => {
+    setSelectedBetIds(new Set());
   };
 
   const loadFriendPicks = async () => {
@@ -291,8 +330,11 @@ export const BetsPage = () => {
             </Card>
           )}
 
-          <Tabs defaultValue="my-bets" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs defaultValue="all-bets" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="all-bets">
+                All Bets ({allBets.length})
+              </TabsTrigger>
               <TabsTrigger value="my-bets">
                 My Bets ({userBets.length})
               </TabsTrigger>
@@ -301,6 +343,106 @@ export const BetsPage = () => {
                 Friends ({friendPicks.length})
               </TabsTrigger>
             </TabsList>
+
+            {/* All Bets Tab */}
+            <TabsContent value="all-bets" className="space-y-3 mt-4">
+              {allBets.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground mb-2">No bets in database</p>
+                    <p className="text-sm text-muted-foreground">
+                      All bets from the system will appear here
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div className="flex gap-2 mb-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={selectAllBets}
+                      disabled={selectedBetIds.size === allBets.length}
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={deselectAllBets}
+                      disabled={selectedBetIds.size === 0}
+                    >
+                      Deselect All
+                    </Button>
+                    {selectedBetIds.size > 0 && (
+                      <Badge variant="secondary" className="ml-auto">
+                        {selectedBetIds.size} selected
+                      </Badge>
+                    )}
+                  </div>
+                  {allBets.map((bet) => (
+                    <Card 
+                      key={bet.id}
+                      className={`cursor-pointer transition-colors ${
+                        selectedBetIds.has(bet.id) ? 'ring-2 ring-primary' : ''
+                      }`}
+                      onClick={() => toggleBetSelection(bet.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedBetIds.has(bet.id)}
+                            onChange={() => toggleBetSelection(bet.id)}
+                            className="mt-1"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="outline">{bet.sport}</Badge>
+                                  <Badge 
+                                    variant={
+                                      bet.status === 'win' ? 'default' :
+                                      bet.status === 'loss' ? 'destructive' :
+                                      bet.status === 'push' ? 'secondary' :
+                                      'outline'
+                                    }
+                                  >
+                                    {bet.status.toUpperCase()}
+                                  </Badge>
+                                </div>
+                                <p className="font-semibold mb-1">{bet.event_name}</p>
+                                <p className="text-sm text-muted-foreground mb-1">
+                                  {bet.market}: {bet.selection}
+                                </p>
+                                {bet.notes && (
+                                  <p className="text-xs text-muted-foreground italic mt-1">
+                                    "{bet.notes}"
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className="font-semibold">
+                                  {formatOdds(bet.odds)}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {bet.stake_units}u
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatTime(bet.placed_at)}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </>
+              )}
+            </TabsContent>
 
             {/* My Bets Tab */}
             <TabsContent value="my-bets" className="space-y-3 mt-4">

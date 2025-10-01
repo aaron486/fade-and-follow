@@ -3,7 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Flame, Snowflake } from "lucide-react";
+import { Flame, Snowflake, Lock, TrendingUp, Target, Zap } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const mockLeaderboardData = [
   { rank: 1, name: "Aaron Hackett", units: "+52.8", streak: "10W", winRate: "78%", roi: "+15.2%" },
@@ -18,6 +20,7 @@ const mockLeaderboardData = [
 
 export const Leaderboard = () => {
   const [activeTab, setActiveTab] = useState("public");
+  const [selectedUser, setSelectedUser] = useState<typeof mockLeaderboardData[0] | null>(null);
 
   const getStreakInfo = (streak: string) => {
     const isWinning = streak.includes('W');
@@ -41,9 +44,13 @@ export const Leaderboard = () => {
         const streakInfo = getStreakInfo(user.streak);
         
         return (
-          <Card key={user.rank} className={`p-6 transition-all duration-300 hover:scale-[1.02] ${
-            index < 3 ? 'bg-gradient-to-r from-card to-primary/5 border-primary/20' : 'bg-card'
-          }`}>
+          <Card 
+            key={user.rank} 
+            onClick={() => setSelectedUser(user)}
+            className={`p-6 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${
+              index < 3 ? 'bg-gradient-to-r from-card to-primary/5 border-primary/20' : 'bg-card'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
@@ -162,6 +169,132 @@ export const Leaderboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* User Profile / Purchase Modal */}
+      <Dialog open={selectedUser !== null} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent className="max-w-2xl">
+          {selectedUser && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">Unlock Premium Picks</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                {/* User Profile Header */}
+                <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg">
+                  <Avatar className="h-20 w-20 border-4 border-primary">
+                    <AvatarFallback className="bg-secondary text-secondary-foreground font-bold text-xl">
+                      {selectedUser.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold">{selectedUser.name}</h3>
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <span className="flex items-center gap-1">
+                        <TrendingUp className="h-4 w-4 text-accent" />
+                        <span className="font-semibold">{selectedUser.units}</span> Units
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Target className="h-4 w-4 text-accent" />
+                        <span className="font-semibold">{selectedUser.winRate}</span> Win Rate
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Zap className="h-4 w-4 text-accent" />
+                        <span className="font-semibold">{selectedUser.roi}</span> ROI
+                      </span>
+                    </div>
+                  </div>
+                  <Badge variant="default" className="text-lg px-3 py-1">
+                    #{selectedUser.rank}
+                  </Badge>
+                </div>
+
+                {/* Pricing Options */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold flex items-center gap-2">
+                    <Lock className="h-5 w-5 text-primary" />
+                    Choose Your Plan
+                  </h4>
+                  
+                  <div className="grid gap-4">
+                    {/* Daily Picks */}
+                    <Card className="p-4 hover:border-primary transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h5 className="font-bold text-lg">Daily Picks</h5>
+                          <p className="text-sm text-muted-foreground">Get today's premium picks</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-accent">$4.99</div>
+                          <Button className="mt-2">Unlock Now</Button>
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Weekly Picks */}
+                    <Card className="p-4 hover:border-primary transition-colors cursor-pointer border-2 border-primary">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-bold text-lg">Weekly Picks</h5>
+                            <Badge variant="default">Popular</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">7 days of winning picks</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-accent">$24.99</div>
+                          <Button className="mt-2">Unlock Now</Button>
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Monthly Subscription */}
+                    <Card className="p-4 hover:border-primary transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-bold text-lg">Monthly VIP</h5>
+                            <Badge className="bg-gradient-to-r from-accent to-primary">Best Value</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">All picks + exclusive analysis</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-muted-foreground line-through">$119.99</div>
+                          <div className="text-2xl font-bold text-accent">$79.99</div>
+                          <Button className="mt-2 bg-gradient-to-r from-accent to-primary">Unlock Now</Button>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Stats Preview */}
+                <div className="p-4 bg-muted rounded-lg">
+                  <h5 className="font-semibold mb-3">What You Get:</h5>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-accent"></div>
+                      Real-time pick notifications
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-accent"></div>
+                      Detailed analysis and reasoning
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-accent"></div>
+                      Access to winning streak picks
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-accent"></div>
+                      Money-back guarantee if under 55% win rate
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

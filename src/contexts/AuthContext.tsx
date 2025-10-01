@@ -43,54 +43,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    let isMounted = true;
-    let subscription: any;
-    let sessionCheckTimeout: ReturnType<typeof setTimeout>;
+    let mounted = true;
 
-    const initializeAuth = async () => {
-      try {
-        // Get initial session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (isMounted) {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes - only update on actual auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
-          setLoading(false);
-        }
-
-        // Set up listener with rate limit protection
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-          (event, session) => {
-            if (!isMounted) return;
-            
-            // Clear any pending session checks
-            clearTimeout(sessionCheckTimeout);
-            
-            // Only update state for specific events to avoid loops
-            if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-              sessionCheckTimeout = setTimeout(() => {
-                if (isMounted) {
-                  setSession(session);
-                  setUser(session?.user ?? null);
-                }
-              }, 100);
-            }
-          }
-        );
-        subscription = authListener.subscription;
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        if (isMounted) {
-          setLoading(false);
         }
       }
-    };
-
-    initializeAuth();
+    );
 
     return () => {
-      isMounted = false;
-      clearTimeout(sessionCheckTimeout);
-      subscription?.unsubscribe();
+      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 

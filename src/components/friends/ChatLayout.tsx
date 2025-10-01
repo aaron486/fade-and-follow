@@ -140,27 +140,37 @@ const ChatLayout = () => {
 
   const createGroupChannel = async (name: string) => {
     try {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const { data: channel, error: channelError } = await supabase
         .from('channels')
         .insert({
           name,
           type: 'group',
-          created_by: user?.id,
+          created_by: user.id,
         })
         .select()
         .single();
 
-      if (channelError) throw channelError;
+      if (channelError) {
+        console.error('Channel creation error:', channelError);
+        throw channelError;
+      }
 
       const { error: memberError } = await supabase
         .from('channel_members')
         .insert({
           channel_id: channel.id,
-          user_id: user?.id,
+          user_id: user.id,
           role: 'admin',
         });
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error('Member addition error:', memberError);
+        throw memberError;
+      }
 
       toast({
         title: "Success",
@@ -182,11 +192,15 @@ const ChatLayout = () => {
 
   const createDirectChat = async (friendUserId: string) => {
     try {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       // Check if direct chat already exists
       const { data: existingChats } = await supabase
         .from('channel_members')
         .select('channel_id, channels!inner(type)')
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
       if (existingChats) {
         for (const chat of existingChats) {
@@ -198,8 +212,12 @@ const ChatLayout = () => {
               .eq('channel_id', chat.channel_id);
 
             const memberIds = members?.map(m => m.user_id) || [];
-            if (memberIds.includes(friendUserId) && memberIds.includes(user?.id)) {
-              // Direct chat already exists, just return its ID
+            if (memberIds.includes(friendUserId) && memberIds.includes(user.id)) {
+              // Direct chat already exists, select it
+              const existingConv = conversations.find(c => c.id === chat.channel_id);
+              if (existingConv) {
+                setSelectedConversation(existingConv);
+              }
               return chat.channel_id;
             }
           }
@@ -210,24 +228,45 @@ const ChatLayout = () => {
       const { data: channel, error: channelError } = await supabase
         .from('channels')
         .insert({
-          name: `DM-${user?.id}-${friendUserId}`,
+          name: `DM-${user.id}-${friendUserId}`,
           type: 'direct',
-          created_by: user?.id,
+          created_by: user.id,
         })
         .select()
         .single();
 
-      if (channelError) throw channelError;
+      if (channelError) {
+        console.error('Channel creation error:', channelError);
+        throw channelError;
+      }
 
-      // Add both users as members
-      const { error: membersError } = await supabase
+      // Add creator as admin first, then add the friend
+      const { error: creatorError } = await supabase
         .from('channel_members')
-        .insert([
-          { channel_id: channel.id, user_id: user?.id, role: 'member' },
-          { channel_id: channel.id, user_id: friendUserId, role: 'member' },
-        ]);
+        .insert({ 
+          channel_id: channel.id, 
+          user_id: user.id, 
+          role: 'admin' 
+        });
 
-      if (membersError) throw membersError;
+      if (creatorError) {
+        console.error('Creator member error:', creatorError);
+        throw creatorError;
+      }
+
+      // Now add the friend as a member
+      const { error: friendError } = await supabase
+        .from('channel_members')
+        .insert({ 
+          channel_id: channel.id, 
+          user_id: friendUserId, 
+          role: 'member' 
+        });
+
+      if (friendError) {
+        console.error('Friend member error:', friendError);
+        throw friendError;
+      }
 
       // Reset loading flag before reload
       loadingRef.current = false;

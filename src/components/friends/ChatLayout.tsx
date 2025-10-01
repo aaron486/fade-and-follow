@@ -7,13 +7,14 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface Conversation {
   id: string;
+  channelId: string;
   type: 'dm' | 'group';
   name: string;
   avatar_url?: string;
   lastMessage?: string;
   lastMessageTime?: string;
   unreadCount?: number;
-  otherUserId?: string; // For DMs
+  otherUserId?: string;
 }
 
 const ChatLayout = () => {
@@ -33,57 +34,71 @@ const ChatLayout = () => {
     try {
       setLoading(true);
 
-      // Load friendships (DM conversations)
-      const { data: friendships, error: friendshipsError } = await supabase
-        .from('friendships')
-        .select(`
-          *,
-          user1_profile:profiles!friendships_user1_id_fkey(user_id, username, display_name, avatar_url),
-          user2_profile:profiles!friendships_user2_id_fkey(user_id, username, display_name, avatar_url)
-        `)
-        .or(`user1_id.eq.${user?.id},user2_id.eq.${user?.id}`);
-
-      if (friendshipsError) throw friendshipsError;
-
-      // Load group channels
+      // Load all channels where user is a member
       const { data: channelMemberships, error: channelsError } = await supabase
         .from('channel_members')
         .select(`
           channel_id,
           channels (
             id,
-            name
+            name,
+            type,
+            created_at
           )
         `)
         .eq('user_id', user?.id);
 
       if (channelsError) throw channelsError;
 
-      // Format friendships as DM conversations
-      const dmConversations: Conversation[] = (friendships || []).map(friendship => {
-        const friendProfile = friendship.user1_id === user?.id 
-          ? friendship.user2_profile 
-          : friendship.user1_profile;
-        
-        return {
-          id: `dm-${friendship.id}`,
-          type: 'dm' as const,
-          name: friendProfile?.display_name || friendProfile?.username || 'Unknown User',
-          avatar_url: friendProfile?.avatar_url,
-          otherUserId: friendProfile?.user_id,
-        };
-      });
+      const allConversations: Conversation[] = [];
 
-      // Format channels as group conversations
-      const groupConversations: Conversation[] = (channelMemberships || [])
-        .filter(membership => membership.channels)
-        .map(membership => ({
-          id: `group-${membership.channels.id}`,
-          type: 'group' as const,
-          name: membership.channels.name,
-        }));
+      // Process each channel
+      for (const membership of channelMemberships || []) {
+        if (!membership.channels) continue;
 
-      setConversations([...dmConversations, ...groupConversations]);
+        const channel = membership.channels;
+
+        if (channel.type === 'direct') {
+          // For direct chats, get the other user's info
+          const { data: members } = await supabase
+            .from('channel_members')
+            .select('user_id')
+            .eq('channel_id', channel.id)
+            .neq('user_id', user?.id);
+
+          if (members && members.length > 0) {
+            const otherUserId = members[0].user_id;
+            
+            // Fetch the other user's profile
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('user_id, username, display_name, avatar_url')
+              .eq('user_id', otherUserId)
+              .single();
+
+            if (profile) {
+              allConversations.push({
+                id: `dm-${channel.id}`,
+                channelId: channel.id,
+                type: 'dm',
+                name: profile.display_name || profile.username || 'Unknown User',
+                avatar_url: profile.avatar_url,
+                otherUserId: profile.user_id,
+              });
+            }
+          }
+        } else {
+          // For group chats
+          allConversations.push({
+            id: `group-${channel.id}`,
+            channelId: channel.id,
+            type: 'group',
+            name: channel.name,
+          });
+        }
+      }
+
+      setConversations(allConversations);
     } catch (error: any) {
       console.error('Error loading conversations:', error);
       toast({
@@ -98,11 +113,11 @@ const ChatLayout = () => {
 
   const createGroupChannel = async (name: string) => {
     try {
-      // Create the channel
       const { data: channel, error: channelError } = await supabase
         .from('channels')
         .insert({
           name,
+          type: 'group',
           created_by: user?.id,
         })
         .select()
@@ -110,7 +125,6 @@ const ChatLayout = () => {
 
       if (channelError) throw channelError;
 
-      // Add creator as admin member
       const { error: memberError } = await supabase
         .from('channel_members')
         .insert({
@@ -134,6 +148,68 @@ const ChatLayout = () => {
         description: "Failed to create group channel",
         variant: "destructive",
       });
+    }
+  };
+
+  const createDirectChat = async (friendUserId: string) => {
+    try {
+      // Check if direct chat already exists
+      const { data: existingChats } = await supabase
+        .from('channel_members')
+        .select('channel_id, channels!inner(type)')
+        .eq('user_id', user?.id);
+
+      if (existingChats) {
+        for (const chat of existingChats) {
+          if (chat.channels?.type === 'direct') {
+            // Check if this direct chat includes the friend
+            const { data: members } = await supabase
+              .from('channel_members')
+              .select('user_id')
+              .eq('channel_id', chat.channel_id);
+
+            const memberIds = members?.map(m => m.user_id) || [];
+            if (memberIds.includes(friendUserId) && memberIds.includes(user?.id)) {
+              // Direct chat already exists, just return its ID
+              return chat.channel_id;
+            }
+          }
+        }
+      }
+
+      // Create new direct chat
+      const { data: channel, error: channelError } = await supabase
+        .from('channels')
+        .insert({
+          name: `DM-${user?.id}-${friendUserId}`,
+          type: 'direct',
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (channelError) throw channelError;
+
+      // Add both users as members
+      const { error: membersError } = await supabase
+        .from('channel_members')
+        .insert([
+          { channel_id: channel.id, user_id: user?.id, role: 'member' },
+          { channel_id: channel.id, user_id: friendUserId, role: 'member' },
+        ]);
+
+      if (membersError) throw membersError;
+
+      await loadConversations();
+      return channel.id;
+    } catch (error: any) {
+      console.error('Error creating direct chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create direct chat",
+        variant: "destructive",
+      });
+      return null;
     }
   };
 

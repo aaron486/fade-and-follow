@@ -62,54 +62,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
 
     try {
       setLoading(true);
-
-      // Get or create channel
-      let currentChannelId: string;
-
-      if (conversation.type === 'dm') {
-        // For DMs, find or create a private channel between the two users
-        const { data: existingChannel } = await supabase
-          .from('channel_members')
-          .select('channel_id')
-          .eq('user_id', user?.id)
-          .limit(1)
-          .single();
-
-        if (existingChannel) {
-          currentChannelId = existingChannel.channel_id;
-        } else {
-          // Create a private channel for this DM
-          const { data: newChannel, error: channelError } = await supabase
-            .from('channels')
-            .insert({
-              name: `DM-${user?.id}-${conversation.otherUserId}`,
-              created_by: user?.id,
-            })
-            .select()
-            .single();
-
-          if (channelError) throw channelError;
-
-          // Add both users as members
-          const { error: membersError } = await supabase
-            .from('channel_members')
-            .insert([
-              { channel_id: newChannel.id, user_id: user?.id, role: 'admin' },
-              { channel_id: newChannel.id, user_id: conversation.otherUserId, role: 'member' },
-            ]);
-
-          if (membersError) throw membersError;
-
-          currentChannelId = newChannel.id;
-        }
-      } else {
-        // For groups, extract the channel ID
-        currentChannelId = conversation.id.replace('group-', '');
-      }
-
+      const currentChannelId = conversation.channelId;
       setChannelId(currentChannelId);
 
-      // Load messages for this channel
+      // Load messages
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
@@ -152,7 +108,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
   const setupRealtimeSubscription = () => {
     if (!channelId) return;
 
-    const subscription = supabase
+    const channel = supabase
       .channel(`messages-${channelId}`)
       .on(
         'postgres_changes',
@@ -163,6 +119,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
           filter: `channel_id=eq.${channelId}`,
         },
         async (payload) => {
+          console.log('📨 New message received:', payload);
+          
           // Fetch the sender profile
           const { data: profile } = await supabase
             .from('profiles')
@@ -170,19 +128,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
             .eq('user_id', payload.new.sender_id)
             .single();
 
-          setMessages((prev) => [
-            ...prev,
-            {
-              ...(payload.new as Message),
-              sender_profile: profile || undefined,
-            },
-          ]);
+          const newMessage = {
+            ...(payload.new as Message),
+            sender_profile: profile || undefined,
+          };
+
+          setMessages((prev) => [...prev, newMessage]);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Realtime subscription status:', status);
+      });
 
     return () => {
-      subscription.unsubscribe();
+      channel.unsubscribe();
     };
   };
 

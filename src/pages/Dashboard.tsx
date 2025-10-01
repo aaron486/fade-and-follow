@@ -9,6 +9,7 @@ import { BottomNav } from '@/components/BottomNav';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
 import { BettingStats } from '@/components/BettingStats';
+import { Leaderboard } from '@/components/Leaderboard';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -60,10 +61,10 @@ const Dashboard = () => {
             </div>
           </div>
         );
-      case 'stats':
+      case 'leaderboard':
         return (
-          <div className="max-w-4xl mx-auto p-6">
-            <BettingStats userId={user.id} />
+          <div className="h-full overflow-y-auto">
+            <Leaderboard />
           </div>
         );
       default:

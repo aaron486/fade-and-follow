@@ -67,9 +67,9 @@ export const FeedContent = () => {
   }, [user]);
 
   return (
-    <div className="h-full overflow-hidden">
+    <div className="h-full flex flex-col">
       {/* Header - Fixed at top */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3">
+      <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">Feed</h2>
           <Button
@@ -83,29 +83,29 @@ export const FeedContent = () => {
         </div>
       </div>
 
-      {/* Scrollable Content with Snap */}
-      <div className="h-[calc(100%-4rem)] overflow-y-auto snap-y snap-mandatory scrollbar-hide">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
         {isLoadingFeed ? (
-          <div className="h-full flex items-center justify-center">
+          <div className="h-full flex items-center justify-center p-4">
             <div className="space-y-4 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
               <p className="text-muted-foreground">Loading your feed...</p>
             </div>
           </div>
         ) : feedItems.length > 0 ? (
-          <>
-            {/* Trending Friends Card - Full Width */}
-            <div className="snap-start min-h-[80vh] p-4">
+          <div className="space-y-4 p-4">
+            {/* Trending Friends Section */}
+            <div className="w-full">
               <TrendingFriends />
             </div>
 
-            {/* Feed Items - Full Width Cards */}
+            {/* Feed Items */}
             {feedItems.map((item) => (
-              <div key={item.id} className="snap-start min-h-[80vh] p-4">
+              <div key={item.id} className="w-full">
                 <FeedCard item={item} />
               </div>
             ))}
-          </>
+          </div>
         ) : (
           <div className="h-full flex items-center justify-center p-8">
             <div className="text-center max-w-md">

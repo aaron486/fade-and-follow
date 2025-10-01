@@ -67,51 +67,62 @@ export const FeedContent = () => {
   }, [user]);
 
   return (
-    <>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold">AI Feed</h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={loadFeed}
-          disabled={isLoadingFeed}
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingFeed ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+    <div className="h-full overflow-hidden">
+      {/* Header - Fixed at top */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">Feed</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={loadFeed}
+            disabled={isLoadingFeed}
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoadingFeed ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
-      {/* Trending Friends */}
-      <div className="mb-4">
-        <TrendingFriends />
-      </div>
-
-      {/* Feed Items */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Scrollable Content with Snap */}
+      <div className="h-[calc(100%-4rem)] overflow-y-auto snap-y snap-mandatory scrollbar-hide">
         {isLoadingFeed ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 bg-card rounded-lg animate-pulse" />
-            ))}
+          <div className="h-full flex items-center justify-center">
+            <div className="space-y-4 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground">Loading your feed...</p>
+            </div>
           </div>
         ) : feedItems.length > 0 ? (
-          <div className="space-y-4">
+          <>
+            {/* Trending Friends Card - Full Width */}
+            <div className="snap-start min-h-[80vh] p-4">
+              <TrendingFriends />
+            </div>
+
+            {/* Feed Items - Full Width Cards */}
             {feedItems.map((item) => (
-              <FeedCard key={item.id} item={item} />
+              <div key={item.id} className="snap-start min-h-[80vh] p-4">
+                <FeedCard item={item} />
+              </div>
             ))}
-          </div>
+          </>
         ) : (
-          <div className="text-center py-12 bg-card rounded-lg border border-border">
-            <p className="text-muted-foreground mb-4">
-              No feed items yet. Set your favorite team in your profile to get personalized insights!
-            </p>
-            <Button onClick={loadFeed} disabled={isLoadingFeed}>
-              Generate Feed
-            </Button>
+          <div className="h-full flex items-center justify-center p-8">
+            <div className="text-center max-w-md">
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                <RefreshCw className="w-10 h-10 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No feed items yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Set your favorite team in your profile to get personalized insights!
+              </p>
+              <Button onClick={loadFeed} disabled={isLoadingFeed} size="lg">
+                Generate Feed
+              </Button>
+            </div>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };

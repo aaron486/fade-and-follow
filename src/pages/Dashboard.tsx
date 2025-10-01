@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import ProfileSidebar from '@/components/ProfileSidebar';
-import ChatLayout from '@/components/friends/ChatLayout';
+import { DiscordChat } from '@/components/DiscordChat';
 import { FeedContent } from '@/components/FeedContent';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
@@ -50,11 +50,8 @@ const Dashboard = () => {
             {/* Three Column Layout */}
             <div className="flex-1 flex overflow-hidden">
               {/* Center - Chat (Main Focus) */}
-              <div className="flex-1 flex flex-col overflow-hidden p-4 border-r">
-                <h2 className="text-2xl font-bold mb-4">Chat</h2>
-                <div className="flex-1 overflow-hidden">
-                  <ChatLayout />
-                </div>
+              <div className="flex-1 flex flex-col overflow-hidden border-r">
+                <DiscordChat />
               </div>
               
               {/* Right - AI Feed */}

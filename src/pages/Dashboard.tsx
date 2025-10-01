@@ -2,12 +2,10 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
-import ProfileSidebar from '@/components/ProfileSidebar';
 import { DiscordChat } from '@/components/DiscordChat';
 import { FeedContent } from '@/components/FeedContent';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
-import FindFriends from '@/components/FindFriends';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -33,13 +31,7 @@ const Dashboard = () => {
       
       <main className="pt-16">
         <div className="flex h-[calc(100vh-4rem)]">
-          {/* Left Sidebar - Profile & Friends */}
-          <div className="w-64 flex-shrink-0 overflow-y-auto border-r space-y-4 p-4">
-            <ProfileSidebar />
-            <FindFriends />
-          </div>
-          
-          {/* Main Content Area */}
+          {/* Main Content Area - Full Width */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Top Bars - Stories & Live Odds */}
             <div className="flex-shrink-0">
@@ -47,10 +39,10 @@ const Dashboard = () => {
               <LiveOddsBar />
             </div>
             
-            {/* Three Column Layout */}
+            {/* Chat and Feed Layout */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Center - Chat (Main Focus) */}
-              <div className="flex-1 flex flex-col overflow-hidden border-r">
+              {/* Chat (Expanded Main Focus) */}
+              <div className="flex-[2] flex flex-col overflow-hidden border-r">
                 <DiscordChat />
               </div>
               

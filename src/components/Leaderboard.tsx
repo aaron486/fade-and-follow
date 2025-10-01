@@ -1,85 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Flame, Snowflake } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 
-interface LeaderboardEntry {
-  rank: number;
-  user_id: string;
-  name: string;
-  avatar_url?: string;
-  units: string;
-  streak: string;
-  winRate: string;
-  roi: string;
-}
+const mockLeaderboardData = [
+  { rank: 1, name: "Aaron Hackett", units: "+52.8", streak: "10W", winRate: "78%", roi: "+15.2%" },
+  { rank: 2, name: "Samir Bouhmaid", units: "+47.2", streak: "8W", winRate: "73%", roi: "+12.3%" },
+  { rank: 3, name: "SharpShooter", units: "+41.8", streak: "5W", winRate: "69%", roi: "+9.8%" },
+  { rank: 4, name: "FadeGod", units: "+38.5", streak: "12W", winRate: "71%", roi: "+11.1%" },
+  { rank: 5, name: "PropMaster", units: "+35.2", streak: "3L", winRate: "66%", roi: "+8.2%" },
+  { rank: 6, name: "LineHunter", units: "+32.1", streak: "7W", winRate: "68%", roi: "+7.9%" },
+  { rank: 7, name: "BankrollBoss", units: "+29.8", streak: "2W", winRate: "64%", roi: "+6.5%" },
+  { rank: 8, name: "OddsWizard", units: "+27.3", streak: "1L", winRate: "62%", roi: "+5.8%" },
+];
 
 export const Leaderboard = () => {
   const [activeTab, setActiveTab] = useState("public");
-  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    loadLeaderboardData(activeTab);
-  }, [activeTab]);
-
-  const loadLeaderboardData = async (tab: string) => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('user_records')
-        .select(`
-          user_id,
-          wins,
-          losses,
-          pushes,
-          units_won,
-          current_streak,
-          profiles!inner(username, display_name, avatar_url)
-        `)
-        .order('units_won', { ascending: false })
-        .limit(20);
-
-      // For sport-specific tabs, we need to filter by sport
-      // This would require joining with bets table, but for now we'll show all
-      
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      const formatted: LeaderboardEntry[] = (data || []).map((entry: any, index: number) => {
-        const totalBets = entry.wins + entry.losses + entry.pushes;
-        const winRate = totalBets > 0 ? ((entry.wins / (entry.wins + entry.losses)) * 100).toFixed(0) : "0";
-        const unitsWon = Number(entry.units_won) || 0;
-        const roi = totalBets > 0 ? ((unitsWon / totalBets) * 100).toFixed(1) : "0.0";
-        
-        const streak = entry.current_streak;
-        const streakStr = streak > 0 ? `${Math.abs(streak)}W` : streak < 0 ? `${Math.abs(streak)}L` : "0";
-        
-        return {
-          rank: index + 1,
-          user_id: entry.user_id,
-          name: entry.profiles?.display_name || entry.profiles?.username || "Anonymous",
-          avatar_url: entry.profiles?.avatar_url,
-          units: unitsWon >= 0 ? `+${unitsWon.toFixed(1)}` : unitsWon.toFixed(1),
-          streak: streakStr,
-          winRate: `${winRate}%`,
-          roi: `${Number(roi) >= 0 ? '+' : ''}${roi}%`
-        };
-      });
-
-      setLeaderboardData(formatted);
-    } catch (error) {
-      console.error('Error loading leaderboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getStreakInfo = (streak: string) => {
     const isWinning = streak.includes('W');
@@ -97,26 +35,9 @@ export const Leaderboard = () => {
     };
   };
 
-  const renderLeaderboardList = (data: LeaderboardEntry[]) => {
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      );
-    }
-
-    if (data.length === 0) {
-      return (
-        <div className="text-center py-12 text-muted-foreground">
-          No betting data available yet. Start tracking your bets!
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid gap-4">
-        {data.map((user, index) => {
+  const renderLeaderboardList = (data: typeof mockLeaderboardData) => (
+    <div className="grid gap-4">
+      {data.map((user, index) => {
         const streakInfo = getStreakInfo(user.streak);
         
         return (
@@ -134,7 +55,6 @@ export const Leaderboard = () => {
                   {user.rank}
                 </div>
                 <Avatar className="w-12 h-12">
-                  {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
                   <AvatarFallback className="bg-secondary text-secondary-foreground font-semibold">
                     {user.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
@@ -192,9 +112,8 @@ export const Leaderboard = () => {
           </Card>
         );
       })}
-      </div>
-    );
-  };
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -219,27 +138,27 @@ export const Leaderboard = () => {
           </TabsList>
 
           <TabsContent value="public">
-            {renderLeaderboardList(leaderboardData)}
+            {renderLeaderboardList(mockLeaderboardData)}
           </TabsContent>
 
           <TabsContent value="private">
-            {renderLeaderboardList(leaderboardData)}
+            {renderLeaderboardList(mockLeaderboardData.slice(0, 5))}
           </TabsContent>
 
           <TabsContent value="celebrity">
-            {renderLeaderboardList(leaderboardData)}
+            {renderLeaderboardList(mockLeaderboardData.slice(0, 6))}
           </TabsContent>
 
           <TabsContent value="football">
-            {renderLeaderboardList(leaderboardData)}
+            {renderLeaderboardList(mockLeaderboardData.slice(1, 7))}
           </TabsContent>
 
           <TabsContent value="basketball">
-            {renderLeaderboardList(leaderboardData)}
+            {renderLeaderboardList(mockLeaderboardData.slice(2, 8))}
           </TabsContent>
 
           <TabsContent value="props">
-            {renderLeaderboardList(leaderboardData)}
+            {renderLeaderboardList(mockLeaderboardData.slice(0, 7))}
           </TabsContent>
         </Tabs>
       </div>

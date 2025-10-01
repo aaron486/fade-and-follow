@@ -1,17 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MessageSquare, Hash, Plus } from 'lucide-react';
+import { MessageSquare, Hash, Plus, Search, UserPlus } from 'lucide-react';
 import { Conversation } from './ChatLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+
+interface Friend {
+  user_id: string;
+  username: string;
+  display_name: string;
+  avatar_url?: string;
+}
 
 interface ConversationsListProps {
   conversations: Conversation[];
   selectedConversation: Conversation | null;
   onSelectConversation: (conversation: Conversation) => void;
   onCreateGroup: (name: string) => void;
+  onStartDirectChat: (friendUserId: string) => Promise<string | null>;
   loading: boolean;
 }
 
@@ -20,10 +31,73 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   selectedConversation,
   onSelectConversation,
   onCreateGroup,
+  onStartDirectChat,
   loading,
 }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [groupName, setGroupName] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [friendSearchQuery, setFriendSearchQuery] = useState('');
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
+
+  useEffect(() => {
+    if (user && friendSearchQuery.length > 0) {
+      searchFriends();
+    } else {
+      setFriends([]);
+    }
+  }, [friendSearchQuery, user]);
+
+  const searchFriends = async () => {
+    if (!user || friendSearchQuery.length < 2) return;
+
+    try {
+      setLoadingFriends(true);
+
+      // Get all friendships
+      const { data: friendships, error: friendshipsError } = await supabase
+        .from('friendships')
+        .select('user1_id, user2_id')
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+
+      if (friendshipsError) throw friendshipsError;
+
+      const friendIds = friendships?.map(f => 
+        f.user1_id === user.id ? f.user2_id : f.user1_id
+      ) || [];
+
+      if (friendIds.length === 0) {
+        setFriends([]);
+        return;
+      }
+
+      // Search friend profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, username, display_name, avatar_url')
+        .in('user_id', friendIds)
+        .or(`username.ilike.%${friendSearchQuery}%,display_name.ilike.%${friendSearchQuery}%`)
+        .limit(5);
+
+      if (profilesError) throw profilesError;
+
+      setFriends(profiles || []);
+    } catch (error) {
+      console.error('Error searching friends:', error);
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
+
+  const handleStartChat = async (friendUserId: string) => {
+    const channelId = await onStartDirectChat(friendUserId);
+    if (channelId) {
+      setFriendSearchQuery('');
+      setFriends([]);
+    }
+  };
 
   const handleCreateGroup = () => {
     if (groupName.trim()) {
@@ -40,7 +114,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     <div className="w-80 border-r flex flex-col bg-muted/30">
       <div className="p-4 border-b">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-lg">Messages</h2>
+          <h2 className="font-semibold text-lg">Friends</h2>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline">
@@ -71,6 +145,56 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
             </DialogContent>
           </Dialog>
         </div>
+        
+        {/* Friend Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search friends to chat..."
+            value={friendSearchQuery}
+            onChange={(e) => setFriendSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {/* Friend Search Results */}
+        {friendSearchQuery.length > 0 && (
+          <div className="mt-2 border rounded-lg bg-card max-h-48 overflow-y-auto">
+            {loadingFriends ? (
+              <div className="p-3 text-sm text-muted-foreground text-center">
+                Searching...
+              </div>
+            ) : friends.length === 0 ? (
+              <div className="p-3 text-sm text-muted-foreground text-center">
+                No friends found
+              </div>
+            ) : (
+              friends.map((friend) => (
+                <button
+                  key={friend.user_id}
+                  onClick={() => handleStartChat(friend.user_id)}
+                  className="w-full flex items-center gap-3 p-2 hover:bg-accent transition-colors"
+                >
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={friend.avatar_url} />
+                    <AvatarFallback>
+                      {(friend.display_name || friend.username || 'U').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="font-medium text-sm truncate">
+                      {friend.display_name || friend.username}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      @{friend.username}
+                    </div>
+                  </div>
+                  <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       <ScrollArea className="flex-1">

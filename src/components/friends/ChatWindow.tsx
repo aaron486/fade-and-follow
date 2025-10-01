@@ -191,8 +191,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
       <div className="flex-1 flex items-center justify-center bg-background/50">
         <div className="text-center text-muted-foreground">
           <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium mb-2">Welcome to Messages</p>
-          <p className="text-sm">Select a conversation to start chatting</p>
+          <p className="text-lg font-medium mb-2">Welcome to Friends</p>
+          <p className="text-sm">Search for a friend to start chatting</p>
         </div>
       </div>
     );

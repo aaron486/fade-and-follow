@@ -226,6 +226,7 @@ const ChatLayout = () => {
         selectedConversation={selectedConversation}
         onSelectConversation={setSelectedConversation}
         onCreateGroup={createGroupChannel}
+        onStartDirectChat={createDirectChat}
         loading={loading}
       />
       <ChatWindow

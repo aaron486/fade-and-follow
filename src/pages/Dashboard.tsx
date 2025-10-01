@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import ProfileSidebar from '@/components/ProfileSidebar';
-import BettingFeed from '@/components/BettingFeed';
+import ChatLayout from '@/components/friends/ChatLayout';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
 
@@ -44,9 +44,9 @@ const Dashboard = () => {
             {/* Live Betting Lines */}
             <LiveOddsBar />
             
-            {/* Friend Activity Feed */}
-            <div className="flex-1 overflow-y-auto">
-              <BettingFeed />
+            {/* Chat Feature */}
+            <div className="flex-1 overflow-hidden p-4">
+              <ChatLayout />
             </div>
           </div>
         </div>

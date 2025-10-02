@@ -42,10 +42,119 @@ const SPORTS = [
   { value: 'soccer_epl', label: 'EPL' },
 ];
 
+const MOCK_EVENTS: OddsEvent[] = [
+  {
+    id: 'mock-1',
+    sport_key: 'americanfootball_nfl',
+    sport_title: 'NFL',
+    commence_time: new Date(Date.now() + 86400000).toISOString(),
+    home_team: 'Kansas City Chiefs',
+    away_team: 'Buffalo Bills',
+    bookmakers: [{
+      key: 'draftkings',
+      title: 'DraftKings',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'Kansas City Chiefs', price: -150 },
+            { name: 'Buffalo Bills', price: 130 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'Kansas City Chiefs', price: -110, point: -3.5 },
+            { name: 'Buffalo Bills', price: -110, point: 3.5 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -110, point: 51.5 },
+            { name: 'Under', price: -110, point: 51.5 }
+          ]
+        }
+      ]
+    }]
+  },
+  {
+    id: 'mock-2',
+    sport_key: 'basketball_nba',
+    sport_title: 'NBA',
+    commence_time: new Date(Date.now() + 172800000).toISOString(),
+    home_team: 'Los Angeles Lakers',
+    away_team: 'Boston Celtics',
+    bookmakers: [{
+      key: 'fanduel',
+      title: 'FanDuel',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'Los Angeles Lakers', price: 105 },
+            { name: 'Boston Celtics', price: -125 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'Los Angeles Lakers', price: -110, point: 2.5 },
+            { name: 'Boston Celtics', price: -110, point: -2.5 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -115, point: 228.5 },
+            { name: 'Under', price: -105, point: 228.5 }
+          ]
+        }
+      ]
+    }]
+  },
+  {
+    id: 'mock-3',
+    sport_key: 'baseball_mlb',
+    sport_title: 'MLB',
+    commence_time: new Date(Date.now() + 259200000).toISOString(),
+    home_team: 'New York Yankees',
+    away_team: 'Houston Astros',
+    bookmakers: [{
+      key: 'betmgm',
+      title: 'BetMGM',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'New York Yankees', price: -140 },
+            { name: 'Houston Astros', price: 120 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'New York Yankees', price: -115, point: -1.5 },
+            { name: 'Houston Astros', price: -105, point: 1.5 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -110, point: 8.5 },
+            { name: 'Under', price: -110, point: 8.5 }
+          ]
+        }
+      ]
+    }]
+  }
+];
+
 const LiveOddsBar = () => {
   const [events, setEvents] = useState<OddsEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSport, setSelectedSport] = useState('upcoming');
+  const [useMockData, setUseMockData] = useState(false);
 
   const fetchOdds = async (sport: string) => {
     setLoading(true);
@@ -56,14 +165,23 @@ const LiveOddsBar = () => {
 
       if (error) {
         console.error('Error fetching odds:', error);
+        setUseMockData(true);
+        setEvents(MOCK_EVENTS);
+        setLoading(false);
         return;
       }
 
-      if (data?.events) {
-        setEvents(data.events.slice(0, 10)); // Show first 10 events
+      if (data?.events && data.events.length > 0) {
+        setEvents(data.events.slice(0, 10));
+        setUseMockData(false);
+      } else {
+        setUseMockData(true);
+        setEvents(MOCK_EVENTS);
       }
     } catch (error) {
       console.error('Error fetching odds:', error);
+      setUseMockData(true);
+      setEvents(MOCK_EVENTS);
     } finally {
       setLoading(false);
     }
@@ -107,6 +225,11 @@ const LiveOddsBar = () => {
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary animate-pulse" />
             <h3 className="font-semibold text-sm">Live Betting Lines</h3>
+            {useMockData && (
+              <Badge variant="outline" className="text-xs">
+                Demo Data
+              </Badge>
+            )}
           </div>
           <Select value={selectedSport} onValueChange={setSelectedSport}>
             <SelectTrigger className="w-48 h-9">

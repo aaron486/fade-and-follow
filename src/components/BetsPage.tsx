@@ -12,7 +12,11 @@ import {
   TrendingDown, 
   RefreshCw,
   Clock,
-  Plus
+  Plus,
+  Check,
+  X,
+  Minus,
+  Trash2
 } from 'lucide-react';
 import { BetForm } from '@/components/BetForm';
 import BetConfirmation from '@/components/BetConfirmation';
@@ -73,6 +77,7 @@ export const BetsPage = () => {
   const [allBets, setAllBets] = useState<UserBet[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBetForm, setShowBetForm] = useState(false);
+  const [updatingBetId, setUpdatingBetId] = useState<string | null>(null);
   const [selectedBet, setSelectedBet] = useState<{
     sport: string;
     event_name: string;
@@ -235,11 +240,78 @@ export const BetsPage = () => {
   const handleBetSuccess = () => {
     setSelectedBet(null);
     setShowBetForm(false);
-    loadUserBets(); // Refresh user's bets
+    loadUserBets();
+    loadAllBets();
     toast({
       title: "Bet Placed!",
       description: "Your bet has been recorded successfully.",
     });
+  };
+
+  const updateBetStatus = async (betId: string, status: 'win' | 'loss' | 'push' | 'pending') => {
+    setUpdatingBetId(betId);
+    try {
+      const updateData: any = { status };
+      
+      // Only set resolved_at if status is not pending
+      if (status !== 'pending') {
+        updateData.resolved_at = new Date().toISOString();
+      } else {
+        updateData.resolved_at = null;
+      }
+
+      const { error } = await supabase
+        .from('bets')
+        .update(updateData)
+        .eq('id', betId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Bet Updated",
+        description: `Bet marked as ${status}`,
+      });
+
+      loadUserBets();
+      loadAllBets();
+    } catch (error) {
+      console.error('Error updating bet:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update bet status",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingBetId(null);
+    }
+  };
+
+  const deleteBet = async (betId: string) => {
+    if (!confirm('Are you sure you want to delete this bet?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('bets')
+        .delete()
+        .eq('id', betId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Bet Deleted",
+        description: "Bet has been removed",
+      });
+
+      loadUserBets();
+      loadAllBets();
+    } catch (error) {
+      console.error('Error deleting bet:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete bet",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTailFade = (pick: FriendPick, action: 'tail' | 'fade') => {
@@ -436,7 +508,48 @@ export const BetsPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                userBets.map((bet) => (
+                <>
+                  {/* Stats Summary */}
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-yellow-600">
+                            {userBets.filter(b => b.status === 'pending').length}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Pending</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {userBets.filter(b => b.status === 'win').length}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Won</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-red-600">
+                            {userBets.filter(b => b.status === 'loss').length}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Lost</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">
+                            {userBets.reduce((sum, b) => {
+                              if (b.status === 'win') {
+                                return sum + (b.stake_units * (Math.abs(b.odds) / 100));
+                              } else if (b.status === 'loss') {
+                                return sum - b.stake_units;
+                              }
+                              return sum;
+                            }, 0).toFixed(1)}u
+                          </div>
+                          <div className="text-xs text-muted-foreground">Net Units</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Bets List */}
+                  {userBets.map((bet) => (
                   <Card key={bet.id}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
@@ -451,6 +564,9 @@ export const BetsPage = () => {
                                 'outline'
                               }
                             >
+                              {bet.status === 'win' && <TrendingUp className="w-3 h-3 mr-1" />}
+                              {bet.status === 'loss' && <TrendingDown className="w-3 h-3 mr-1" />}
+                              {bet.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
                               {bet.status.toUpperCase()}
                             </Badge>
                           </div>
@@ -473,12 +589,74 @@ export const BetsPage = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatTime(bet.placed_at)}
+                      
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                        <div className="text-xs text-muted-foreground">
+                          {formatTime(bet.placed_at)}
+                        </div>
+                        
+                        {bet.status === 'pending' && (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2 text-green-600 hover:bg-green-50 hover:text-green-700"
+                              onClick={() => updateBetStatus(bet.id, 'win')}
+                              disabled={updatingBetId === bet.id}
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Win
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+                              onClick={() => updateBetStatus(bet.id, 'loss')}
+                              disabled={updatingBetId === bet.id}
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Loss
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              onClick={() => updateBetStatus(bet.id, 'push')}
+                              disabled={updatingBetId === bet.id}
+                            >
+                              <Minus className="w-4 h-4 mr-1" />
+                              Push
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {bet.status !== 'pending' && (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                              onClick={() => updateBetStatus(bet.id, 'pending')}
+                              disabled={updatingBetId === bet.id}
+                            >
+                              <RefreshCw className="w-4 h-4 mr-1" />
+                              Reset
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 px-2 text-destructive hover:bg-destructive/10"
+                              onClick={() => deleteBet(bet.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-                ))
+                ))}
+                </>
               )}
             </TabsContent>
 

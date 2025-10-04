@@ -30,6 +30,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
+import { TeamSelector } from '@/components/TeamSelector';
 import {
   Select,
   SelectContent,
@@ -88,7 +89,7 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     display_name: '',
     username: '',
-    favorite_team: '',
+    favorite_teams: [] as string[],
     state: '',
     preferred_sportsbook: '',
     instagram_url: '',
@@ -155,10 +156,15 @@ const Profile = () => {
       
       // Initialize form data if it's own profile
       if (isOwnProfile && data) {
+        // Parse favorite_team string into array
+        const favoriteTeams = data.favorite_team 
+          ? data.favorite_team.split(',').map(t => t.trim()).filter(Boolean)
+          : [];
+        
         setFormData({
           display_name: data.display_name || '',
           username: data.username || '',
-          favorite_team: data.favorite_team || '',
+          favorite_teams: favoriteTeams,
           state: data.state || '',
           preferred_sportsbook: data.preferred_sportsbook || '',
           instagram_url: data.instagram_url || '',
@@ -403,10 +409,14 @@ const Profile = () => {
                     )}
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                       {profile.favorite_team && (
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" />
-                          {profile.favorite_team}
-                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Heart className="w-4 h-4 flex-shrink-0" />
+                          {profile.favorite_team.split(',').map((team, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              {team.trim()}
+                            </Badge>
+                          ))}
+                        </div>
                       )}
                       {profile.state && (
                         <span className="flex items-center gap-1">
@@ -607,51 +617,51 @@ const Profile = () => {
                       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                         Betting Preferences
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="favorite_team">Favorite Team</Label>
-                          <Input
-                            id="favorite_team"
-                            value={formData.favorite_team}
-                            onChange={(e) => setFormData(prev => ({ ...prev, favorite_team: e.target.value }))}
-                            placeholder="e.g., Lakers, Yankees, Cowboys"
+                          <Label>Favorite Teams</Label>
+                          <TeamSelector
+                            selectedTeams={formData.favorite_teams}
+                            onChange={(teams) => setFormData(prev => ({ ...prev, favorite_teams: teams }))}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="state">State</Label>
-                          <Select
-                            value={formData.state}
-                            onValueChange={(value) => setFormData(prev => ({ ...prev, state: value }))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select your state" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {US_STATES.map((state) => (
-                                <SelectItem key={state} value={state}>
-                                  {state}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="preferred_sportsbook">Preferred Sportsbook</Label>
-                          <Select
-                            value={formData.preferred_sportsbook}
-                            onValueChange={(value) => setFormData(prev => ({ ...prev, preferred_sportsbook: value }))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select your sportsbook" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SPORTSBOOKS.map((book) => (
-                                <SelectItem key={book} value={book}>
-                                  {book}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="state">State</Label>
+                            <Select
+                              value={formData.state}
+                              onValueChange={(value) => setFormData(prev => ({ ...prev, state: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select your state" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background z-50">
+                                {US_STATES.map((state) => (
+                                  <SelectItem key={state} value={state}>
+                                    {state}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="preferred_sportsbook">Preferred Sportsbook</Label>
+                            <Select
+                              value={formData.preferred_sportsbook}
+                              onValueChange={(value) => setFormData(prev => ({ ...prev, preferred_sportsbook: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select your sportsbook" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background z-50">
+                                {SPORTSBOOKS.map((book) => (
+                                  <SelectItem key={book} value={book}>
+                                    {book}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -754,15 +764,25 @@ const Profile = () => {
                         Betting Preferences
                       </h3>
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-sm text-muted-foreground">Favorite Team</span>
-                          <p className="font-medium">{profile.favorite_team || 'Not set'}</p>
+                        <div className="col-span-2">
+                          <span className="text-sm text-muted-foreground">Favorite Teams</span>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {profile.favorite_team ? (
+                              profile.favorite_team.split(',').map((team, i) => (
+                                <Badge key={i} variant="secondary">
+                                  {team.trim()}
+                                </Badge>
+                              ))
+                            ) : (
+                              <p className="font-medium text-sm">Not set</p>
+                            )}
+                          </div>
                         </div>
                         <div>
                           <span className="text-sm text-muted-foreground">State</span>
                           <p className="font-medium">{profile.state || 'Not set'}</p>
                         </div>
-                        <div className="col-span-2">
+                        <div>
                           <span className="text-sm text-muted-foreground">Preferred Sportsbook</span>
                           <p className="font-medium">{profile.preferred_sportsbook || 'Not set'}</p>
                         </div>

@@ -141,8 +141,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       } else {
         toast({
-          title: "Success!",
-          description: "Check your email for the confirmation link.",
+          title: "Account Created!",
+          description: "You're all set. Signing you in...",
         });
       }
 

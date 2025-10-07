@@ -8,12 +8,23 @@ import { BetsPage } from '@/components/BetsPage';
 import { BottomNav } from '@/components/BottomNav';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
+import BetStoryViewer from '@/components/BetStoryViewer';
+import BetConfirmation from '@/components/BetConfirmation';
 import { BettingStats } from '@/components/BettingStats';
 import { Leaderboard } from '@/components/Leaderboard';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
   const [activeView, setActiveView] = useState('chat');
+  const [selectedBet, setSelectedBet] = useState<{
+    sport: string;
+    event_name: string;
+    market: string;
+    selection: string;
+    odds: string;
+    stake_units: string;
+    notes?: string;
+  } | null>(null);
 
   if (loading) {
     return (
@@ -80,12 +91,25 @@ const Dashboard = () => {
     }
   };
 
+  const handleBetClick = (betDetails: typeof selectedBet) => {
+    setSelectedBet(betDetails);
+  };
+
+  const handleBetSuccess = () => {
+    setSelectedBet(null);
+    // Refresh the bets view if we're on it by reloading the BetsPage component data
+    if (activeView === 'bets') {
+      // The BetsPage will reload its data on mount
+      setActiveView('bets');
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex flex-col bg-background">
       {/* Top Bars - Stories & Live Odds */}
       <div className="flex-shrink-0">
         <BetStoriesBar />
-        <LiveOddsBar />
+        <LiveOddsBar onBetClick={handleBetClick} />
       </div>
 
       {/* Full Screen Content Area */}
@@ -95,6 +119,15 @@ const Dashboard = () => {
 
       {/* Bottom Navigation */}
       <BottomNav activeView={activeView} onViewChange={setActiveView} />
+
+      {/* Bet Confirmation Modal */}
+      {selectedBet && (
+        <BetConfirmation
+          betDetails={selectedBet}
+          onCancel={() => setSelectedBet(null)}
+          onSuccess={handleBetSuccess}
+        />
+      )}
     </div>
   );
 };

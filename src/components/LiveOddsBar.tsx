@@ -150,7 +150,18 @@ const MOCK_EVENTS: OddsEvent[] = [
   }
 ];
 
-const LiveOddsBar = () => {
+interface LiveOddsBarProps {
+  onBetClick?: (betDetails: {
+    sport: string;
+    event_name: string;
+    market: string;
+    selection: string;
+    odds: string;
+    stake_units: string;
+  }) => void;
+}
+
+const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
   const [events, setEvents] = useState<OddsEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSport, setSelectedSport] = useState('upcoming');
@@ -287,14 +298,34 @@ const LiveOddsBar = () => {
                       <span className="font-medium truncate flex-1">{event.away_team}</span>
                       <div className="flex items-center gap-2 text-xs">
                         {awaySpread && (
-                          <span className="font-mono bg-muted px-2 py-1 rounded">
+                          <button
+                            onClick={() => onBetClick?.({
+                              sport: event.sport_title,
+                              event_name: `${event.away_team} vs ${event.home_team}`,
+                              market: 'Spread',
+                              selection: `${event.away_team} ${awaySpread.point > 0 ? '+' : ''}${awaySpread.point}`,
+                              odds: awaySpread.price.toString(),
+                              stake_units: '1'
+                            })}
+                            className="font-mono bg-muted px-2 py-1 rounded hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+                          >
                             {awaySpread.point > 0 ? '+' : ''}{awaySpread.point} ({formatOdds(awaySpread.price)})
-                          </span>
+                          </button>
                         )}
                         {awayML && (
-                          <span className="font-mono font-semibold text-primary">
+                          <button
+                            onClick={() => onBetClick?.({
+                              sport: event.sport_title,
+                              event_name: `${event.away_team} vs ${event.home_team}`,
+                              market: 'Moneyline',
+                              selection: event.away_team,
+                              odds: awayML.price.toString(),
+                              stake_units: '1'
+                            })}
+                            className="font-mono font-semibold text-primary hover:bg-primary hover:text-primary-foreground px-2 py-1 rounded transition-colors cursor-pointer"
+                          >
                             {formatOdds(awayML.price)}
-                          </span>
+                          </button>
                         )}
                       </div>
                     </div>
@@ -304,14 +335,34 @@ const LiveOddsBar = () => {
                       <span className="font-medium truncate flex-1">{event.home_team}</span>
                       <div className="flex items-center gap-2 text-xs">
                         {homeSpread && (
-                          <span className="font-mono bg-muted px-2 py-1 rounded">
+                          <button
+                            onClick={() => onBetClick?.({
+                              sport: event.sport_title,
+                              event_name: `${event.away_team} vs ${event.home_team}`,
+                              market: 'Spread',
+                              selection: `${event.home_team} ${homeSpread.point > 0 ? '+' : ''}${homeSpread.point}`,
+                              odds: homeSpread.price.toString(),
+                              stake_units: '1'
+                            })}
+                            className="font-mono bg-muted px-2 py-1 rounded hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+                          >
                             {homeSpread.point > 0 ? '+' : ''}{homeSpread.point} ({formatOdds(homeSpread.price)})
-                          </span>
+                          </button>
                         )}
                         {homeML && (
-                          <span className="font-mono font-semibold text-primary">
+                          <button
+                            onClick={() => onBetClick?.({
+                              sport: event.sport_title,
+                              event_name: `${event.away_team} vs ${event.home_team}`,
+                              market: 'Moneyline',
+                              selection: event.home_team,
+                              odds: homeML.price.toString(),
+                              stake_units: '1'
+                            })}
+                            className="font-mono font-semibold text-primary hover:bg-primary hover:text-primary-foreground px-2 py-1 rounded transition-colors cursor-pointer"
+                          >
                             {formatOdds(homeML.price)}
-                          </span>
+                          </button>
                         )}
                       </div>
                     </div>
@@ -320,9 +371,41 @@ const LiveOddsBar = () => {
                     {over && (
                       <div className="flex items-center justify-between text-xs pt-1 border-t">
                         <span className="text-muted-foreground">Total</span>
-                        <span className="font-mono">
-                          O/U {over.point} ({formatOdds(over.price)})
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onBetClick?.({
+                              sport: event.sport_title,
+                              event_name: `${event.away_team} vs ${event.home_team}`,
+                              market: 'Total',
+                              selection: `Over ${over.point}`,
+                              odds: over.price.toString(),
+                              stake_units: '1'
+                            })}
+                            className="font-mono hover:bg-primary hover:text-primary-foreground px-2 py-0.5 rounded transition-colors cursor-pointer"
+                          >
+                            O {over.point} ({formatOdds(over.price)})
+                          </button>
+                          {totalsMarket?.outcomes.find(o => o.name === 'Under') && (
+                            <button
+                              onClick={() => {
+                                const under = totalsMarket.outcomes.find(o => o.name === 'Under');
+                                if (under) {
+                                  onBetClick?.({
+                                    sport: event.sport_title,
+                                    event_name: `${event.away_team} vs ${event.home_team}`,
+                                    market: 'Total',
+                                    selection: `Under ${under.point}`,
+                                    odds: under.price.toString(),
+                                    stake_units: '1'
+                                  });
+                                }
+                              }}
+                              className="font-mono hover:bg-primary hover:text-primary-foreground px-2 py-0.5 rounded transition-colors cursor-pointer"
+                            >
+                              U {totalsMarket.outcomes.find(o => o.name === 'Under')?.point} ({formatOdds(totalsMarket.outcomes.find(o => o.name === 'Under')!.price)})
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
 

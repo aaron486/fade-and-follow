@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -100,13 +101,13 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Confirm Your Bet</h2>
-        <p className="text-muted-foreground">Review and edit the extracted details</p>
-      </div>
+    <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Confirm Your Bet</DialogTitle>
+        </DialogHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="sport">Sport *</Label>
@@ -205,7 +206,8 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
           </Button>
         </div>
       </form>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

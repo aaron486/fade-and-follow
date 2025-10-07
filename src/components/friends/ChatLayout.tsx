@@ -17,7 +17,11 @@ export interface Conversation {
   otherUserId?: string;
 }
 
-const ChatLayout = () => {
+interface ChatLayoutProps {
+  fullscreen?: boolean;
+}
+
+const ChatLayout = ({ fullscreen = false }: ChatLayoutProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -276,7 +280,10 @@ const ChatLayout = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] border rounded-lg overflow-hidden bg-card">
+    <div className={fullscreen 
+      ? "flex h-[calc(100vh-10rem)] overflow-hidden bg-card" 
+      : "flex h-[calc(100vh-8rem)] border rounded-lg overflow-hidden bg-card"
+    }>
       <ConversationsList
         conversations={conversations}
         selectedConversation={selectedConversation}

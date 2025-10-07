@@ -253,16 +253,14 @@ const Friends = () => {
   if (activeTab === 'chat') {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <Navigation />
-        
-        {/* Bet Stories Bar */}
-        <div className="border-b border-border">
+        {/* Bet Stories Bar - at the very top */}
+        <div className="border-b border-border pt-4">
           <BetStoriesBar />
         </div>
 
         {/* Chat Layout - Full Screen */}
         <div className="flex-1 overflow-hidden">
-          <ChatLayout />
+          <ChatLayout fullscreen />
         </div>
       </div>
     );

@@ -50,7 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   // Load user profile
@@ -75,59 +74,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-    let isInitialMount = true;
 
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      // Ignore TOKEN_REFRESHED events entirely - they're handled automatically
+      // Only update state on actual auth changes, not token refreshes
       if (event === 'TOKEN_REFRESHED') {
         return;
       }
       
       console.log('🔐 Auth event:', event);
       
-      // Only synchronous state updates
       setSession(session);
       setUser(session?.user ?? null);
       
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in:', session.user.email);
-        // Load profile data after sign in
-        setTimeout(() => {
-          loadUserProfile(session.user.id);
-        }, 0);
+        setTimeout(() => loadUserProfile(session.user.id), 0);
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
         setUserProfile(null);
       }
     });
 
-    // THEN check for existing session (only once on initial mount)
-    if (isInitialMount) {
-      isInitialMount = false;
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-          setIsInitialized(true);
-          
-          if (session) {
-            console.log('✅ Session restored:', session.user.email);
-            // Load profile for existing session
-            loadUserProfile(session.user.id);
-          }
+    // Check for existing session once on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        if (session) {
+          console.log('✅ Session restored:', session.user.email);
+          loadUserProfile(session.user.id);
         }
-      }).catch((error) => {
-        console.error('❌ Session restore error:', error);
-        if (mounted) {
-          setLoading(false);
-          setIsInitialized(true);
-        }
-      });
-    }
+      }
+    }).catch((error) => {
+      console.error('❌ Session restore error:', error);
+      if (mounted) setLoading(false);
+    });
 
     return () => {
       mounted = false;

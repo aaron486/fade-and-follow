@@ -250,11 +250,17 @@ const BetStoriesBar = () => {
                   >
                     <div className="relative">
                       <div className={`p-[3px] rounded-full bg-gradient-to-tr ${ringColor} shadow-lg transition-all duration-300 group-hover:scale-110`}>
-                        <div className="h-16 w-16 rounded-full bg-background flex items-center justify-center">
-                          <span className={`text-2xl font-bold ${isWinStreak ? 'text-green-500' : 'text-red-500'}`}>
-                            {story.currentStreak || 0}
-                          </span>
-                        </div>
+                        <Avatar className="h-16 w-16 border-[3px] border-background">
+                          <AvatarImage src={story.avatarUrl} />
+                          <AvatarFallback className="bg-muted">
+                            {story.userName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-background border-2 border-background flex items-center justify-center shadow-lg">
+                        <span className={`text-sm font-bold ${isWinStreak ? 'text-green-500' : 'text-red-500'}`}>
+                          {story.currentStreak || 0}
+                        </span>
                       </div>
                     </div>
                     <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground max-w-[80px] truncate">

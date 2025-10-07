@@ -262,20 +262,49 @@ serve(async (req) => {
 
     console.log(`Found ${bettors?.length || 0} celebrity accounts to scrape`);
 
+    // Create scraping job record
+    const { data: job } = await supabase
+      .from('scraping_jobs')
+      .insert({
+        job_type: 'celebrity_picks',
+        status: 'running',
+        total_accounts: bettors?.length || 0,
+        processed_accounts: 0,
+        successful_picks: 0,
+        failed_accounts: 0
+      })
+      .select()
+      .single();
+
     // Start background scraping task
     const scrapeTask = async () => {
       let totalPicks = 0;
       const results: Record<string, number> = {};
+      let processedCount = 0;
+      let failedCount = 0;
 
       for (const bettor of bettors || []) {
         try {
           console.log(`Processing ${bettor.display_name} (@${bettor.username})`);
+          
+          // Update current account being processed
+          if (job) {
+            await supabase
+              .from('scraping_jobs')
+              .update({
+                current_account: bettor.display_name,
+                processed_accounts: processedCount
+              })
+              .eq('id', job.id);
+          }
           
           // Scrape their recent posts
           const content = await scrapeTwitterProfile(bettor.username);
           if (!content) {
             console.log(`No content found for ${bettor.username}`);
             results[bettor.display_name] = 0;
+            failedCount++;
+            processedCount++;
             continue;
           }
 
@@ -286,19 +315,59 @@ serve(async (req) => {
           const saved = await saveCelebrityPicks(bettor.username, picks);
           results[bettor.display_name] = saved;
           totalPicks += saved;
+          processedCount++;
 
           console.log(`Processed ${bettor.display_name}: ${saved} new picks (Total: ${totalPicks})`);
+
+          // Update job progress
+          if (job) {
+            await supabase
+              .from('scraping_jobs')
+              .update({
+                processed_accounts: processedCount,
+                successful_picks: totalPicks,
+                failed_accounts: failedCount
+              })
+              .eq('id', job.id);
+          }
 
           // Rate limiting - 5 seconds between accounts to avoid overwhelming instances
           await new Promise(resolve => setTimeout(resolve, 5000));
         } catch (error) {
           console.error(`Error processing ${bettor.username}:`, error);
           results[bettor.display_name] = 0;
+          failedCount++;
+          processedCount++;
+          
+          // Update job with error
+          if (job) {
+            await supabase
+              .from('scraping_jobs')
+              .update({
+                processed_accounts: processedCount,
+                failed_accounts: failedCount
+              })
+              .eq('id', job.id);
+          }
         }
       }
 
       console.log(`Scraping complete! Total picks: ${totalPicks}`);
       console.log('Results by celebrity:', JSON.stringify(results, null, 2));
+      
+      // Mark job as completed
+      if (job) {
+        await supabase
+          .from('scraping_jobs')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            processed_accounts: processedCount,
+            successful_picks: totalPicks,
+            failed_accounts: failedCount
+          })
+          .eq('id', job.id);
+      }
     };
 
     // Start background task without waiting
@@ -310,7 +379,8 @@ serve(async (req) => {
         success: true,
         message: `Started scraping ${bettors?.length || 0} celebrity accounts. This will take approximately ${Math.ceil((bettors?.length || 0) * 5 / 60)} minutes.`,
         status: 'processing',
-        accounts: bettors?.length || 0
+        accounts: bettors?.length || 0,
+        job_id: job?.id
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

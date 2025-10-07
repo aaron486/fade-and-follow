@@ -28,10 +28,23 @@ interface Influencer {
   is_verified: boolean | null;
 }
 
+interface ScrapingJob {
+  id: string;
+  status: string;
+  total_accounts: number;
+  processed_accounts: number;
+  successful_picks: number;
+  failed_accounts: number;
+  current_account: string | null;
+  started_at: string;
+  completed_at: string | null;
+}
+
 export const AdminDashboard = () => {
   const [scraping, setScraping] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [currentJob, setCurrentJob] = useState<ScrapingJob | null>(null);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalBets: 0,
@@ -44,7 +57,35 @@ export const AdminDashboard = () => {
     loadStats();
     loadUsers();
     loadInfluencers();
-  }, []);
+    loadLatestScrapingJob();
+    
+    // Poll for scraping job updates every 3 seconds
+    const interval = setInterval(() => {
+      if (currentJob?.status === 'running') {
+        loadLatestScrapingJob();
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [currentJob?.status]);
+
+  const loadLatestScrapingJob = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('scraping_jobs')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      if (data) {
+        setCurrentJob(data);
+      }
+    } catch (error) {
+      console.error('Error loading scraping job:', error);
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -112,8 +153,8 @@ export const AdminDashboard = () => {
         description: `Scraping ${stats.totalInfluencers} influencers in the background. This may take several minutes.`,
       });
       
-      // Reload stats after a delay
-      setTimeout(loadStats, 5000);
+      // Reload job status immediately
+      setTimeout(loadLatestScrapingJob, 1000);
     } catch (error) {
       console.error('Error triggering scrape:', error);
       toast({
@@ -199,13 +240,13 @@ export const AdminDashboard = () => {
                   Fetch latest picks from all {stats.totalInfluencers} influencers on Twitter
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <Button 
                   onClick={handleScrapeCelebrityPicks}
-                  disabled={scraping}
+                  disabled={scraping || currentJob?.status === 'running'}
                   className="w-full"
                 >
-                  {scraping ? (
+                  {scraping || currentJob?.status === 'running' ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Scraping...
@@ -217,9 +258,64 @@ export const AdminDashboard = () => {
                     </>
                   )}
                 </Button>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Takes ~3 seconds per influencer. Check logs for progress.
-                </p>
+                
+                {currentJob && (
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Status:</span>
+                      <Badge variant={currentJob.status === 'completed' ? 'default' : 'secondary'}>
+                        {currentJob.status}
+                      </Badge>
+                    </div>
+                    
+                    {currentJob.status === 'running' && currentJob.current_account && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Processing:</span>
+                        <span className="ml-2 font-medium">{currentJob.current_account}</span>
+                      </div>
+                    )}
+                    
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Progress:</span>
+                        <span className="font-medium">
+                          {currentJob.processed_accounts} / {currentJob.total_accounts}
+                        </span>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${currentJob.total_accounts > 0 
+                              ? (currentJob.processed_accounts / currentJob.total_accounts) * 100 
+                              : 0}%` 
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Picks found:</span>
+                        <span className="ml-2 font-medium text-green-600">
+                          {currentJob.successful_picks}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Failed:</span>
+                        <span className="ml-2 font-medium text-red-600">
+                          {currentJob.failed_accounts}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {currentJob.completed_at && (
+                      <div className="text-xs text-muted-foreground">
+                        Completed {new Date(currentJob.completed_at).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

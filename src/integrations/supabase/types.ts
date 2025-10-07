@@ -697,6 +697,51 @@ export type Database = {
           },
         ]
       }
+      scraping_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_account: string | null
+          error_message: string | null
+          failed_accounts: number | null
+          id: string
+          job_type: string
+          processed_accounts: number | null
+          started_at: string
+          status: string
+          successful_picks: number | null
+          total_accounts: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_account?: string | null
+          error_message?: string | null
+          failed_accounts?: number | null
+          id?: string
+          job_type: string
+          processed_accounts?: number | null
+          started_at?: string
+          status?: string
+          successful_picks?: number | null
+          total_accounts?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_account?: string | null
+          error_message?: string | null
+          failed_accounts?: number | null
+          id?: string
+          job_type?: string
+          processed_accounts?: number | null
+          started_at?: string
+          status?: string
+          successful_picks?: number | null
+          total_accounts?: number | null
+        }
+        Relationships: []
+      }
       teams: {
         Row: {
           created_at: string

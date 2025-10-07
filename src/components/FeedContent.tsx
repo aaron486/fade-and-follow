@@ -1,6 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { PicksFeed } from '@/components/PicksFeed';
-import { TrendingFriends } from '@/components/TrendingFriends';
 
 export const FeedContent = () => {
   const { user } = useAuth();
@@ -16,17 +15,9 @@ export const FeedContent = () => {
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-6 p-4 max-w-2xl mx-auto">
-          {/* Trending Friends Section */}
-          <div className="w-full">
-            <TrendingFriends />
-          </div>
-
+        <div className="space-y-4 p-4 max-w-2xl mx-auto">
           {/* Picks Feed */}
-          <div className="w-full">
-            <h3 className="text-lg font-semibold mb-4">Recent Picks</h3>
-            <PicksFeed />
-          </div>
+          <PicksFeed />
         </div>
       </div>
     </div>

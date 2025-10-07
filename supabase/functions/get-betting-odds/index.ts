@@ -98,8 +98,24 @@ serve(async (req) => {
       // Continue without scores if there's an error
     }
 
-    // Sort by commence time and limit to 20 games
-    allEvents.sort((a, b) => new Date(a.commence_time).getTime() - new Date(b.commence_time).getTime());
+    // Sort by live status first, then by commence time
+    allEvents.sort((a, b) => {
+      const now = new Date().getTime();
+      const aCommence = new Date(a.commence_time).getTime();
+      const bCommence = new Date(b.commence_time).getTime();
+      
+      // Check if games are live (started within last 4 hours and not completed)
+      const aIsLive = aCommence < now && (now - aCommence) < (4 * 60 * 60 * 1000) && !a.completed;
+      const bIsLive = bCommence < now && (now - bCommence) < (4 * 60 * 60 * 1000) && !b.completed;
+      
+      // Live games come first
+      if (aIsLive && !bIsLive) return -1;
+      if (!aIsLive && bIsLive) return 1;
+      
+      // For games in the same category, sort by commence time
+      return aCommence - bCommence;
+    });
+    
     allEvents = allEvents.slice(0, 20);
 
     console.log('Odds fetched successfully, events count:', allEvents.length);

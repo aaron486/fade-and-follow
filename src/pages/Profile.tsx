@@ -71,7 +71,7 @@ interface FriendStats {
 }
 
 const Profile = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { userId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -832,6 +832,22 @@ const Profile = () => {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+                
+                {/* Logout Button */}
+                {isOwnProfile && !isEditing && (
+                  <div className="pt-6 border-t">
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={async () => {
+                        await signOut();
+                        navigate('/auth');
+                      }}
+                    >
+                      Sign Out
+                    </Button>
                   </div>
                 )}
               </CardContent>

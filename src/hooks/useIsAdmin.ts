@@ -3,9 +3,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useIsAdmin = () => {
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const hasCheckedRef = useRef(false);
   const checkedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -13,18 +14,25 @@ export const useIsAdmin = () => {
     let timeoutId: NodeJS.Timeout;
 
     const checkAdminStatus = async () => {
-      // Only check if we have both user and session
-      if (!user || !session) {
-        setIsAdmin(false);
-        setLoading(false);
-        checkedUserIdRef.current = null;
+      // Wait for auth to complete and have both user and session
+      if (authLoading || !user || !session) {
+        if (mounted) {
+          setIsAdmin(false);
+          setLoading(authLoading);
+        }
         return;
       }
 
       // Don't check again if we already checked for this user
       if (checkedUserIdRef.current === user.id) {
+        if (mounted) {
+          setLoading(false);
+        }
         return;
       }
+
+      // Mark that we've checked
+      hasCheckedRef.current = true;
 
       try {
         const { data, error } = await supabase.rpc('has_role', {
@@ -32,11 +40,16 @@ export const useIsAdmin = () => {
           _role: 'admin'
         });
 
-        if (error) throw error;
-        
-        if (mounted) {
-          setIsAdmin(data || false);
-          checkedUserIdRef.current = user.id;
+        if (error) {
+          console.error('Error checking admin status:', error);
+          if (mounted) {
+            setIsAdmin(false);
+          }
+        } else {
+          if (mounted) {
+            setIsAdmin(data || false);
+            checkedUserIdRef.current = user.id;
+          }
         }
       } catch (error) {
         console.error('Error checking admin status:', error);
@@ -50,16 +63,22 @@ export const useIsAdmin = () => {
       }
     };
 
-    // Debounce the admin check to ensure auth is stable
-    if (user && session) {
+    // Reset check flag when user changes
+    if (!user) {
+      hasCheckedRef.current = false;
+      checkedUserIdRef.current = null;
+      setIsAdmin(false);
+      setLoading(authLoading);
+      return;
+    }
+
+    // Delay admin check significantly to ensure auth is completely stable
+    if (!authLoading && user && session && !hasCheckedRef.current) {
       timeoutId = setTimeout(() => {
         if (mounted) {
           checkAdminStatus();
         }
-      }, 500);
-    } else {
-      setIsAdmin(false);
-      setLoading(false);
+      }, 1000); // Wait 1 full second after auth is stable
     }
 
     return () => {
@@ -68,7 +87,7 @@ export const useIsAdmin = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [user, session]);
+  }, [user, session, authLoading]);
 
   return { isAdmin, loading };
 };

@@ -129,11 +129,13 @@ const Dashboard = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background pt-[env(safe-area-inset-top)]">
-      {/* Top Bars - Stories & Live Odds */}
-      <div className="flex-shrink-0">
-        <BetStoriesBar />
-        <LiveOddsBar onBetClick={handleBetClick} />
-      </div>
+      {/* Top Bars - Stories & Live Odds - Hidden for admin view */}
+      {activeView !== 'admin' && (
+        <div className="flex-shrink-0">
+          <BetStoriesBar />
+          <LiveOddsBar onBetClick={handleBetClick} />
+        </div>
+      )}
 
       {/* Full Screen Content Area */}
       <main className="flex-1 overflow-hidden">

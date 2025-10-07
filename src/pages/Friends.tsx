@@ -59,7 +59,7 @@ const Friends = () => {
       navigate('/auth');
       return;
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading]);
 
   // Load friend requests and friends on mount
   useEffect(() => {

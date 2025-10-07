@@ -42,7 +42,7 @@ const Bets = () => {
     }
 
     loadUserBets();
-  }, [user, loading, navigate]);
+  }, [user, loading]);
 
   const loadUserBets = async () => {
     if (!user) return;

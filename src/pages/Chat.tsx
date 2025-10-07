@@ -16,7 +16,7 @@ const Chat = () => {
       navigate('/auth');
       return;
     }
-  }, [user, loading, navigate]);
+  }, [user, loading]);
 
   if (!user) return null;
 

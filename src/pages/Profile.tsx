@@ -129,7 +129,7 @@ const Profile = () => {
       navigate('/auth');
       return;
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading]);
 
   // Load profile data
   useEffect(() => {

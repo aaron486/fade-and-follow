@@ -75,7 +75,7 @@ const Groups = () => {
     }
     loadGroups();
     loadFriends();
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading]);
 
   const loadGroups = async () => {
     try {

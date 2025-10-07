@@ -73,9 +73,15 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
 
       if (error) {
         console.error('Error fetching odds:', error);
+        // Check if it's an API key issue
+        if (error.message?.includes('API key not configured')) {
+          setError(null); // Hide the component gracefully
+          setLoading(false);
+          return;
+        }
         // Don't clear events on transient failures - keep showing previous data
         if (events.length === 0) {
-          setError('Unable to load betting lines. Retrying...');
+          setError(null); // Hide errors, will retry
         }
         setLoading(false);
         return;
@@ -83,7 +89,9 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
 
       if (data?.error) {
         console.error('API error:', data.error);
-        setError(data.error);
+        if (data.error.includes('API key')) {
+          setError(null); // Hide if API key issue
+        }
         if (events.length === 0) {
           setEvents([]);
         }
@@ -93,15 +101,12 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
         setError(null);
       } else {
         if (events.length === 0) {
-          setError('No games available right now');
+          setError(null); // Hide if no events
         }
       }
     } catch (error) {
       console.error('Error fetching odds:', error);
-      // Don't clear existing data on network errors
-      if (events.length === 0) {
-        setError('Network error. Will retry automatically...');
-      }
+      setError(null); // Hide errors gracefully
     } finally {
       setLoading(false);
     }
@@ -183,6 +188,11 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
         </div>
       </div>
     );
+  }
+
+  // Hide component if no events and no error (API key not configured)
+  if (events.length === 0 && !error) {
+    return null;
   }
 
   return (

@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, User, Settings, Users, Globe } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ChevronLeft, ChevronRight, User, Settings, Users, Globe, Camera } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,6 +25,8 @@ const Auth = () => {
   const [tiktokUrl, setTiktokUrl] = useState('');
   const [xUrl, setXUrl] = useState('');
   const [discordUrl, setDiscordUrl] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -147,6 +150,31 @@ const Auth = () => {
     if (e) e.preventDefault();
     setLoading(true);
     
+    let avatarUrl = '';
+    
+    // Upload avatar if provided
+    if (avatarFile) {
+      try {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+        
+        const { error: uploadError, data } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, avatarFile);
+        
+        if (uploadError) {
+          console.error('Avatar upload error:', uploadError);
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          avatarUrl = publicUrl;
+        }
+      } catch (error) {
+        console.error('Error uploading avatar:', error);
+      }
+    }
+    
     const { error } = await signUp({
       email,
       password,
@@ -159,10 +187,37 @@ const Auth = () => {
       instagramUrl,
       tiktokUrl,
       xUrl,
-      discordUrl
+      discordUrl,
+      avatarUrl
     });
     
     setLoading(false);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file');
+        return;
+      }
+      
+      setAvatarFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const renderStepContent = () => {
@@ -195,6 +250,33 @@ const Auth = () => {
               <h2 className="text-2xl font-semibold mb-2">Create Your Account</h2>
               <p className="text-muted-foreground">Set up your FADE account and select your favorite team</p>
             </div>
+            
+            {/* Avatar Upload */}
+            <div className="flex flex-col items-center gap-3 mb-4">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full border-2 border-dashed border-muted-foreground/50 flex items-center justify-center overflow-hidden bg-muted">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <Camera className="w-8 h-8 text-muted-foreground" />
+                  )}
+                </div>
+                <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                    <Camera className="w-4 h-4" />
+                  </div>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground">Optional: Upload a profile picture (max 5MB)</p>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="favorite-team">Favorite Team</Label>
               <Select value={favoriteTeam} onValueChange={setFavoriteTeam} required>

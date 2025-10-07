@@ -16,6 +16,7 @@ interface SignUpData {
   tiktokUrl?: string;
   xUrl?: string;
   discordUrl?: string;
+  avatarUrl?: string;
 }
 
 interface AuthContextType {
@@ -109,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [isInitialized]);
 
-  const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook, bettorLevel, instagramUrl, tiktokUrl, xUrl, discordUrl }: SignUpData) => {
+  const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook, bettorLevel, instagramUrl, tiktokUrl, xUrl, discordUrl, avatarUrl }: SignUpData) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -128,7 +129,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             instagram_url: instagramUrl,
             tiktok_url: tiktokUrl,
             x_url: xUrl,
-            discord_url: discordUrl
+            discord_url: discordUrl,
+            avatar_url: avatarUrl
           }
         }
       });

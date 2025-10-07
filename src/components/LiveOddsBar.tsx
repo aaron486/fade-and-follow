@@ -67,46 +67,48 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('get-betting-odds', {
-        body: { sport }
-      });
-
-      if (error) {
-        console.error('Error fetching odds:', error);
-        // Check if it's an API key issue
-        if (error.message?.includes('API key not configured')) {
-          setError(null); // Hide the component gracefully
-          setLoading(false);
-          return;
+      // Call function directly with fetch to avoid auth issues
+      const response = await fetch(
+        'https://btteqktyhnyeycmognox.supabase.co/functions/v1/get-betting-odds',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sport })
         }
-        // Don't clear events on transient failures - keep showing previous data
+      );
+
+      if (!response.ok) {
+        console.error('Error fetching odds:', response.status);
         if (events.length === 0) {
-          setError(null); // Hide errors, will retry
+          setError(null);
         }
         setLoading(false);
         return;
       }
 
+      const data = await response.json();
+
       if (data?.error) {
         console.error('API error:', data.error);
         if (data.error.includes('API key')) {
-          setError(null); // Hide if API key issue
+          setError(null);
         }
         if (events.length === 0) {
           setEvents([]);
         }
       } else if (data?.events && data.events.length > 0) {
-        // Already sorted by the edge function
         setEvents(data.events);
         setError(null);
       } else {
         if (events.length === 0) {
-          setError(null); // Hide if no events
+          setError(null);
         }
       }
     } catch (error) {
       console.error('Error fetching odds:', error);
-      setError(null); // Hide errors gracefully
+      setError(null);
     } finally {
       setLoading(false);
     }

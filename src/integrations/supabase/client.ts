@@ -15,5 +15,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: false,
     flowType: 'pkce',
-  }
+    storageKey: 'fade-bet-auth',
+    debug: false,
+  },
+  global: {
+    headers: {
+      'x-application-name': 'fade-bet',
+    },
+  },
 });

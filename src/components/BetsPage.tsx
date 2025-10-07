@@ -69,16 +69,125 @@ interface UserBet {
   user_id?: string;
 }
 
+const MOCK_GAMES: Game[] = [
+  {
+    id: 'mock-1',
+    sport_key: 'americanfootball_nfl',
+    sport_title: 'NFL',
+    commence_time: new Date(Date.now() + 86400000).toISOString(),
+    home_team: 'Kansas City Chiefs',
+    away_team: 'Buffalo Bills',
+    bookmakers: [{
+      key: 'draftkings',
+      title: 'DraftKings',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'Kansas City Chiefs', price: -150 },
+            { name: 'Buffalo Bills', price: 130 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'Kansas City Chiefs', price: -110, point: -3.5 },
+            { name: 'Buffalo Bills', price: -110, point: 3.5 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -110, point: 51.5 },
+            { name: 'Under', price: -110, point: 51.5 }
+          ]
+        }
+      ]
+    }]
+  },
+  {
+    id: 'mock-2',
+    sport_key: 'basketball_nba',
+    sport_title: 'NBA',
+    commence_time: new Date(Date.now() + 172800000).toISOString(),
+    home_team: 'Los Angeles Lakers',
+    away_team: 'Boston Celtics',
+    bookmakers: [{
+      key: 'fanduel',
+      title: 'FanDuel',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'Los Angeles Lakers', price: 105 },
+            { name: 'Boston Celtics', price: -125 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'Los Angeles Lakers', price: -110, point: 2.5 },
+            { name: 'Boston Celtics', price: -110, point: -2.5 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -115, point: 228.5 },
+            { name: 'Under', price: -105, point: 228.5 }
+          ]
+        }
+      ]
+    }]
+  },
+  {
+    id: 'mock-3',
+    sport_key: 'baseball_mlb',
+    sport_title: 'MLB',
+    commence_time: new Date(Date.now() + 259200000).toISOString(),
+    home_team: 'New York Yankees',
+    away_team: 'Houston Astros',
+    bookmakers: [{
+      key: 'betmgm',
+      title: 'BetMGM',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'New York Yankees', price: -140 },
+            { name: 'Houston Astros', price: 120 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'New York Yankees', price: -115, point: -1.5 },
+            { name: 'Houston Astros', price: -105, point: 1.5 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -110, point: 8.5 },
+            { name: 'Under', price: -110, point: 8.5 }
+          ]
+        }
+      ]
+    }]
+  }
+];
+
 export const BetsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<Game[]>(MOCK_GAMES);
   const [friendPicks, setFriendPicks] = useState<FriendPick[]>([]);
   const [userBets, setUserBets] = useState<UserBet[]>([]);
   const [allBets, setAllBets] = useState<UserBet[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBetForm, setShowBetForm] = useState(false);
   const [updatingBetId, setUpdatingBetId] = useState<string | null>(null);
+  const [useMockData, setUseMockData] = useState(true);
   const [selectedBet, setSelectedBet] = useState<{
     sport: string;
     event_name: string;
@@ -103,18 +212,25 @@ export const BetsPage = () => {
         body: { sport: 'upcoming' }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading games:', error);
+        setUseMockData(true);
+        setGames(MOCK_GAMES);
+        setLoading(false);
+        return;
+      }
       
-      if (data?.events) {
-        setGames(data.events); // Show all available games
+      if (data?.events && data.events.length > 0) {
+        setGames(data.events);
+        setUseMockData(false);
+      } else {
+        setUseMockData(true);
+        setGames(MOCK_GAMES);
       }
     } catch (error) {
       console.error('Error loading games:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load games. Please try again.",
-        variant: "destructive",
-      });
+      setUseMockData(true);
+      setGames(MOCK_GAMES);
     } finally {
       setLoading(false);
     }
@@ -402,7 +518,9 @@ export const BetsPage = () => {
               <TabsTrigger value="my-bets">
                 My Bets ({userBets.length})
               </TabsTrigger>
-              <TabsTrigger value="games">Games</TabsTrigger>
+              <TabsTrigger value="games">
+                Games {useMockData && <Badge variant="outline" className="ml-1 text-xs">Demo</Badge>}
+              </TabsTrigger>
               <TabsTrigger value="friends">
                 Friends ({friendPicks.length})
               </TabsTrigger>

@@ -74,9 +74,9 @@ const MOCK_GAMES: Game[] = [
     id: 'mock-1',
     sport_key: 'americanfootball_nfl',
     sport_title: 'NFL',
-    commence_time: new Date(Date.now() + 86400000).toISOString(),
-    home_team: 'Kansas City Chiefs',
-    away_team: 'Buffalo Bills',
+    commence_time: new Date(Date.now() + 7200000).toISOString(), // 2 hours from now
+    home_team: 'San Francisco 49ers',
+    away_team: 'Dallas Cowboys',
     bookmakers: [{
       key: 'draftkings',
       title: 'DraftKings',
@@ -84,22 +84,22 @@ const MOCK_GAMES: Game[] = [
         {
           key: 'h2h',
           outcomes: [
-            { name: 'Kansas City Chiefs', price: -150 },
-            { name: 'Buffalo Bills', price: 130 }
+            { name: 'San Francisco 49ers', price: -165 },
+            { name: 'Dallas Cowboys', price: 140 }
           ]
         },
         {
           key: 'spreads',
           outcomes: [
-            { name: 'Kansas City Chiefs', price: -110, point: -3.5 },
-            { name: 'Buffalo Bills', price: -110, point: 3.5 }
+            { name: 'San Francisco 49ers', price: -110, point: -4.0 },
+            { name: 'Dallas Cowboys', price: -110, point: 4.0 }
           ]
         },
         {
           key: 'totals',
           outcomes: [
-            { name: 'Over', price: -110, point: 51.5 },
-            { name: 'Under', price: -110, point: 51.5 }
+            { name: 'Over', price: -112, point: 47.5 },
+            { name: 'Under', price: -108, point: 47.5 }
           ]
         }
       ]
@@ -109,9 +109,9 @@ const MOCK_GAMES: Game[] = [
     id: 'mock-2',
     sport_key: 'basketball_nba',
     sport_title: 'NBA',
-    commence_time: new Date(Date.now() + 172800000).toISOString(),
-    home_team: 'Los Angeles Lakers',
-    away_team: 'Boston Celtics',
+    commence_time: new Date(Date.now() + 14400000).toISOString(), // 4 hours from now
+    home_team: 'Milwaukee Bucks',
+    away_team: 'Brooklyn Nets',
     bookmakers: [{
       key: 'fanduel',
       title: 'FanDuel',
@@ -119,22 +119,22 @@ const MOCK_GAMES: Game[] = [
         {
           key: 'h2h',
           outcomes: [
-            { name: 'Los Angeles Lakers', price: 105 },
-            { name: 'Boston Celtics', price: -125 }
+            { name: 'Milwaukee Bucks', price: -195 },
+            { name: 'Brooklyn Nets', price: 162 }
           ]
         },
         {
           key: 'spreads',
           outcomes: [
-            { name: 'Los Angeles Lakers', price: -110, point: 2.5 },
-            { name: 'Boston Celtics', price: -110, point: -2.5 }
+            { name: 'Milwaukee Bucks', price: -108, point: -5.5 },
+            { name: 'Brooklyn Nets', price: -112, point: 5.5 }
           ]
         },
         {
           key: 'totals',
           outcomes: [
-            { name: 'Over', price: -115, point: 228.5 },
-            { name: 'Under', price: -105, point: 228.5 }
+            { name: 'Over', price: -110, point: 234.5 },
+            { name: 'Under', price: -110, point: 234.5 }
           ]
         }
       ]
@@ -142,11 +142,11 @@ const MOCK_GAMES: Game[] = [
   },
   {
     id: 'mock-3',
-    sport_key: 'baseball_mlb',
-    sport_title: 'MLB',
-    commence_time: new Date(Date.now() + 259200000).toISOString(),
-    home_team: 'New York Yankees',
-    away_team: 'Houston Astros',
+    sport_key: 'icehockey_nhl',
+    sport_title: 'NHL',
+    commence_time: new Date(Date.now() + 21600000).toISOString(), // 6 hours from now
+    home_team: 'Colorado Avalanche',
+    away_team: 'Vegas Golden Knights',
     bookmakers: [{
       key: 'betmgm',
       title: 'BetMGM',
@@ -154,22 +154,127 @@ const MOCK_GAMES: Game[] = [
         {
           key: 'h2h',
           outcomes: [
-            { name: 'New York Yankees', price: -140 },
-            { name: 'Houston Astros', price: 120 }
+            { name: 'Colorado Avalanche', price: -145 },
+            { name: 'Vegas Golden Knights', price: 125 }
           ]
         },
         {
           key: 'spreads',
           outcomes: [
-            { name: 'New York Yankees', price: -115, point: -1.5 },
-            { name: 'Houston Astros', price: -105, point: 1.5 }
+            { name: 'Colorado Avalanche', price: -110, point: -1.5 },
+            { name: 'Vegas Golden Knights', price: -110, point: 1.5 }
           ]
         },
         {
           key: 'totals',
           outcomes: [
-            { name: 'Over', price: -110, point: 8.5 },
-            { name: 'Under', price: -110, point: 8.5 }
+            { name: 'Over', price: -115, point: 6.5 },
+            { name: 'Under', price: -105, point: 6.5 }
+          ]
+        }
+      ]
+    }]
+  },
+  {
+    id: 'mock-4',
+    sport_key: 'basketball_nba',
+    sport_title: 'NBA',
+    commence_time: new Date(Date.now() + 28800000).toISOString(), // 8 hours from now
+    home_team: 'Phoenix Suns',
+    away_team: 'Golden State Warriors',
+    bookmakers: [{
+      key: 'caesars',
+      title: 'Caesars',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'Phoenix Suns', price: 115 },
+            { name: 'Golden State Warriors', price: -135 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'Phoenix Suns', price: -110, point: 3.0 },
+            { name: 'Golden State Warriors', price: -110, point: -3.0 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -108, point: 227.5 },
+            { name: 'Under', price: -112, point: 227.5 }
+          ]
+        }
+      ]
+    }]
+  },
+  {
+    id: 'mock-5',
+    sport_key: 'americanfootball_nfl',
+    sport_title: 'NFL',
+    commence_time: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+    home_team: 'Philadelphia Eagles',
+    away_team: 'Green Bay Packers',
+    bookmakers: [{
+      key: 'draftkings',
+      title: 'DraftKings',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'Philadelphia Eagles', price: -175 },
+            { name: 'Green Bay Packers', price: 150 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'Philadelphia Eagles', price: -112, point: -4.5 },
+            { name: 'Green Bay Packers', price: -108, point: 4.5 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -110, point: 49.0 },
+            { name: 'Under', price: -110, point: 49.0 }
+          ]
+        }
+      ]
+    }]
+  },
+  {
+    id: 'mock-6',
+    sport_key: 'basketball_nba',
+    sport_title: 'NBA',
+    commence_time: new Date(Date.now() + 93600000).toISOString(), // Tomorrow evening
+    home_team: 'Miami Heat',
+    away_team: 'Chicago Bulls',
+    bookmakers: [{
+      key: 'fanduel',
+      title: 'FanDuel',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'Miami Heat', price: -155 },
+            { name: 'Chicago Bulls', price: 132 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'Miami Heat', price: -110, point: -3.5 },
+            { name: 'Chicago Bulls', price: -110, point: 3.5 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -112, point: 221.0 },
+            { name: 'Under', price: -108, point: 221.0 }
           ]
         }
       ]

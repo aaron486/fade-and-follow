@@ -46,149 +46,6 @@ const SPORTS = [
   { value: 'americanfootball_ncaaf', label: 'College Football' },
 ];
 
-const MOCK_EVENTS: OddsEvent[] = [
-  {
-    id: 'mock-1',
-    sport_key: 'americanfootball_nfl',
-    sport_title: 'NFL',
-    commence_time: new Date(Date.now() + 7200000).toISOString(),
-    home_team: 'Kansas City Chiefs',
-    away_team: 'Buffalo Bills',
-    bookmakers: [{
-      key: 'draftkings',
-      title: 'DraftKings',
-      markets: [
-        {
-          key: 'h2h',
-          outcomes: [
-            { name: 'Kansas City Chiefs', price: -150 },
-            { name: 'Buffalo Bills', price: 130 }
-          ]
-        },
-        {
-          key: 'spreads',
-          outcomes: [
-            { name: 'Kansas City Chiefs', price: -110, point: -3.5 },
-            { name: 'Buffalo Bills', price: -110, point: 3.5 }
-          ]
-        },
-        {
-          key: 'totals',
-          outcomes: [
-            { name: 'Over', price: -110, point: 51.5 },
-            { name: 'Under', price: -110, point: 51.5 }
-          ]
-        }
-      ]
-    }]
-  },
-  {
-    id: 'mock-2',
-    sport_key: 'basketball_nba',
-    sport_title: 'NBA',
-    commence_time: new Date(Date.now() + 14400000).toISOString(),
-    home_team: 'Los Angeles Lakers',
-    away_team: 'Boston Celtics',
-    bookmakers: [{
-      key: 'fanduel',
-      title: 'FanDuel',
-      markets: [
-        {
-          key: 'h2h',
-          outcomes: [
-            { name: 'Los Angeles Lakers', price: 105 },
-            { name: 'Boston Celtics', price: -125 }
-          ]
-        },
-        {
-          key: 'spreads',
-          outcomes: [
-            { name: 'Los Angeles Lakers', price: -110, point: 2.5 },
-            { name: 'Boston Celtics', price: -110, point: -2.5 }
-          ]
-        },
-        {
-          key: 'totals',
-          outcomes: [
-            { name: 'Over', price: -115, point: 228.5 },
-            { name: 'Under', price: -105, point: 228.5 }
-          ]
-        }
-      ]
-    }]
-  },
-  {
-    id: 'mock-3',
-    sport_key: 'baseball_mlb',
-    sport_title: 'MLB',
-    commence_time: new Date(Date.now() + 21600000).toISOString(),
-    home_team: 'New York Yankees',
-    away_team: 'Houston Astros',
-    bookmakers: [{
-      key: 'betmgm',
-      title: 'BetMGM',
-      markets: [
-        {
-          key: 'h2h',
-          outcomes: [
-            { name: 'New York Yankees', price: -140 },
-            { name: 'Houston Astros', price: 120 }
-          ]
-        },
-        {
-          key: 'spreads',
-          outcomes: [
-            { name: 'New York Yankees', price: -115, point: -1.5 },
-            { name: 'Houston Astros', price: -105, point: 1.5 }
-          ]
-        },
-        {
-          key: 'totals',
-          outcomes: [
-            { name: 'Over', price: -110, point: 8.5 },
-            { name: 'Under', price: -110, point: 8.5 }
-          ]
-        }
-      ]
-    }]
-  },
-  {
-    id: 'mock-4',
-    sport_key: 'americanfootball_ncaaf',
-    sport_title: 'NCAAF',
-    commence_time: new Date(Date.now() + 28800000).toISOString(),
-    home_team: 'Ohio State Buckeyes',
-    away_team: 'Michigan Wolverines',
-    bookmakers: [{
-      key: 'fanduel',
-      title: 'FanDuel',
-      markets: [
-        {
-          key: 'h2h',
-          outcomes: [
-            { name: 'Ohio State Buckeyes', price: -180 },
-            { name: 'Michigan Wolverines', price: 155 }
-          ]
-        },
-        {
-          key: 'spreads',
-          outcomes: [
-            { name: 'Ohio State Buckeyes', price: -110, point: -7.5 },
-            { name: 'Michigan Wolverines', price: -110, point: 7.5 }
-          ]
-        },
-        {
-          key: 'totals',
-          outcomes: [
-            { name: 'Over', price: -110, point: 56.5 },
-            { name: 'Under', price: -110, point: 56.5 }
-          ]
-        }
-      ]
-    }]
-  }
-];
-
 interface LiveOddsBarProps {
   onBetClick?: (betDetails: {
     sport: string;
@@ -204,10 +61,11 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
   const [events, setEvents] = useState<OddsEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSport, setSelectedSport] = useState('upcoming');
-  const [useMockData, setUseMockData] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchOdds = async (sport: string) => {
     setLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase.functions.invoke('get-betting-odds', {
         body: { sport }
@@ -215,46 +73,40 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
 
       if (error) {
         console.error('Error fetching odds:', error);
-        setUseMockData(true);
-        setEvents(MOCK_EVENTS);
+        setError('Failed to load betting lines');
+        setEvents([]);
         setLoading(false);
         return;
       }
 
       if (data?.events && data.events.length > 0) {
-        // Sort events: live games first, then by closest start time
-        const sortedEvents = [...data.events].sort((a, b) => {
-          const aIsLive = isGameLive(a.commence_time);
-          const bIsLive = isGameLive(b.commence_time);
-          
-          // Live games first
-          if (aIsLive && !bIsLive) return -1;
-          if (!aIsLive && bIsLive) return 1;
-          
-          // Then sort by commence time (earliest first)
-          return new Date(a.commence_time).getTime() - new Date(b.commence_time).getTime();
-        });
-        
-        setEvents(sortedEvents.slice(0, 10));
-        setUseMockData(false);
+        // Already sorted by the edge function
+        setEvents(data.events);
       } else {
-        setUseMockData(true);
-        setEvents(MOCK_EVENTS);
+        setEvents([]);
       }
     } catch (error) {
       console.error('Error fetching odds:', error);
-      setUseMockData(true);
-      setEvents(MOCK_EVENTS);
+      setError('Failed to load betting lines');
+      setEvents([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOdds(selectedSport);
-    // Refresh every 2 minutes for live tracking
-    const interval = setInterval(() => fetchOdds(selectedSport), 2 * 60 * 1000);
-    return () => clearInterval(interval);
+    // Add delay to prevent rate limiting
+    const timer = setTimeout(() => {
+      fetchOdds(selectedSport);
+    }, 200);
+    
+    // Refresh every 3 minutes for live tracking
+    const interval = setInterval(() => fetchOdds(selectedSport), 3 * 60 * 1000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, [selectedSport]);
 
   const formatOdds = (price: number) => {
@@ -327,9 +179,9 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary animate-pulse" />
             <h3 className="font-semibold text-sm">Live Betting Lines</h3>
-            {useMockData && (
-              <Badge variant="outline" className="text-xs">
-                Demo Data
+            {error && (
+              <Badge variant="destructive" className="text-xs">
+                {error}
               </Badge>
             )}
           </div>
@@ -352,7 +204,9 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
         <div className="flex gap-3 p-4 pt-0">
           {events.length === 0 ? (
             <div className="text-center text-muted-foreground py-8 w-full">
-              <p className="text-sm">No upcoming games found for this sport</p>
+              <p className="text-sm">
+                {error ? 'Unable to load betting lines. Please try again.' : 'No upcoming games found for this sport'}
+              </p>
             </div>
           ) : (
             events.map((event) => {

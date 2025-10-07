@@ -77,48 +77,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
     let profileLoadTimeout: NodeJS.Timeout;
+    let hasLoadedProfile = false;
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      // Completely ignore token refresh events
+      // Completely ignore token refresh - don't update anything
       if (event === 'TOKEN_REFRESHED') {
         return;
       }
       
       console.log('🔐 Auth event:', event);
       
-      // Always update session state
-      setSession(session);
-      setUser(session?.user ?? null);
-      
       // Clear any pending profile loads
       if (profileLoadTimeout) {
         clearTimeout(profileLoadTimeout);
       }
       
-      // Handle sign in - load profile once after a delay
+      // Handle sign in - load profile once
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in:', session.user.email);
-        profileLoadTimeout = setTimeout(() => {
-          if (mounted && session?.user) {
-            loadUserProfile(session.user.id);
-          }
-        }, 200);
+        setSession(session);
+        setUser(session.user);
+        
+        if (!hasLoadedProfile) {
+          hasLoadedProfile = true;
+          profileLoadTimeout = setTimeout(() => {
+            if (mounted && session?.user) {
+              loadUserProfile(session.user.id);
+            }
+          }, 300);
+        }
       } 
       // Handle sign out
       else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
+        setSession(null);
+        setUser(null);
         setUserProfile(null);
+        hasLoadedProfile = false;
       }
-      // Handle initial session - load profile once
-      else if (event === 'INITIAL_SESSION' && session?.user) {
-        profileLoadTimeout = setTimeout(() => {
-          if (mounted && session?.user) {
-            loadUserProfile(session.user.id);
-          }
-        }, 200);
+      // Handle initial session
+      else if (event === 'INITIAL_SESSION') {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user && !hasLoadedProfile) {
+          hasLoadedProfile = true;
+          profileLoadTimeout = setTimeout(() => {
+            if (mounted && session?.user) {
+              loadUserProfile(session.user.id);
+            }
+          }, 300);
+        }
       }
     });
 

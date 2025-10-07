@@ -113,13 +113,13 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
   };
 
   useEffect(() => {
-    // Stagger load heavily to prevent rate limiting - wait for BetStoriesBar
+    // Small delay, then fetch. Function is public so no auth needed.
     const timer = setTimeout(() => {
       fetchOdds(selectedSport);
-    }, 3000); // 3 second delay
+    }, 300);
     
-    // Refresh every 10 minutes to avoid excessive API calls
-    const interval = setInterval(() => fetchOdds(selectedSport), 10 * 60 * 1000);
+    // Refresh every 3 minutes for live updates
+    const interval = setInterval(() => fetchOdds(selectedSport), 3 * 60 * 1000);
     
     return () => {
       clearTimeout(timer);

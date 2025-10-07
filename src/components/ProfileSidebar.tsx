@@ -1,13 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Flame, Snowflake, TrendingUp, TrendingDown, Users, Trophy } from 'lucide-react';
 import { BettingStats } from './BettingStats';
+import { AvatarUpload } from './AvatarUpload';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProfileSidebar = () => {
   const { user } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setProfile(data);
+      }
+    };
+
+    fetchProfile();
+  }, [user?.id]);
+
+  const handleAvatarUpload = (url: string) => {
+    setProfile((prev: any) => ({ ...prev, avatar_url: url }));
+  };
 
   // Mock data - this will come from actual user data/stats later
   const userStats = {
@@ -52,20 +77,18 @@ const ProfileSidebar = () => {
       {/* Profile Header */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-3">
-            <Avatar className="w-12 h-12">
-              <AvatarImage src={user.user_metadata?.avatar_url} />
-              <AvatarFallback>
-                {user.user_metadata?.username?.[0]?.toUpperCase() || 
-                 user.email?.[0]?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <h3 className="font-semibold">
-                {user.user_metadata?.display_name || user.user_metadata?.username || 'User'}
+          <div className="flex flex-col items-center gap-4">
+            <AvatarUpload 
+              currentAvatarUrl={profile?.avatar_url || user.user_metadata?.avatar_url}
+              username={profile?.username || user.user_metadata?.username}
+              onUploadComplete={handleAvatarUpload}
+            />
+            <div className="text-center">
+              <h3 className="font-semibold text-lg">
+                {profile?.display_name || user.user_metadata?.display_name || user.user_metadata?.username || 'User'}
               </h3>
               <p className="text-sm text-muted-foreground">
-                @{user.user_metadata?.username || 'username'}
+                @{profile?.username || user.user_metadata?.username || 'username'}
               </p>
             </div>
           </div>

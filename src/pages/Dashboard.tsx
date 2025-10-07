@@ -13,10 +13,13 @@ import BetConfirmation from '@/components/BetConfirmation';
 import { BettingStats } from '@/components/BettingStats';
 import { Leaderboard } from '@/components/Leaderboard';
 import { useBetSettlement } from '@/hooks/useBetSettlement';
+import { Button } from '@/components/ui/button';
+import { MessageCircle, X } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
-  const [activeView, setActiveView] = useState('chat');
+  const [activeView, setActiveView] = useState('feed');
+  const [chatOpen, setChatOpen] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{
     sport: string;
     event_name: string;
@@ -67,12 +70,6 @@ const Dashboard = () => {
             <BetsPage />
           </div>
         );
-      case 'chat':
-        return (
-          <div className="h-full overflow-hidden">
-            <DiscordChat />
-          </div>
-        );
       case 'groups':
         return (
           <div className="flex items-center justify-center h-full px-4">
@@ -91,7 +88,11 @@ const Dashboard = () => {
           </div>
         );
       default:
-        return <DiscordChat />;
+        return (
+          <div className="h-full overflow-hidden">
+            <FeedContent />
+          </div>
+        );
     }
   };
 
@@ -123,6 +124,51 @@ const Dashboard = () => {
 
       {/* Bottom Navigation */}
       <BottomNav activeView={activeView} onViewChange={setActiveView} />
+
+      {/* Floating Chat Button - Top Right */}
+      <Button
+        onClick={() => setChatOpen(!chatOpen)}
+        size="icon"
+        className="fixed top-4 right-4 z-50 h-12 w-12 rounded-full shadow-lg hover:scale-110 transition-transform"
+      >
+        {chatOpen ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <MessageCircle className="h-5 w-5" />
+        )}
+      </Button>
+
+      {/* Sliding Chat Panel - Instagram Style */}
+      <div
+        className={`fixed top-0 right-0 bottom-0 w-full md:w-[500px] bg-background border-l shadow-2xl z-40 transition-transform duration-300 ${
+          chatOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="h-full flex flex-col">
+          <div className="h-14 border-b flex items-center justify-between px-4 bg-card">
+            <h2 className="text-lg font-semibold">Messages</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setChatOpen(false)}
+              className="md:hidden"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <DiscordChat />
+          </div>
+        </div>
+      </div>
+
+      {/* Overlay for mobile */}
+      {chatOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setChatOpen(false)}
+        />
+      )}
 
       {/* Bet Confirmation Modal */}
       {selectedBet && (

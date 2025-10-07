@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { FeedCard } from '@/components/FeedCard';
 import { TrendingFriends } from '@/components/TrendingFriends';
+import { PicksFeed } from '@/components/PicksFeed';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw } from 'lucide-react';
@@ -104,32 +105,43 @@ const Feed = () => {
           </div>
 
           {/* Feed Items */}
-          {isLoadingFeed ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-64 bg-card rounded-lg animate-pulse" />
-              ))}
+          <div className="space-y-6">
+            {/* Friends Activity */}
+            <TrendingFriends />
+            
+            {/* Friends Picks */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Friends & Celebrity Picks</h2>
+              <PicksFeed />
             </div>
-          ) : feedItems.length > 0 ? (
-            <div className="space-y-4">
-              {/* Friends Activity */}
-              <TrendingFriends />
-              
-              {/* Feed Items */}
-              {feedItems.map((item) => (
-                <FeedCard key={item.id} item={item} />
-              ))}
+
+            {/* AI Generated Feed */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">AI Insights</h2>
+              {isLoadingFeed ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-64 bg-card rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              ) : feedItems.length > 0 ? (
+                <div className="space-y-4">
+                  {feedItems.map((item) => (
+                    <FeedCard key={item.id} item={item} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-card rounded-lg border border-border">
+                  <p className="text-muted-foreground mb-4">
+                    No AI insights yet. Set your favorite team in your profile to get personalized insights!
+                  </p>
+                  <Button onClick={loadFeed} disabled={isLoadingFeed}>
+                    Generate AI Insights
+                  </Button>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="text-center py-12 bg-card rounded-lg border border-border">
-              <p className="text-muted-foreground mb-4">
-                No feed items yet. Set your favorite team in your profile to get personalized insights!
-              </p>
-              <Button onClick={loadFeed} disabled={isLoadingFeed}>
-                Generate Feed
-              </Button>
-            </div>
-          )}
+          </div>
         </div>
       </main>
     </div>

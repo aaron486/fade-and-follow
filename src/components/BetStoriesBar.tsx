@@ -15,6 +15,7 @@ interface BetStory {
   userName: string;
   avatarUrl?: string;
   winRate?: number;
+  currentStreak?: number;
   betDetails: {
     sport: string;
     eventName: string;
@@ -117,10 +118,10 @@ const BetStoriesBar = () => {
         .select('user_id, username, display_name, avatar_url')
         .in('user_id', userIds);
 
-      // Fetch user records for win rates
+      // Fetch user records for win rates and streaks
       const { data: userRecords } = await supabase
         .from('user_records')
-        .select('user_id, wins, losses')
+        .select('user_id, wins, losses, current_streak')
         .in('user_id', userIds);
 
       // Fetch bets
@@ -133,40 +134,51 @@ const BetStoriesBar = () => {
       const betsMap = new Map(bets?.map(b => [b.id, b]) || []);
       const recordsMap = new Map(userRecords?.map(r => [r.user_id, r]) || []);
 
-      // Format stories
-      const formattedStories: BetStory[] = storiesData
-        .map((story) => {
-          const profile = profilesMap.get(story.user_id);
-          const bet = betsMap.get(story.bet_id);
-          const record = recordsMap.get(story.user_id);
-          
-          if (!profile || !bet) return null;
+      // Format stories and group by user (only keep the most recent story per user)
+      const userStoriesMap = new Map<string, BetStory>();
+      
+      storiesData.forEach((story) => {
+        const profile = profilesMap.get(story.user_id);
+        const bet = betsMap.get(story.bet_id);
+        const record = recordsMap.get(story.user_id);
+        
+        if (!profile || !bet) return;
 
-          // Calculate win rate
-          let winRate = 0;
-          if (record && (record.wins + record.losses) > 0) {
-            winRate = (record.wins / (record.wins + record.losses)) * 100;
-          }
+        // Calculate win rate
+        let winRate = 0;
+        if (record && (record.wins + record.losses) > 0) {
+          winRate = (record.wins / (record.wins + record.losses)) * 100;
+        }
 
-          return {
-            id: story.id,
-            userId: story.user_id,
-            userName: profile.display_name || profile.username || 'Unknown User',
-            avatarUrl: profile.avatar_url,
-            timestamp: story.created_at,
-            winRate,
-            betDetails: {
-              sport: bet.sport,
-              eventName: bet.event_name,
-              selection: bet.selection,
-              odds: bet.odds,
-              stake: bet.stake_units,
-              notes: bet.notes,
-            },
-          };
-        })
-        .filter(Boolean) as BetStory[];
+        // Get current streak (positive for wins, negative for losses)
+        const currentStreak = record?.current_streak || 0;
 
+        const formattedStory: BetStory = {
+          id: story.id,
+          userId: story.user_id,
+          userName: profile.display_name || profile.username || 'Unknown User',
+          avatarUrl: profile.avatar_url,
+          timestamp: story.created_at,
+          winRate,
+          currentStreak: Math.abs(currentStreak), // Show absolute value
+          betDetails: {
+            sport: bet.sport,
+            eventName: bet.event_name,
+            selection: bet.selection,
+            odds: bet.odds,
+            stake: bet.stake_units,
+            notes: bet.notes,
+          },
+        };
+
+        // Only keep the most recent story per user
+        const existingStory = userStoriesMap.get(story.user_id);
+        if (!existingStory || new Date(story.created_at) > new Date(existingStory.timestamp)) {
+          userStoriesMap.set(story.user_id, formattedStory);
+        }
+      });
+
+      const formattedStories = Array.from(userStoriesMap.values());
       setStories(formattedStories);
     } catch (error) {
       console.error('Error loading stories:', error);
@@ -226,9 +238,9 @@ const BetStoriesBar = () => {
             ) : (
               stories.map((story) => (
                 <button
-                  key={story.id}
+                  key={story.userId}
                   onClick={() => setSelectedStory(story)}
-                  className="flex flex-col items-center gap-2 flex-shrink-0 group"
+                  className="flex flex-col items-center gap-1 flex-shrink-0 group"
                 >
                   <div className="relative">
                     <div className={`p-[3px] rounded-full bg-gradient-to-tr ${getPerformanceRing(story.winRate)} shadow-lg`}>
@@ -247,8 +259,8 @@ const BetStoriesBar = () => {
                       <div className="absolute -top-1 -right-1 text-lg">❄️</div>
                     )}
                   </div>
-                  <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground max-w-[80px] truncate">
-                    {story.userName.split(' ')[0]}
+                  <span className="text-lg font-bold text-foreground group-hover:text-primary">
+                    {story.currentStreak || 0}
                   </span>
                 </button>
               ))

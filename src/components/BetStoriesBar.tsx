@@ -236,34 +236,33 @@ const BetStoriesBar = () => {
                 <p className="text-sm">No stories yet. Add a bet to share with friends!</p>
               </div>
             ) : (
-              stories.map((story) => (
-                <button
-                  key={story.userId}
-                  onClick={() => setSelectedStory(story)}
-                  className="flex flex-col items-center gap-1 flex-shrink-0 group"
-                >
-                  <div className="relative">
-                    <div className={`p-[3px] rounded-full bg-gradient-to-tr ${getPerformanceRing(story.winRate)} shadow-lg`}>
-                      <Avatar className="h-16 w-16 border-[3px] border-background">
-                        <AvatarImage src={story.avatarUrl} />
-                        <AvatarFallback className="bg-muted">
-                          {story.userName.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
+              stories.map((story) => {
+                const isWinStreak = story.currentStreak && story.currentStreak > 0;
+                const ringColor = isWinStreak 
+                  ? "from-green-500 via-green-600 to-green-500" 
+                  : "from-red-500 via-red-600 to-red-500";
+                
+                return (
+                  <button
+                    key={story.userId}
+                    onClick={() => setSelectedStory(story)}
+                    className="flex flex-col items-center gap-1 flex-shrink-0 group"
+                  >
+                    <div className="relative">
+                      <div className={`p-[3px] rounded-full bg-gradient-to-tr ${ringColor} shadow-lg transition-all duration-300 group-hover:scale-110`}>
+                        <div className="h-16 w-16 rounded-full bg-background flex items-center justify-center">
+                          <span className={`text-2xl font-bold ${isWinStreak ? 'text-green-500' : 'text-red-500'}`}>
+                            {story.currentStreak || 0}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    {/* Performance indicator */}
-                    {story.winRate && story.winRate >= 70 && (
-                      <div className="absolute -top-1 -right-1 text-lg">🔥</div>
-                    )}
-                    {story.winRate && story.winRate >= 25 && story.winRate < 35 && (
-                      <div className="absolute -top-1 -right-1 text-lg">❄️</div>
-                    )}
-                  </div>
-                  <span className="text-lg font-bold text-foreground group-hover:text-primary">
-                    {story.currentStreak || 0}
-                  </span>
-                </button>
-              ))
+                    <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground max-w-[80px] truncate">
+                      {story.userName.split(' ')[0]}
+                    </span>
+                  </button>
+                );
+              })
             )}
           </div>
           <ScrollBar orientation="horizontal" />

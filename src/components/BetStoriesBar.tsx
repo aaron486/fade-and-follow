@@ -27,6 +27,146 @@ interface BetStory {
   timestamp: string;
 }
 
+// Mock bet stories data
+const mockBetStories: BetStory[] = [
+  {
+    id: '1',
+    userId: 'user1',
+    userName: 'Sarah Johnson',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+    winRate: 72,
+    currentStreak: 5,
+    betDetails: {
+      sport: 'NBA',
+      eventName: 'Lakers vs Warriors',
+      selection: 'Lakers -3.5',
+      odds: -110,
+      stake: 2,
+      notes: 'Lakers defense looking solid, Warriors missing key players 🔥'
+    },
+    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString()
+  },
+  {
+    id: '2',
+    userId: 'user2',
+    userName: 'Mike Chen',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
+    winRate: 65,
+    currentStreak: 3,
+    betDetails: {
+      sport: 'NFL',
+      eventName: 'Chiefs vs Bills',
+      selection: 'Mahomes Over 287.5 Passing Yards',
+      odds: -115,
+      stake: 3,
+      notes: 'Mahomes always delivers in prime time!'
+    },
+    timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString()
+  },
+  {
+    id: '3',
+    userId: 'user3',
+    userName: 'Alex Rivera',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+    winRate: 58,
+    currentStreak: 2,
+    betDetails: {
+      sport: 'MLB',
+      eventName: 'Yankees vs Blue Jays',
+      selection: 'Over 8 Runs',
+      odds: -105,
+      stake: 1.5,
+      notes: 'Both bullpens struggling lately'
+    },
+    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: '4',
+    userId: 'user4',
+    userName: 'Emma Davis',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
+    winRate: 45,
+    currentStreak: -2,
+    betDetails: {
+      sport: 'NBA',
+      eventName: 'Celtics vs Heat',
+      selection: 'Celtics ML',
+      odds: -140,
+      stake: 2,
+      notes: 'Bounce back game for Boston'
+    },
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: '5',
+    userId: 'user5',
+    userName: 'James Wilson',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=James',
+    winRate: 78,
+    currentStreak: 7,
+    betDetails: {
+      sport: 'NFL',
+      eventName: 'Eagles vs Cowboys',
+      selection: 'Eagles -6.5',
+      odds: -105,
+      stake: 4,
+      notes: 'Eagles run game too strong for Dallas defense 🦅'
+    },
+    timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: '6',
+    userId: 'user6',
+    userName: 'Lisa Martinez',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lisa',
+    winRate: 55,
+    currentStreak: 1,
+    betDetails: {
+      sport: 'NHL',
+      eventName: 'Maple Leafs vs Bruins',
+      selection: 'Under 6.5 Goals',
+      odds: -120,
+      stake: 2,
+      notes: 'Both teams playing tight defensive hockey'
+    },
+    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: '7',
+    userId: 'user7',
+    userName: 'Chris Taylor',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chris',
+    winRate: 32,
+    currentStreak: -4,
+    betDetails: {
+      sport: 'NBA',
+      eventName: 'Suns vs Nuggets',
+      selection: 'Suns +7',
+      odds: -110,
+      stake: 1,
+      notes: 'Due for a win, right? 😅'
+    },
+    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: '8',
+    userId: 'user8',
+    userName: 'Rachel Kim',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rachel',
+    winRate: 69,
+    currentStreak: 4,
+    betDetails: {
+      sport: 'NFL',
+      eventName: '49ers vs Seahawks',
+      selection: '49ers Team Total Over 24.5',
+      odds: -115,
+      stake: 3,
+      notes: 'Niners offense rolling, Seattle defense vulnerable'
+    },
+    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+  }
+];
+
 const getPerformanceRing = (winRate?: number) => {
   if (!winRate || winRate < 25) {
     return "from-gray-400 via-gray-500 to-gray-400"; // Below 25% - gray
@@ -57,33 +197,14 @@ const BetStoriesBar = () => {
 
   useEffect(() => {
     if (user) {
-      // Stagger load to prevent rate limiting
+      // Load mock stories with a small delay
       const timer = setTimeout(() => {
         loadStories();
       }, 150);
       
-      // Subscribe to new stories
-      const channel = supabase
-        .channel('bet-stories-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'bet_stories'
-          },
-          () => {
-            loadStories();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        clearTimeout(timer);
-        supabase.removeChannel(channel);
-      };
+      return () => clearTimeout(timer);
     }
-  }, [user?.id]); // Only depend on user.id
+  }, [user?.id]);
 
   const loadUserProfile = async () => {
     // Profile is now loaded in AuthContext - this function is no longer needed
@@ -94,96 +215,11 @@ const BetStoriesBar = () => {
     try {
       setLoading(true);
       
-      // Clean up expired stories first
-      await supabase.rpc('delete_expired_stories');
-
-      // Get story IDs
-      const { data: storiesData, error: storiesError } = await supabase
-        .from('bet_stories')
-        .select('id, user_id, bet_id, created_at')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (storiesError) throw storiesError;
-
-      if (!storiesData || storiesData.length === 0) {
-        setStories([]);
-        setLoading(false);
-        return;
-      }
-
-      // Get user IDs and bet IDs
-      const userIds = [...new Set(storiesData.map(s => s.user_id))];
-      const betIds = storiesData.map(s => s.bet_id);
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 600));
       
-      // Fetch profiles
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, username, display_name, avatar_url')
-        .in('user_id', userIds);
-
-      // Fetch user records for win rates and streaks
-      const { data: userRecords } = await supabase
-        .from('user_records')
-        .select('user_id, wins, losses, current_streak')
-        .in('user_id', userIds);
-
-      // Fetch bets
-      const { data: bets } = await supabase
-        .from('bets')
-        .select('id, sport, event_name, selection, odds, stake_units, notes')
-        .in('id', betIds);
-
-      const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-      const betsMap = new Map(bets?.map(b => [b.id, b]) || []);
-      const recordsMap = new Map(userRecords?.map(r => [r.user_id, r]) || []);
-
-      // Format stories and group by user (only keep the most recent story per user)
-      const userStoriesMap = new Map<string, BetStory>();
-      
-      storiesData.forEach((story) => {
-        const profile = profilesMap.get(story.user_id);
-        const bet = betsMap.get(story.bet_id);
-        const record = recordsMap.get(story.user_id);
-        
-        if (!profile || !bet) return;
-
-        // Calculate win rate
-        let winRate = 0;
-        if (record && (record.wins + record.losses) > 0) {
-          winRate = (record.wins / (record.wins + record.losses)) * 100;
-        }
-
-        // Get current streak (positive for wins, negative for losses)
-        const currentStreak = record?.current_streak || 0;
-
-        const formattedStory: BetStory = {
-          id: story.id,
-          userId: story.user_id,
-          userName: profile.display_name || profile.username || 'Unknown User',
-          avatarUrl: profile.avatar_url,
-          timestamp: story.created_at,
-          winRate,
-          currentStreak: Math.abs(currentStreak), // Show absolute value
-          betDetails: {
-            sport: bet.sport,
-            eventName: bet.event_name,
-            selection: bet.selection,
-            odds: bet.odds,
-            stake: bet.stake_units,
-            notes: bet.notes,
-          },
-        };
-
-        // Only keep the most recent story per user
-        const existingStory = userStoriesMap.get(story.user_id);
-        if (!existingStory || new Date(story.created_at) > new Date(existingStory.timestamp)) {
-          userStoriesMap.set(story.user_id, formattedStory);
-        }
-      });
-
-      const formattedStories = Array.from(userStoriesMap.values());
-      setStories(formattedStories);
+      // Use mock data
+      setStories(mockBetStories);
     } catch (error) {
       console.error('Error loading stories:', error);
     } finally {

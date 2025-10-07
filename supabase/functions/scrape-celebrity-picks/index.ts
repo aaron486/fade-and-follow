@@ -23,55 +23,77 @@ interface ParsedPick {
 }
 
 async function scrapeTwitterProfile(username: string): Promise<string> {
-  try {
-    // Use Nitter (Twitter mirror) for scraping
-    const nitterUrl = `https://nitter.poast.org/${username}`;
-    console.log(`Scraping ${nitterUrl}`);
-    
-    const response = await fetch(nitterUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-    });
+  // Try multiple Nitter instances as fallbacks
+  const nitterInstances = [
+    'https://nitter.net',
+    'https://nitter.privacydev.net',
+    'https://nitter.poast.org',
+    'https://nitter.esmailelbob.xyz',
+    'https://nitter.lunar.icu'
+  ];
 
-    if (!response.ok) {
-      console.error(`Failed to fetch ${nitterUrl}: ${response.status}`);
-      return '';
-    }
-
-    const html = await response.text();
-    
-    // Extract tweet content
-    const tweetPattern = /<div class="tweet-content[^>]*>([\s\S]*?)<\/div>/gi;
-    const tweets: string[] = [];
-    let match;
-    
-    while ((match = tweetPattern.exec(html)) !== null) {
-      const tweetHtml = match[1];
-      const textContent = tweetHtml
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+  for (const baseUrl of nitterInstances) {
+    try {
+      const nitterUrl = `${baseUrl}/${username}`;
+      console.log(`Trying to scrape ${nitterUrl}`);
       
-      // Only include tweets that look like betting picks
-      if (
-        textContent.length > 20 &&
-        (textContent.match(/\b\d+\b/) || // Contains numbers (odds)
-         textContent.toLowerCase().includes('pick') ||
-         textContent.toLowerCase().includes('bet') ||
-         textContent.toLowerCase().includes('lock') ||
-         textContent.toLowerCase().includes('parlay') ||
-         textContent.match(/[+-]\d{3}/)) // American odds format
-      ) {
-        tweets.push(textContent);
-      }
-    }
+      const response = await fetch(nitterUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
 
-    return tweets.slice(0, 10).join('\n\n---\n\n');
-  } catch (error) {
-    console.error(`Error scraping ${username}:`, error);
-    return '';
+      if (response.ok) {
+        const html = await response.text();
+        console.log(`Successfully fetched from ${baseUrl}`);
+        
+        // Extract tweet content
+        const tweetPattern = /<div class="tweet-content[^>]*>([\s\S]*?)<\/div>/gi;
+        const tweets: string[] = [];
+        let match;
+        
+        while ((match = tweetPattern.exec(html)) !== null) {
+          const tweetHtml = match[1];
+          const textContent = tweetHtml
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          
+          // Only include tweets that look like betting picks
+          if (
+            textContent.length > 20 &&
+            (textContent.match(/\b\d+\b/) || // Contains numbers (odds)
+             textContent.toLowerCase().includes('pick') ||
+             textContent.toLowerCase().includes('bet') ||
+             textContent.toLowerCase().includes('lock') ||
+             textContent.toLowerCase().includes('parlay') ||
+             textContent.match(/[+-]\d{3}/)) // American odds format
+          ) {
+            tweets.push(textContent);
+          }
+        }
+
+        if (tweets.length > 0) {
+          console.log(`Found ${tweets.length} tweets from ${username}`);
+          return tweets.slice(0, 10).join('\n\n---\n\n');
+        }
+        
+        console.log(`No betting-related tweets found for ${username}`);
+        return '';
+      }
+      
+      console.log(`${baseUrl} returned status ${response.status}, trying next instance...`);
+    } catch (error) {
+      console.error(`Error with ${baseUrl}:`, error instanceof Error ? error.message : 'Unknown error');
+      // Continue to next instance
+    }
   }
+
+  console.log(`All Nitter instances failed for ${username}`);
+  return '';
 }
 
 async function extractPicksWithAI(content: string, username: string): Promise<ParsedPick[]> {
@@ -267,8 +289,8 @@ serve(async (req) => {
 
           console.log(`Processed ${bettor.display_name}: ${saved} new picks (Total: ${totalPicks})`);
 
-          // Rate limiting - 3 seconds between accounts
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          // Rate limiting - 5 seconds between accounts to avoid overwhelming instances
+          await new Promise(resolve => setTimeout(resolve, 5000));
         } catch (error) {
           console.error(`Error processing ${bettor.username}:`, error);
           results[bettor.display_name] = 0;
@@ -286,7 +308,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Started scraping ${bettors?.length || 0} celebrity accounts. This will take approximately ${Math.ceil((bettors?.length || 0) * 3 / 60)} minutes.`,
+        message: `Started scraping ${bettors?.length || 0} celebrity accounts. This will take approximately ${Math.ceil((bettors?.length || 0) * 5 / 60)} minutes.`,
         status: 'processing',
         accounts: bettors?.length || 0
       }),

@@ -505,6 +505,163 @@ export type Database = {
         }
         Relationships: []
       }
+      public_bettor_records: {
+        Row: {
+          bettor_id: string
+          created_at: string | null
+          current_streak: number
+          last_pick_at: string | null
+          longest_streak: number
+          losses: number
+          pushes: number
+          units_won: number
+          updated_at: string | null
+          wins: number
+        }
+        Insert: {
+          bettor_id: string
+          created_at?: string | null
+          current_streak?: number
+          last_pick_at?: string | null
+          longest_streak?: number
+          losses?: number
+          pushes?: number
+          units_won?: number
+          updated_at?: string | null
+          wins?: number
+        }
+        Update: {
+          bettor_id?: string
+          created_at?: string | null
+          current_streak?: number
+          last_pick_at?: string | null
+          longest_streak?: number
+          losses?: number
+          pushes?: number
+          units_won?: number
+          updated_at?: string | null
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_bettor_records_bettor_id_fkey"
+            columns: ["bettor_id"]
+            isOneToOne: true
+            referencedRelation: "public_bettors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_bettors: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string
+          follower_count: number | null
+          id: string
+          is_verified: boolean | null
+          social_handles: Json | null
+          source_urls: string[] | null
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name: string
+          follower_count?: number | null
+          id?: string
+          is_verified?: boolean | null
+          social_handles?: Json | null
+          source_urls?: string[] | null
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string
+          follower_count?: number | null
+          id?: string
+          is_verified?: boolean | null
+          social_handles?: Json | null
+          source_urls?: string[] | null
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      public_picks: {
+        Row: {
+          bettor_id: string
+          confidence: string | null
+          created_at: string | null
+          event_name: string
+          id: string
+          market: string
+          odds: number
+          posted_at: string
+          reasoning: string | null
+          resolved_at: string | null
+          selection: string
+          source_post_id: string | null
+          source_url: string | null
+          sport: string
+          stake_units: number | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          bettor_id: string
+          confidence?: string | null
+          created_at?: string | null
+          event_name: string
+          id?: string
+          market: string
+          odds: number
+          posted_at: string
+          reasoning?: string | null
+          resolved_at?: string | null
+          selection: string
+          source_post_id?: string | null
+          source_url?: string | null
+          sport: string
+          stake_units?: number | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          bettor_id?: string
+          confidence?: string | null
+          created_at?: string | null
+          event_name?: string
+          id?: string
+          market?: string
+          odds?: number
+          posted_at?: string
+          reasoning?: string | null
+          resolved_at?: string | null
+          selection?: string
+          source_post_id?: string | null
+          source_url?: string | null
+          sport?: string
+          stake_units?: number | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_picks_bettor_id_fkey"
+            columns: ["bettor_id"]
+            isOneToOne: false
+            referencedRelation: "public_bettors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           created_at: string
@@ -613,6 +770,10 @@ export type Database = {
       is_first_channel_member: {
         Args: { _channel_id: string }
         Returns: boolean
+      }
+      update_public_bettor_stats: {
+        Args: { target_bettor_id: string }
+        Returns: undefined
       }
       update_user_records_stats: {
         Args: { target_user_id: string }

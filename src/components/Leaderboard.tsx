@@ -1,26 +1,163 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Flame, Snowflake, Lock, TrendingUp, Target, Zap } from "lucide-react";
+import { Flame, Snowflake, Lock, TrendingUp, Target, Zap, Star, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-const mockLeaderboardData = [
-  { rank: 1, name: "Aaron Hackett", units: "+52.8", streak: "10W", winRate: "78%", roi: "+15.2%" },
-  { rank: 2, name: "Samir Bouhmaid", units: "+47.2", streak: "8W", winRate: "73%", roi: "+12.3%" },
-  { rank: 3, name: "George Cemovich", units: "+41.8", streak: "5W", winRate: "69%", roi: "+9.8%" },
-  { rank: 4, name: "Anthony Hackett", units: "+38.5", streak: "12W", winRate: "71%", roi: "+11.1%" },
-  { rank: 5, name: "Dave Portnoy", units: "+35.2", streak: "3L", winRate: "66%", roi: "+8.2%" },
-  { rank: 6, name: "Lee Corso", units: "+32.1", streak: "7W", winRate: "68%", roi: "+7.9%" },
-  { rank: 7, name: "Urban Meyer", units: "+29.8", streak: "2W", winRate: "64%", roi: "+6.5%" },
-  { rank: 8, name: "Speedy Laroche", units: "+27.3", streak: "4W", winRate: "62%", roi: "+5.8%" },
-];
+interface LeaderboardEntry {
+  rank: number;
+  id: string;
+  name: string;
+  username: string;
+  avatar_url?: string;
+  units: string;
+  streak: string;
+  winRate: string;
+  roi: string;
+  wins: number;
+  losses: number;
+  isCelebrity?: boolean;
+}
 
 export const Leaderboard = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("public");
-  const [selectedUser, setSelectedUser] = useState<typeof mockLeaderboardData[0] | null>(null);
+  const [selectedUser, setSelectedUser] = useState<LeaderboardEntry | null>(null);
+  const [userLeaderboard, setUserLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [celebrityLeaderboard, setCelebrityLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadLeaderboards();
+  }, []);
+
+  const loadLeaderboards = async () => {
+    setLoading(true);
+    try {
+      // Fetch user leaderboard
+      const { data: userData, error: userError } = await supabase
+        .from('user_records')
+        .select(`
+          user_id,
+          wins,
+          losses,
+          pushes,
+          units_won,
+          current_streak,
+          profiles!inner(username, display_name, avatar_url)
+        `)
+        .order('units_won', { ascending: false })
+        .limit(50);
+
+      if (userError) throw userError;
+
+      // Fetch celebrity leaderboard
+      const { data: celebrityData, error: celebrityError } = await supabase
+        .from('public_bettor_records')
+        .select(`
+          bettor_id,
+          wins,
+          losses,
+          pushes,
+          units_won,
+          current_streak,
+          public_bettors!inner(username, display_name, avatar_url)
+        `)
+        .order('units_won', { ascending: false })
+        .limit(50);
+
+      if (celebrityError) throw celebrityError;
+
+      // Format user leaderboard
+      const formattedUsers: LeaderboardEntry[] = (userData || []).map((record: any, index) => {
+        const totalBets = record.wins + record.losses;
+        const winRate = totalBets > 0 ? ((record.wins / totalBets) * 100).toFixed(0) : '0';
+        const roi = totalBets > 0 ? ((record.units_won / totalBets) * 100).toFixed(1) : '0';
+        const roiNum = parseFloat(roi);
+        
+        return {
+          rank: index + 1,
+          id: record.user_id,
+          name: record.profiles.display_name || record.profiles.username,
+          username: record.profiles.username,
+          avatar_url: record.profiles.avatar_url,
+          units: Number(record.units_won) >= 0 ? `+${Number(record.units_won).toFixed(1)}` : Number(record.units_won).toFixed(1),
+          streak: `${Math.abs(record.current_streak)}${record.current_streak >= 0 ? 'W' : 'L'}`,
+          winRate: `${winRate}%`,
+          roi: `${roiNum >= 0 ? '+' : ''}${roi}%`,
+          wins: record.wins,
+          losses: record.losses,
+          isCelebrity: false,
+        };
+      });
+
+      // Format celebrity leaderboard
+      const formattedCelebrities: LeaderboardEntry[] = (celebrityData || []).map((record: any, index) => {
+        const totalBets = record.wins + record.losses;
+        const winRate = totalBets > 0 ? ((record.wins / totalBets) * 100).toFixed(0) : '0';
+        const roi = totalBets > 0 ? ((record.units_won / totalBets) * 100).toFixed(1) : '0';
+        const roiNum = parseFloat(roi);
+        
+        return {
+          rank: index + 1,
+          id: record.bettor_id,
+          name: record.public_bettors.display_name,
+          username: record.public_bettors.username,
+          avatar_url: record.public_bettors.avatar_url,
+          units: Number(record.units_won) >= 0 ? `+${Number(record.units_won).toFixed(1)}` : Number(record.units_won).toFixed(1),
+          streak: `${Math.abs(record.current_streak)}${record.current_streak >= 0 ? 'W' : 'L'}`,
+          winRate: `${winRate}%`,
+          roi: `${roiNum >= 0 ? '+' : ''}${roi}%`,
+          wins: record.wins,
+          losses: record.losses,
+          isCelebrity: true,
+        };
+      });
+
+      setUserLeaderboard(formattedUsers);
+      setCelebrityLeaderboard(formattedCelebrities);
+    } catch (error) {
+      console.error('Error loading leaderboards:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load leaderboards',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshCelebrityPicks = async () => {
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-celebrity-picks');
+      
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: data.message || 'Celebrity picks updated',
+      });
+
+      await loadLeaderboards();
+    } catch (error) {
+      console.error('Error refreshing picks:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh celebrity picks',
+        variant: 'destructive',
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const getStreakInfo = (streak: string) => {
     const isWinning = streak.includes('W');
@@ -38,9 +175,29 @@ export const Leaderboard = () => {
     };
   };
 
-  const renderLeaderboardList = (data: typeof mockLeaderboardData) => (
-    <div className="grid gap-4">
-      {data.map((user, index) => {
+  const renderLeaderboardList = (data: LeaderboardEntry[]) => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading leaderboard...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (data.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No data available yet</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid gap-4">
+        {data.map((user, index) => {
         const streakInfo = getStreakInfo(user.streak);
         
         return (
@@ -62,6 +219,7 @@ export const Leaderboard = () => {
                   {user.rank}
                 </div>
                 <Avatar className="w-12 h-12">
+                  {user.avatar_url && <AvatarImage src={user.avatar_url} />}
                   <AvatarFallback className="bg-secondary text-secondary-foreground font-semibold">
                     {user.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
@@ -69,6 +227,9 @@ export const Leaderboard = () => {
                 <div>
                   <div className="font-semibold text-lg flex items-center gap-2">
                     {user.name}
+                    {user.isCelebrity && (
+                      <Star className="w-4 h-4 text-accent fill-accent" />
+                    )}
                     {streakInfo.isOnFire && (
                       <span className="text-orange-500 animate-pulse" title="On Fire! 🔥">
                         🔥
@@ -120,7 +281,8 @@ export const Leaderboard = () => {
         );
       })}
     </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -135,37 +297,41 @@ export const Leaderboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 mb-8">
-            <TabsTrigger value="public">Public</TabsTrigger>
-            <TabsTrigger value="private">Private</TabsTrigger>
-            <TabsTrigger value="celebrity">Celebrity</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-8">
+            <TabsTrigger value="public">All Users</TabsTrigger>
+            <TabsTrigger value="celebrity" className="flex items-center gap-2">
+              <Star className="h-4 w-4" />
+              Celebrities
+            </TabsTrigger>
             <TabsTrigger value="football">Football</TabsTrigger>
             <TabsTrigger value="basketball">Basketball</TabsTrigger>
-            <TabsTrigger value="props">Props</TabsTrigger>
           </TabsList>
 
           <TabsContent value="public">
-            {renderLeaderboardList(mockLeaderboardData)}
-          </TabsContent>
-
-          <TabsContent value="private">
-            {renderLeaderboardList(mockLeaderboardData.slice(0, 5))}
+            {renderLeaderboardList(userLeaderboard)}
           </TabsContent>
 
           <TabsContent value="celebrity">
-            {renderLeaderboardList(mockLeaderboardData.slice(0, 6))}
+            <div className="mb-4 flex justify-end">
+              <Button 
+                onClick={refreshCelebrityPicks} 
+                disabled={refreshing}
+                size="sm"
+                variant="outline"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Updating...' : 'Refresh Picks'}
+              </Button>
+            </div>
+            {renderLeaderboardList(celebrityLeaderboard)}
           </TabsContent>
 
           <TabsContent value="football">
-            {renderLeaderboardList(mockLeaderboardData.slice(1, 7))}
+            {renderLeaderboardList(userLeaderboard.slice(1, 7))}
           </TabsContent>
 
           <TabsContent value="basketball">
-            {renderLeaderboardList(mockLeaderboardData.slice(2, 8))}
-          </TabsContent>
-
-          <TabsContent value="props">
-            {renderLeaderboardList(mockLeaderboardData.slice(0, 7))}
+            {renderLeaderboardList(userLeaderboard.slice(2, 8))}
           </TabsContent>
         </Tabs>
       </div>

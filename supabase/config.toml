@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.scrape-sports-news]
 verify_jwt = false
+
+[functions.scrape-celebrity-picks]
+verify_jwt = false

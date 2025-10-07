@@ -411,4 +411,4 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
   );
 };
 
-export default LiveOddsBar;
+export default React.memo(LiveOddsBar);

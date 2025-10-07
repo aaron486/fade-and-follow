@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -380,4 +380,4 @@ const BetStoriesBar = () => {
   );
 };
 
-export default BetStoriesBar;
+export default React.memo(BetStoriesBar);

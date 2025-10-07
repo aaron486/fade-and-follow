@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { DiscordChat } from '@/components/DiscordChat';
@@ -33,22 +33,20 @@ const Dashboard = () => {
   // Auto-settle bets when games finish
   useBetSettlement();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  // Memoize callbacks to prevent unnecessary re-renders
+  const handleBetClick = useCallback((betDetails: typeof selectedBet) => {
+    setSelectedBet(betDetails);
+  }, []);
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  const handleBetSuccess = useCallback(() => {
+    setSelectedBet(null);
+    if (activeView === 'bets') {
+      setActiveView('bets');
+    }
+  }, [activeView]);
 
-  const renderView = () => {
+  // Memoize view renderer to prevent re-creating on every render
+  const renderView = useMemo(() => {
     switch (activeView) {
       case 'fade':
         return (
@@ -81,20 +79,22 @@ const Dashboard = () => {
           </div>
         );
     }
-  };
+  }, [activeView]);
 
-  const handleBetClick = (betDetails: typeof selectedBet) => {
-    setSelectedBet(betDetails);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleBetSuccess = () => {
-    setSelectedBet(null);
-    // Refresh the bets view if we're on it by reloading the BetsPage component data
-    if (activeView === 'bets') {
-      // The BetsPage will reload its data on mount
-      setActiveView('bets');
-    }
-  };
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background pt-[env(safe-area-inset-top)]">
@@ -108,7 +108,7 @@ const Dashboard = () => {
 
       {/* Full Screen Content Area */}
       <main className="flex-1 overflow-hidden">
-        {renderView()}
+        {renderView}
       </main>
 
       {/* Bottom Navigation */}

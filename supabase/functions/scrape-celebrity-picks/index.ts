@@ -22,7 +22,12 @@ interface ParsedPick {
   posted_at: string;
 }
 
-async function scrapeTwitterProfile(username: string): Promise<string> {
+interface ScrapedContent {
+  text: string;
+  images: string[];
+}
+
+async function scrapeTwitterProfile(username: string): Promise<ScrapedContent> {
   // Try multiple Nitter instances as fallbacks
   const nitterInstances = [
     'https://nitter.net',
@@ -50,39 +55,57 @@ async function scrapeTwitterProfile(username: string): Promise<string> {
         const html = await response.text();
         console.log(`Successfully fetched from ${baseUrl}`);
         
-        // Extract tweet content
-        const tweetPattern = /<div class="tweet-content[^>]*>([\s\S]*?)<\/div>/gi;
         const tweets: string[] = [];
+        const images: string[] = [];
+        
+        // Extract tweet content and images
+        const tweetPattern = /<div class="tweet-content[^>]*>([\s\S]*?)<\/div>/gi;
         let match;
         
         while ((match = tweetPattern.exec(html)) !== null) {
           const tweetHtml = match[1];
+          
+          // Extract images from this tweet
+          const imgPattern = /<img[^>]+src="([^"]+)"[^>]*>/gi;
+          let imgMatch;
+          while ((imgMatch = imgPattern.exec(tweetHtml)) !== null) {
+            const imgSrc = imgMatch[1];
+            // Convert relative URLs to absolute
+            const fullUrl = imgSrc.startsWith('http') ? imgSrc : `${baseUrl}${imgSrc}`;
+            images.push(fullUrl);
+          }
+          
+          // Extract text
           const textContent = tweetHtml
             .replace(/<[^>]+>/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
           
-          // Only include tweets that look like betting picks
+          // Include tweets with betting keywords or images
           if (
             textContent.length > 20 &&
-            (textContent.match(/\b\d+\b/) || // Contains numbers (odds)
+            (textContent.match(/\b\d+\b/) ||
              textContent.toLowerCase().includes('pick') ||
+             textContent.toLowerCase().includes('potd') ||
              textContent.toLowerCase().includes('bet') ||
              textContent.toLowerCase().includes('lock') ||
              textContent.toLowerCase().includes('parlay') ||
-             textContent.match(/[+-]\d{3}/)) // American odds format
+             textContent.match(/[+-]\d{3}/))
           ) {
             tweets.push(textContent);
           }
         }
 
-        if (tweets.length > 0) {
-          console.log(`Found ${tweets.length} tweets from ${username}`);
-          return tweets.slice(0, 10).join('\n\n---\n\n');
+        if (tweets.length > 0 || images.length > 0) {
+          console.log(`Found ${tweets.length} tweets and ${images.length} images from ${username}`);
+          return {
+            text: tweets.slice(0, 10).join('\n\n---\n\n'),
+            images: images.slice(0, 15) // Limit to 15 images
+          };
         }
         
-        console.log(`No betting-related tweets found for ${username}`);
-        return '';
+        console.log(`No betting-related content found for ${username}`);
+        return { text: '', images: [] };
       }
       
       console.log(`${baseUrl} returned status ${response.status}, trying next instance...`);
@@ -93,7 +116,81 @@ async function scrapeTwitterProfile(username: string): Promise<string> {
   }
 
   console.log(`All Nitter instances failed for ${username}`);
-  return '';
+  return { text: '', images: [] };
+}
+
+async function extractPicksFromImages(images: string[], username: string): Promise<ParsedPick[]> {
+  if (!LOVABLE_API_KEY || images.length === 0) {
+    return [];
+  }
+
+  const allPicks: ParsedPick[] = [];
+
+  // Process images in batches to avoid overwhelming the API
+  for (const imageUrl of images.slice(0, 10)) {
+    try {
+      console.log(`Analyzing image: ${imageUrl}`);
+      
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-pro',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Analyze this betting pick image from ${username}. Extract:
+- sport (NBA, NFL, MLB, NHL, Soccer, UFC, etc.)
+- event_name (Team vs Team format)
+- market (Moneyline, Spread, Over/Under, Player Props, etc.)
+- selection (the specific pick)
+- odds (American odds like -110, +150)
+- stake_units (if mentioned, default 1.0)
+- confidence (high/medium/low based on their language)
+- reasoning (why they like this pick)
+
+Return as JSON array. If no clear pick, return empty array [].
+Example: [{"sport":"NBA","event_name":"Lakers vs Celtics","market":"Spread","selection":"Lakers -5.5","odds":-110,"stake_units":1.0,"confidence":"high","reasoning":"Lakers dominant at home","posted_at":"${new Date().toISOString()}"}]`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: imageUrl
+                  }
+                }
+              ]
+            }
+          ],
+          temperature: 0.2,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const aiResponse = data.choices[0].message.content;
+        
+        const jsonMatch = aiResponse.match(/\[[\s\S]*?\]/);
+        if (jsonMatch) {
+          const picks = JSON.parse(jsonMatch[0]) as ParsedPick[];
+          allPicks.push(...picks);
+          console.log(`Extracted ${picks.length} picks from image`);
+        }
+      }
+
+      // Rate limit between image requests
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error(`Error analyzing image ${imageUrl}:`, error);
+    }
+  }
+
+  return allPicks;
 }
 
 async function extractPicksWithAI(content: string, username: string): Promise<ParsedPick[]> {
@@ -106,14 +203,15 @@ async function extractPicksWithAI(content: string, username: string): Promise<Pa
 For each clear betting pick, return:
 - sport: NBA, NFL, MLB, NHL, Soccer, UFC, or other
 - event_name: Team vs Team or Fighter vs Fighter
-- market: Moneyline, Spread, Over/Under, etc.
-- selection: The specific pick (team name, over/under value, etc.)
+- market: Moneyline, Spread, Over/Under, Player Props, etc.
+- selection: The specific pick (team name, over/under value, player prop, etc.)
 - odds: American odds as a number (e.g., -110, +150)
 - stake_units: Units bet (default 1.0 if not specified)
 - confidence: high, medium, or low
 - reasoning: Why they like this pick (if mentioned)
 - posted_at: Current timestamp
 
+Look for POTD (Pick of the Day) posts especially.
 Only extract CLEAR betting picks with identifiable games/matches. Skip general commentary.
 
 Posts:
@@ -171,7 +269,7 @@ Return as JSON array:
     }
     
     const picks = JSON.parse(jsonMatch[0]) as ParsedPick[];
-    console.log(`Extracted ${picks.length} picks from ${username}`);
+    console.log(`Extracted ${picks.length} picks from text`);
     return picks;
   } catch (error) {
     console.error('AI extraction error:', error);
@@ -300,7 +398,7 @@ serve(async (req) => {
           
           // Scrape their recent posts
           const content = await scrapeTwitterProfile(bettor.username);
-          if (!content) {
+          if (!content.text && content.images.length === 0) {
             console.log(`No content found for ${bettor.username}`);
             results[bettor.display_name] = 0;
             failedCount++;
@@ -308,8 +406,14 @@ serve(async (req) => {
             continue;
           }
 
-          // Extract picks with AI
-          const picks = await extractPicksWithAI(content, bettor.username);
+          // Extract picks from text with AI
+          const textPicks = content.text ? await extractPicksWithAI(content.text, bettor.username) : [];
+          
+          // Extract picks from images with vision AI
+          const imagePicks = content.images.length > 0 ? await extractPicksFromImages(content.images, bettor.username) : [];
+          
+          // Combine all picks
+          const picks = [...textPicks, ...imagePicks];
           
           // Save picks
           const saved = await saveCelebrityPicks(bettor.username, picks);

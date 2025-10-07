@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Newspaper, Trophy, Receipt, Users } from 'lucide-react';
+import { User, Newspaper, Trophy, Receipt, Users, Shield } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +11,16 @@ interface BottomNavProps {
 
 export const BottomNav = ({ activeView, onViewChange }: BottomNavProps) => {
   const { user, userProfile } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) return;
+      const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+      setIsAdmin(data || false);
+    };
+    checkAdmin();
+  }, [user]);
   
   const displayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || 'User';
   const avatarUrl = userProfile?.avatar_url;
@@ -20,6 +30,7 @@ export const BottomNav = ({ activeView, onViewChange }: BottomNavProps) => {
     { id: 'bets', icon: Receipt, label: 'Bets' },
     { id: 'friends', icon: Users, label: 'Friends' },
     { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' },
+    ...(isAdmin ? [{ id: 'admin', icon: Shield, label: 'Admin' }] : []),
     { id: 'profile', icon: User, label: 'Profile' },
   ];
 

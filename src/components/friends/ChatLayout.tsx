@@ -281,7 +281,7 @@ const ChatLayout = ({ fullscreen = false }: ChatLayoutProps) => {
 
   return (
     <div className={fullscreen 
-      ? "flex h-[calc(100vh-10rem)] overflow-hidden bg-card" 
+      ? "flex h-full w-full overflow-hidden bg-background" 
       : "flex h-[calc(100vh-8rem)] border rounded-lg overflow-hidden bg-card"
     }>
       <ConversationsList

@@ -40,85 +40,107 @@ export const Leaderboard = () => {
   const loadLeaderboards = async () => {
     setLoading(true);
     try {
-      // Fetch user leaderboard
-      const { data: userData, error: userError } = await supabase
+      // Fetch user records and profiles separately
+      const { data: userRecords, error: userError } = await supabase
         .from('user_records')
-        .select(`
-          user_id,
-          wins,
-          losses,
-          pushes,
-          units_won,
-          current_streak,
-          profiles!inner(username, display_name, avatar_url)
-        `)
+        .select('user_id, wins, losses, pushes, units_won, current_streak')
         .order('units_won', { ascending: false })
         .limit(50);
 
       if (userError) throw userError;
 
-      // Fetch celebrity leaderboard
-      const { data: celebrityData, error: celebrityError } = await supabase
+      // Get user IDs
+      const userIds = userRecords?.map(r => r.user_id) || [];
+      
+      // Fetch corresponding profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, username, display_name, avatar_url')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of user_id to profile
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      // Fetch celebrity records and bettors separately
+      const { data: celebrityRecords, error: celebrityError } = await supabase
         .from('public_bettor_records')
-        .select(`
-          bettor_id,
-          wins,
-          losses,
-          pushes,
-          units_won,
-          current_streak,
-          public_bettors!inner(username, display_name, avatar_url)
-        `)
+        .select('bettor_id, wins, losses, pushes, units_won, current_streak')
         .order('units_won', { ascending: false })
         .limit(50);
 
       if (celebrityError) throw celebrityError;
 
+      // Get bettor IDs
+      const bettorIds = celebrityRecords?.map(r => r.bettor_id) || [];
+      
+      // Fetch corresponding bettors
+      const { data: bettors, error: bettorsError } = await supabase
+        .from('public_bettors')
+        .select('id, username, display_name, avatar_url')
+        .in('id', bettorIds);
+
+      if (bettorsError) throw bettorsError;
+
+      // Create a map of bettor_id to bettor
+      const bettorsMap = new Map(bettors?.map(b => [b.id, b]) || []);
+
       // Format user leaderboard
-      const formattedUsers: LeaderboardEntry[] = (userData || []).map((record: any, index) => {
-        const totalBets = record.wins + record.losses;
-        const winRate = totalBets > 0 ? ((record.wins / totalBets) * 100).toFixed(0) : '0';
-        const roi = totalBets > 0 ? ((record.units_won / totalBets) * 100).toFixed(1) : '0';
-        const roiNum = parseFloat(roi);
-        
-        return {
-          rank: index + 1,
-          id: record.user_id,
-          name: record.profiles.display_name || record.profiles.username,
-          username: record.profiles.username,
-          avatar_url: record.profiles.avatar_url,
-          units: Number(record.units_won) >= 0 ? `+${Number(record.units_won).toFixed(1)}` : Number(record.units_won).toFixed(1),
-          streak: `${Math.abs(record.current_streak)}${record.current_streak >= 0 ? 'W' : 'L'}`,
-          winRate: `${winRate}%`,
-          roi: `${roiNum >= 0 ? '+' : ''}${roi}%`,
-          wins: record.wins,
-          losses: record.losses,
-          isCelebrity: false,
-        };
-      });
+      const formattedUsers: LeaderboardEntry[] = (userRecords || [])
+        .map((record: any, index) => {
+          const profile = profilesMap.get(record.user_id);
+          if (!profile) return null;
+
+          const totalBets = record.wins + record.losses;
+          const winRate = totalBets > 0 ? ((record.wins / totalBets) * 100).toFixed(0) : '0';
+          const roi = totalBets > 0 ? ((record.units_won / totalBets) * 100).toFixed(1) : '0';
+          const roiNum = parseFloat(roi);
+          
+          return {
+            rank: index + 1,
+            id: record.user_id,
+            name: profile.display_name || profile.username,
+            username: profile.username,
+            avatar_url: profile.avatar_url,
+            units: Number(record.units_won) >= 0 ? `+${Number(record.units_won).toFixed(1)}` : Number(record.units_won).toFixed(1),
+            streak: `${Math.abs(record.current_streak)}${record.current_streak >= 0 ? 'W' : 'L'}`,
+            winRate: `${winRate}%`,
+            roi: `${roiNum >= 0 ? '+' : ''}${roi}%`,
+            wins: record.wins,
+            losses: record.losses,
+            isCelebrity: false,
+          };
+        })
+        .filter(Boolean) as LeaderboardEntry[];
 
       // Format celebrity leaderboard
-      const formattedCelebrities: LeaderboardEntry[] = (celebrityData || []).map((record: any, index) => {
-        const totalBets = record.wins + record.losses;
-        const winRate = totalBets > 0 ? ((record.wins / totalBets) * 100).toFixed(0) : '0';
-        const roi = totalBets > 0 ? ((record.units_won / totalBets) * 100).toFixed(1) : '0';
-        const roiNum = parseFloat(roi);
-        
-        return {
-          rank: index + 1,
-          id: record.bettor_id,
-          name: record.public_bettors.display_name,
-          username: record.public_bettors.username,
-          avatar_url: record.public_bettors.avatar_url,
-          units: Number(record.units_won) >= 0 ? `+${Number(record.units_won).toFixed(1)}` : Number(record.units_won).toFixed(1),
-          streak: `${Math.abs(record.current_streak)}${record.current_streak >= 0 ? 'W' : 'L'}`,
-          winRate: `${winRate}%`,
-          roi: `${roiNum >= 0 ? '+' : ''}${roi}%`,
-          wins: record.wins,
-          losses: record.losses,
-          isCelebrity: true,
-        };
-      });
+      const formattedCelebrities: LeaderboardEntry[] = (celebrityRecords || [])
+        .map((record: any, index) => {
+          const bettor = bettorsMap.get(record.bettor_id);
+          if (!bettor) return null;
+
+          const totalBets = record.wins + record.losses;
+          const winRate = totalBets > 0 ? ((record.wins / totalBets) * 100).toFixed(0) : '0';
+          const roi = totalBets > 0 ? ((record.units_won / totalBets) * 100).toFixed(1) : '0';
+          const roiNum = parseFloat(roi);
+          
+          return {
+            rank: index + 1,
+            id: record.bettor_id,
+            name: bettor.display_name,
+            username: bettor.username,
+            avatar_url: bettor.avatar_url,
+            units: Number(record.units_won) >= 0 ? `+${Number(record.units_won).toFixed(1)}` : Number(record.units_won).toFixed(1),
+            streak: `${Math.abs(record.current_streak)}${record.current_streak >= 0 ? 'W' : 'L'}`,
+            winRate: `${winRate}%`,
+            roi: `${roiNum >= 0 ? '+' : ''}${roi}%`,
+            wins: record.wins,
+            losses: record.losses,
+            isCelebrity: true,
+          };
+        })
+        .filter(Boolean) as LeaderboardEntry[];
 
       setUserLeaderboard(formattedUsers);
       setCelebrityLeaderboard(formattedCelebrities);

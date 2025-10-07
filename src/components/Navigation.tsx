@@ -53,7 +53,7 @@ export const Navigation = () => {
                       Friends
                     </Button>
                   </Link>
-                  <Link to="/dashboard">
+                  <Link to="/chat">
                     <Button variant="ghost" size="sm">
                       <MessageSquare className="w-4 h-4 mr-2" />
                       Messages
@@ -136,7 +136,7 @@ export const Navigation = () => {
                           Friends
                         </Button>
                       </Link>
-                      <Link to="/dashboard">
+                      <Link to="/chat">
                         <Button variant="ghost" size="sm" className="w-full justify-start">
                           <MessageSquare className="w-4 h-4 mr-2" />
                           Messages

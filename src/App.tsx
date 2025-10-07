@@ -12,6 +12,7 @@ import Feed from "./pages/Feed";
 import Friends from "./pages/Friends";
 import Groups from "./pages/Groups";
 import Profile from "./pages/Profile";
+import Chat from "./pages/Chat";
 import TestFriends from "./pages/TestFriends";
 import TestUsersSetup from "./pages/TestUsersSetup";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/feed" element={<Feed />} />
             <Route path="/friends" element={<Friends />} />
             <Route path="/groups" element={<Groups />} />
+            <Route path="/chat" element={<Chat />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/test-friends" element={<TestFriends />} />

@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, UserPlus, Check, X, Users, MessageSquare } from 'lucide-react';
-import ChatLayout from '@/components/friends/ChatLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -257,9 +256,9 @@ const Friends = () => {
           <p className="text-muted-foreground">Chat with friends and manage your betting network</p>
         </div>
 
-        <Tabs defaultValue="chat" className="w-full">
+        <Tabs defaultValue="discover" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="chat">
+            <TabsTrigger value="chat" onClick={() => navigate('/chat')}>
               <MessageSquare className="w-4 h-4 mr-2" />
               Chat
             </TabsTrigger>
@@ -292,10 +291,6 @@ const Friends = () => {
               )}
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="chat" className="mt-6">
-            <ChatLayout />
-          </TabsContent>
 
           <TabsContent value="discover" className="space-y-6">
             <Card>

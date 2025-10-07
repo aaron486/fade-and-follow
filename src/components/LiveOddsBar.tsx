@@ -73,22 +73,35 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
 
       if (error) {
         console.error('Error fetching odds:', error);
-        setError('Failed to load betting lines');
-        setEvents([]);
+        // Don't clear events on transient failures - keep showing previous data
+        if (events.length === 0) {
+          setError('Unable to load betting lines. Retrying...');
+        }
         setLoading(false);
         return;
       }
 
-      if (data?.events && data.events.length > 0) {
+      if (data?.error) {
+        console.error('API error:', data.error);
+        setError(data.error);
+        if (events.length === 0) {
+          setEvents([]);
+        }
+      } else if (data?.events && data.events.length > 0) {
         // Already sorted by the edge function
         setEvents(data.events);
+        setError(null);
       } else {
-        setEvents([]);
+        if (events.length === 0) {
+          setError('No games available right now');
+        }
       }
     } catch (error) {
       console.error('Error fetching odds:', error);
-      setError('Failed to load betting lines');
-      setEvents([]);
+      // Don't clear existing data on network errors
+      if (events.length === 0) {
+        setError('Network error. Will retry automatically...');
+      }
     } finally {
       setLoading(false);
     }

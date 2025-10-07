@@ -76,14 +76,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
+    let lastSession: Session | null = null;
 
     // Get initial session first
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (!mounted) return;
+      
+      // Don't clear session on rate limit errors
+      if (error?.message?.includes('rate limit')) {
+        console.warn('⚠️ Rate limit on session load, keeping existing session');
+        return;
+      }
       
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      lastSession = session;
       
       // Load profile if we have a user
       if (session?.user) {
@@ -93,20 +101,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }, 100);
       }
+    }).catch(err => {
+      console.error('Session load error:', err);
+      setLoading(false);
     });
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      // Ignore token refresh events
+      // Ignore token refresh events to reduce noise
       if (event === 'TOKEN_REFRESHED') {
+        // Only update if session changed
+        if (session && JSON.stringify(session) !== JSON.stringify(lastSession)) {
+          lastSession = session;
+          setSession(session);
+        }
         return;
       }
       
       console.log('🔐 Auth event:', event);
       
-      // Always sync session state
+      // Don't clear session on rate limit or network errors
+      if (!session && lastSession && event !== 'SIGNED_OUT') {
+        console.warn('⚠️ No session in event, but we have a previous session. Keeping it.');
+        return;
+      }
+      
+      // Update session state
+      lastSession = session;
       setSession(session);
       setUser(session?.user ?? null);
       

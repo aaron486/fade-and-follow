@@ -53,6 +53,18 @@ const BetStoryViewer = ({ story, onClose, onNext, onPrevious }: BetStoryViewerPr
     return () => clearInterval(interval);
   }, [onNext]);
 
+  // Handle Escape key to close
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   const formatOdds = (odds: number) => {
     return odds > 0 ? `+${odds}` : odds;
   };
@@ -122,8 +134,17 @@ const BetStoryViewer = ({ story, onClose, onNext, onPrevious }: BetStoryViewerPr
     }
   };
 
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center">
+    <div 
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center cursor-pointer"
+      onClick={handleBackgroundClick}
+    >
       {/* Progress Bar */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-white/20">
         <div
@@ -148,9 +169,9 @@ const BetStoryViewer = ({ story, onClose, onNext, onPrevious }: BetStoryViewerPr
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="text-white hover:bg-white/20"
+          className="text-white hover:bg-white/20 bg-black/30 backdrop-blur-sm"
         >
-          <X className="h-5 w-5" />
+          <X className="h-6 w-6" />
         </Button>
       </div>
 
@@ -177,7 +198,7 @@ const BetStoryViewer = ({ story, onClose, onNext, onPrevious }: BetStoryViewerPr
       )}
 
       {/* Bet Details Card */}
-      <div className="max-w-md w-full mx-4">
+      <div className="max-w-md w-full mx-4 cursor-default" onClick={(e) => e.stopPropagation()}>
         <div className="bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
           <div className="space-y-6">
             {/* Sport Badge */}

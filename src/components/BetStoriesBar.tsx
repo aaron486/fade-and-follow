@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
 import BetStoryViewer from './BetStoryViewer';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import BetImageUpload from './BetImageUpload';
 import BetConfirmation from './BetConfirmation';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BetStory {
   id: string;
@@ -25,166 +25,132 @@ interface BetStory {
   timestamp: string;
 }
 
-// Mock data for now - will be replaced with real data
-const mockStories: BetStory[] = [
-  {
-    id: '1',
-    userId: '1',
-    userName: 'Aaron Hackett',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'NBA',
-      eventName: 'Lakers vs Warriors',
-      selection: 'Lakers -5.5',
-      odds: -110,
-      stake: 150,
-      notes: 'Lakers dominating at home! Easy money 🔥'
-    },
-    timestamp: new Date().toISOString()
-  },
-  {
-    id: '2',
-    userId: '2',
-    userName: 'Samir Bouhmaid',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'NFL',
-      eventName: 'Chiefs vs Bills',
-      selection: 'Over 52.5',
-      odds: -115,
-      stake: 100,
-      notes: 'Both offenses are unstoppable'
-    },
-    timestamp: new Date().toISOString()
-  },
-  {
-    id: '3',
-    userId: '3',
-    userName: 'George Cemovich',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'NBA',
-      eventName: 'Celtics vs Heat',
-      selection: 'Celtics ML',
-      odds: -125,
-      stake: 200,
-      notes: 'Celtics crushing it this season'
-    },
-    timestamp: new Date().toISOString()
-  },
-  {
-    id: '4',
-    userId: '4',
-    userName: 'Anthony Hackett',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'NFL',
-      eventName: 'Cowboys vs Eagles',
-      selection: 'Cowboys +3.5',
-      odds: -110,
-      stake: 75,
-      notes: 'Dallas defense is underrated'
-    },
-    timestamp: new Date().toISOString()
-  },
-  {
-    id: '5',
-    userId: '5',
-    userName: 'Dave Portnoy',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'NFL',
-      eventName: 'Patriots vs Jets',
-      selection: 'Patriots -7',
-      odds: -110,
-      stake: 500,
-      notes: 'Jets are a disaster. Lock it in!'
-    },
-    timestamp: new Date().toISOString()
-  },
-  {
-    id: '6',
-    userId: '6',
-    userName: 'Lee Corso',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'College Football',
-      eventName: 'Alabama vs Georgia',
-      selection: 'Alabama +2.5',
-      odds: -110,
-      stake: 100,
-      notes: 'NOT SO FAST! Roll Tide!'
-    },
-    timestamp: new Date().toISOString()
-  },
-  {
-    id: '7',
-    userId: '7',
-    userName: 'Urban Meyer',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'College Football',
-      eventName: 'Ohio State vs Michigan',
-      selection: 'Ohio State -10',
-      odds: -115,
-      stake: 250,
-      notes: 'Buckeyes never disappoint'
-    },
-    timestamp: new Date().toISOString()
-  },
-  {
-    id: '8',
-    userId: '8',
-    userName: 'Speedy Laroche',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'NBA',
-      eventName: 'Bucks vs Nets',
-      selection: 'Under 230.5',
-      odds: -110,
-      stake: 125,
-      notes: 'Defense wins championships 🛡️'
-    },
-    timestamp: new Date().toISOString()
-  },
-  {
-    id: '9',
-    userId: '1',
-    userName: 'Aaron Hackett',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'NFL',
-      eventName: '49ers vs Seahawks',
-      selection: '49ers -3',
-      odds: -110,
-      stake: 200,
-      notes: 'SF defense too strong'
-    },
-    timestamp: new Date().toISOString()
-  },
-  {
-    id: '10',
-    userId: '3',
-    userName: 'George Cemovich',
-    avatarUrl: undefined,
-    betDetails: {
-      sport: 'NFL',
-      eventName: 'Rams vs Cardinals',
-      selection: 'Over 48.5',
-      odds: -110,
-      stake: 150,
-      notes: 'High scoring game incoming'
-    },
-    timestamp: new Date().toISOString()
-  },
-];
-
 const BetStoriesBar = () => {
   const { user } = useAuth();
+  const [stories, setStories] = useState<BetStory[]>([]);
   const [selectedStory, setSelectedStory] = useState<BetStory | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadStep, setUploadStep] = useState<'upload' | 'confirm'>('upload');
   const [extractedBetDetails, setExtractedBetDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadStories();
+      
+      // Subscribe to new stories
+      const channel = supabase
+        .channel('bet-stories-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'bet_stories'
+          },
+          () => {
+            loadStories();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user]);
+
+  const loadStories = async () => {
+    try {
+      setLoading(true);
+      
+      // Clean up expired stories first
+      await supabase.rpc('delete_expired_stories');
+
+      // Get story IDs
+      const { data: storiesData, error: storiesError } = await supabase
+        .from('bet_stories')
+        .select('id, user_id, bet_id, created_at')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (storiesError) throw storiesError;
+
+      if (!storiesData || storiesData.length === 0) {
+        setStories([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get user IDs and bet IDs
+      const userIds = [...new Set(storiesData.map(s => s.user_id))];
+      const betIds = storiesData.map(s => s.bet_id);
+      
+      // Fetch profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, username, display_name, avatar_url')
+        .in('user_id', userIds);
+
+      // Fetch bets
+      const { data: bets } = await supabase
+        .from('bets')
+        .select('id, sport, event_name, selection, odds, stake_units, notes')
+        .in('id', betIds);
+
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      const betsMap = new Map(bets?.map(b => [b.id, b]) || []);
+
+      // Format stories
+      const formattedStories: BetStory[] = storiesData
+        .map((story) => {
+          const profile = profilesMap.get(story.user_id);
+          const bet = betsMap.get(story.bet_id);
+          
+          if (!profile || !bet) return null;
+
+          return {
+            id: story.id,
+            userId: story.user_id,
+            userName: profile.display_name || profile.username || 'Unknown User',
+            avatarUrl: profile.avatar_url,
+            timestamp: story.created_at,
+            betDetails: {
+              sport: bet.sport,
+              eventName: bet.event_name,
+              selection: bet.selection,
+              odds: bet.odds,
+              stake: bet.stake_units,
+              notes: bet.notes,
+            },
+          };
+        })
+        .filter(Boolean) as BetStory[];
+
+      setStories(formattedStories);
+    } catch (error) {
+      console.error('Error loading stories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="border-b bg-card/50 backdrop-blur-sm">
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex gap-4 p-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-col items-center gap-2 animate-pulse">
+                <div className="h-16 w-16 rounded-full bg-muted" />
+                <div className="h-3 w-12 bg-muted rounded" />
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -213,27 +179,33 @@ const BetStoriesBar = () => {
             </button>
 
             {/* Friends' Bet Stories */}
-            {mockStories.map((story) => (
-              <button
-                key={story.id}
-                onClick={() => setSelectedStory(story)}
-                className="flex flex-col items-center gap-2 flex-shrink-0 group"
-              >
-                <div className="relative">
-                  <div className="p-[2px] rounded-full bg-gradient-to-tr from-primary via-accent to-primary">
-                    <Avatar className="h-16 w-16 border-2 border-background">
-                      <AvatarImage src={story.avatarUrl} />
-                      <AvatarFallback className="bg-muted">
-                        {story.userName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
+            {stories.length === 0 ? (
+              <div className="flex items-center justify-center p-8 text-muted-foreground">
+                <p className="text-sm">No stories yet. Add a bet to share with friends!</p>
+              </div>
+            ) : (
+              stories.map((story) => (
+                <button
+                  key={story.id}
+                  onClick={() => setSelectedStory(story)}
+                  className="flex flex-col items-center gap-2 flex-shrink-0 group"
+                >
+                  <div className="relative">
+                    <div className="p-[2px] rounded-full bg-gradient-to-tr from-primary via-accent to-primary">
+                      <Avatar className="h-16 w-16 border-2 border-background">
+                        <AvatarImage src={story.avatarUrl} />
+                        <AvatarFallback className="bg-muted">
+                          {story.userName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
                   </div>
-                </div>
-                <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground max-w-[80px] truncate">
-                  {story.userName.split(' ')[0]}
-                </span>
-              </button>
-            ))}
+                  <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground max-w-[80px] truncate">
+                    {story.userName.split(' ')[0]}
+                  </span>
+                </button>
+              ))
+            )}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -245,15 +217,15 @@ const BetStoriesBar = () => {
           story={selectedStory}
           onClose={() => setSelectedStory(null)}
           onNext={() => {
-            const currentIndex = mockStories.findIndex(s => s.id === selectedStory.id);
-            if (currentIndex < mockStories.length - 1) {
-              setSelectedStory(mockStories[currentIndex + 1]);
+            const currentIndex = stories.findIndex(s => s.id === selectedStory.id);
+            if (currentIndex < stories.length - 1) {
+              setSelectedStory(stories[currentIndex + 1]);
             }
           }}
           onPrevious={() => {
-            const currentIndex = mockStories.findIndex(s => s.id === selectedStory.id);
+            const currentIndex = stories.findIndex(s => s.id === selectedStory.id);
             if (currentIndex > 0) {
-              setSelectedStory(mockStories[currentIndex - 1]);
+              setSelectedStory(stories[currentIndex - 1]);
             }
           }}
         />
@@ -294,6 +266,7 @@ const BetStoriesBar = () => {
                 setShowUploadDialog(false);
                 setUploadStep('upload');
                 setExtractedBetDetails(null);
+                loadStories(); // Reload stories after adding a new one
               }}
             />
           )}

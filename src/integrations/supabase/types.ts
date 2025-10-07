@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      bet_stories: {
+        Row: {
+          bet_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          user_id: string
+          views_count: number
+        }
+        Insert: {
+          bet_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id: string
+          views_count?: number
+        }
+        Update: {
+          bet_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
+          views_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bet_stories_bet_id_fkey"
+            columns: ["bet_id"]
+            isOneToOne: true
+            referencedRelation: "bets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bets: {
         Row: {
           action_type: string | null
@@ -754,6 +789,10 @@ export type Database = {
           win_percentage: number
           wins: number
         }[]
+      }
+      delete_expired_stories: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       is_channel_admin: {
         Args: { _channel_id: string; _user_id: string }

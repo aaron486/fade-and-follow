@@ -70,7 +70,8 @@ export const BetForm: React.FC<BetFormProps> = ({ onCancel, onSuccess }) => {
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      // Insert bet and get the created bet ID
+      const { data: betData, error: betError } = await supabase
         .from('bets')
         .insert([
           {
@@ -83,13 +84,28 @@ export const BetForm: React.FC<BetFormProps> = ({ onCancel, onSuccess }) => {
             stake_units: stakeUnits,
             notes: formData.notes || null,
           },
-        ]);
+        ])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (betError) throw betError;
+
+      // Automatically create a story for this bet
+      const { error: storyError } = await supabase
+        .from('bet_stories')
+        .insert({
+          user_id: user.id,
+          bet_id: betData.id,
+        });
+
+      if (storyError) {
+        console.error('Failed to create story:', storyError);
+        // Don't fail the whole operation if story creation fails
+      }
 
       toast({
         title: 'Bet Placed',
-        description: 'Your bet has been successfully recorded.',
+        description: 'Your bet has been successfully recorded and shared with friends.',
       });
 
       onSuccess();

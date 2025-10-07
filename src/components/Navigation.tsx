@@ -1,12 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Users, User, MessageSquare, Newspaper, UserPlus } from "lucide-react";
 
 export const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, loading } = useAuth();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>("");
+
+  useEffect(() => {
+    if (user) {
+      loadUserProfile();
+    }
+  }, [user]);
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('avatar_url, display_name, username')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setAvatarUrl(data.avatar_url);
+        setDisplayName(data.display_name || data.username || user.email?.split('@')[0] || 'User');
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
 
 
   return (
@@ -60,15 +91,17 @@ export const Navigation = () => {
                       Groups
                     </Button>
                   </Link>
-                  <Link to="/profile">
-                    <Button variant="ghost" size="sm">
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </Button>
+                  <Link to="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <span className="text-sm text-muted-foreground hidden lg:block">
+                      {displayName}
+                    </span>
+                    <Avatar className="h-9 w-9 border-2 border-primary/20">
+                      <AvatarImage src={avatarUrl || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                        {displayName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                   </Link>
-                  <span className="text-sm text-muted-foreground">
-                    Welcome back!
-                  </span>
                 </>
               ) : (
                 <>
@@ -141,15 +174,20 @@ export const Navigation = () => {
                           Groups
                         </Button>
                       </Link>
-                      <Link to="/profile">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
-                          <User className="w-4 h-4 mr-2" />
-                          Profile
-                        </Button>
+                      <Link to="/profile" className="block px-3 py-2">
+                        <div className="flex items-center gap-3 hover:bg-muted/50 rounded-lg p-2 transition-colors">
+                          <Avatar className="h-10 w-10 border-2 border-primary/20">
+                            <AvatarImage src={avatarUrl || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                              {displayName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{displayName}</span>
+                            <span className="text-xs text-muted-foreground">View Profile</span>
+                          </div>
+                        </div>
                       </Link>
-                      <span className="text-sm text-muted-foreground px-3">
-                        Welcome back!
-                      </span>
                     </>
                   ) : (
                     <>

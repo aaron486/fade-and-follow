@@ -14,6 +14,7 @@ interface BetStory {
   userId: string;
   userName: string;
   avatarUrl?: string;
+  winRate?: number;
   betDetails: {
     sport: string;
     eventName: string;
@@ -24,6 +25,22 @@ interface BetStory {
   };
   timestamp: string;
 }
+
+const getPerformanceRing = (winRate?: number) => {
+  if (!winRate || winRate < 25) {
+    return "from-gray-400 via-gray-500 to-gray-400"; // Below 25% - gray
+  } else if (winRate >= 70) {
+    return "from-orange-500 via-red-500 to-orange-600 animate-pulse"; // 70%+ - Flame 🔥
+  } else if (winRate >= 60) {
+    return "from-red-500 via-red-600 to-red-500"; // 60%+ - Red
+  } else if (winRate >= 50) {
+    return "from-green-500 via-green-600 to-green-500"; // 50%+ - Green
+  } else if (winRate >= 35) {
+    return "from-yellow-500 via-yellow-600 to-yellow-500"; // 35%+ - Yellow
+  } else {
+    return "from-blue-400 via-cyan-400 to-blue-500"; // 25-35% - Ice ❄️
+  }
+};
 
 const BetStoriesBar = () => {
   const { user } = useAuth();
@@ -116,6 +133,12 @@ const BetStoriesBar = () => {
         .select('user_id, username, display_name, avatar_url')
         .in('user_id', userIds);
 
+      // Fetch user records for win rates
+      const { data: userRecords } = await supabase
+        .from('user_records')
+        .select('user_id, wins, losses')
+        .in('user_id', userIds);
+
       // Fetch bets
       const { data: bets } = await supabase
         .from('bets')
@@ -124,14 +147,22 @@ const BetStoriesBar = () => {
 
       const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
       const betsMap = new Map(bets?.map(b => [b.id, b]) || []);
+      const recordsMap = new Map(userRecords?.map(r => [r.user_id, r]) || []);
 
       // Format stories
       const formattedStories: BetStory[] = storiesData
         .map((story) => {
           const profile = profilesMap.get(story.user_id);
           const bet = betsMap.get(story.bet_id);
+          const record = recordsMap.get(story.user_id);
           
           if (!profile || !bet) return null;
+
+          // Calculate win rate
+          let winRate = 0;
+          if (record && (record.wins + record.losses) > 0) {
+            winRate = (record.wins / (record.wins + record.losses)) * 100;
+          }
 
           return {
             id: story.id,
@@ -139,6 +170,7 @@ const BetStoriesBar = () => {
             userName: profile.display_name || profile.username || 'Unknown User',
             avatarUrl: profile.avatar_url,
             timestamp: story.created_at,
+            winRate,
             betDetails: {
               sport: bet.sport,
               eventName: bet.event_name,
@@ -215,14 +247,21 @@ const BetStoriesBar = () => {
                   className="flex flex-col items-center gap-2 flex-shrink-0 group"
                 >
                   <div className="relative">
-                    <div className="p-[2px] rounded-full bg-gradient-to-tr from-primary via-accent to-primary">
-                      <Avatar className="h-16 w-16 border-2 border-background">
+                    <div className={`p-[3px] rounded-full bg-gradient-to-tr ${getPerformanceRing(story.winRate)} shadow-lg`}>
+                      <Avatar className="h-16 w-16 border-[3px] border-background">
                         <AvatarImage src={story.avatarUrl} />
                         <AvatarFallback className="bg-muted">
                           {story.userName.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                     </div>
+                    {/* Performance indicator */}
+                    {story.winRate && story.winRate >= 70 && (
+                      <div className="absolute -top-1 -right-1 text-lg">🔥</div>
+                    )}
+                    {story.winRate && story.winRate >= 25 && story.winRate < 35 && (
+                      <div className="absolute -top-1 -right-1 text-lg">❄️</div>
+                    )}
                   </div>
                   <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground max-w-[80px] truncate">
                     {story.userName.split(' ')[0]}

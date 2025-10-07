@@ -110,7 +110,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
+    <div className="fixed inset-0 flex flex-col bg-background pt-[env(safe-area-inset-top)]">
       {/* Top Bars - Stories & Live Odds */}
       <div className="flex-shrink-0">
         <BetStoriesBar />
@@ -129,7 +129,7 @@ const Dashboard = () => {
       <Button
         onClick={() => setChatOpen(!chatOpen)}
         size="icon"
-        className="fixed top-4 right-4 z-50 h-12 w-12 rounded-full shadow-lg hover:scale-110 transition-transform"
+        className="fixed top-[calc(env(safe-area-inset-top)+1rem)] right-[calc(env(safe-area-inset-right)+1rem)] z-50 h-12 w-12 rounded-full shadow-lg hover:scale-110 transition-transform"
       >
         {chatOpen ? (
           <X className="h-5 w-5" />

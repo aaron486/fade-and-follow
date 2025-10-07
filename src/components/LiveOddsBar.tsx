@@ -222,7 +222,20 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
       }
 
       if (data?.events && data.events.length > 0) {
-        setEvents(data.events.slice(0, 10));
+        // Sort events: live games first, then by closest start time
+        const sortedEvents = [...data.events].sort((a, b) => {
+          const aIsLive = isGameLive(a.commence_time);
+          const bIsLive = isGameLive(b.commence_time);
+          
+          // Live games first
+          if (aIsLive && !bIsLive) return -1;
+          if (!aIsLive && bIsLive) return 1;
+          
+          // Then sort by commence time (earliest first)
+          return new Date(a.commence_time).getTime() - new Date(b.commence_time).getTime();
+        });
+        
+        setEvents(sortedEvents.slice(0, 10));
         setUseMockData(false);
       } else {
         setUseMockData(true);

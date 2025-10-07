@@ -1,24 +1,19 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import ProfileSidebar from '@/components/ProfileSidebar';
-import { TeamPicker } from '@/components/TeamPicker';
 import { DiscordChat } from '@/components/DiscordChat';
 import { FeedContent } from '@/components/FeedContent';
 import { BetsPage } from '@/components/BetsPage';
 import { BottomNav } from '@/components/BottomNav';
 import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
-import BetStoryViewer from '@/components/BetStoryViewer';
 import BetConfirmation from '@/components/BetConfirmation';
-import { BettingStats } from '@/components/BettingStats';
-import { Leaderboard } from '@/components/Leaderboard';
 import { useBetSettlement } from '@/hooks/useBetSettlement';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, X } from 'lucide-react';
-import FriendsSection from '@/components/friends/FriendsSection';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { FadeSection } from '@/components/FadeSection';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -55,13 +50,10 @@ const Dashboard = () => {
 
   const renderView = () => {
     switch (activeView) {
-      case 'profile':
+      case 'fade':
         return (
-          <div className="h-full overflow-y-auto">
-            <div className="max-w-2xl mx-auto p-4 pb-8 space-y-4">
-              <ProfileSidebar />
-              <TeamPicker />
-            </div>
+          <div className="h-full overflow-hidden">
+            <FadeSection />
           </div>
         );
       case 'admin':
@@ -80,29 +72,6 @@ const Dashboard = () => {
         return (
           <div className="h-full overflow-hidden">
             <BetsPage />
-          </div>
-        );
-      case 'groups':
-        return (
-          <div className="flex items-center justify-center h-full px-4">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Groups</h2>
-              <p className="text-muted-foreground">Group management coming soon</p>
-            </div>
-          </div>
-        );
-      case 'friends':
-        return (
-          <div className="h-full overflow-hidden">
-            <FriendsSection />
-          </div>
-        );
-      case 'leaderboard':
-        return (
-          <div className="h-full overflow-y-auto">
-            <div className="pb-8">
-              <Leaderboard />
-            </div>
           </div>
         );
       default:

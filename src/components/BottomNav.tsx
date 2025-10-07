@@ -18,10 +18,8 @@ export const BottomNav = ({ activeView, onViewChange }: BottomNavProps) => {
   const navItems = [
     { id: 'feed', icon: Newspaper, label: 'Feed' },
     { id: 'bets', icon: Receipt, label: 'Bets' },
-    { id: 'friends', icon: Users, label: 'Friends' },
-    { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' },
+    { id: 'fade', icon: User, label: 'Fade' },
     ...(isAdmin ? [{ id: 'admin', icon: Shield, label: 'Admin' }] : []),
-    { id: 'profile', icon: User, label: 'Profile' },
   ];
 
   return (
@@ -41,7 +39,7 @@ export const BottomNav = ({ activeView, onViewChange }: BottomNavProps) => {
                   : 'text-muted-foreground active:scale-95'
               }`}
             >
-              {item.id === 'profile' ? (
+              {item.id === 'fade' ? (
                 <Avatar className={`h-6 w-6 transition-transform ${isActive ? 'scale-110 border-2 border-primary' : ''}`}>
                   <AvatarImage src={avatarUrl || undefined} />
                   <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">

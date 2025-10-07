@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
+import ChatLayout from '@/components/friends/ChatLayout';
+import BetStoriesBar from '@/components/BetStoriesBar';
 
 interface Profile {
   user_id: string;
@@ -50,6 +52,7 @@ const Friends = () => {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('discover');
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -246,6 +249,25 @@ const Friends = () => {
   const sentRequests = friendRequests.filter(req => req.sender_id === user.id);
   const receivedRequests = friendRequests.filter(req => req.receiver_id === user.id);
 
+  // Full screen chat mode
+  if (activeTab === 'chat') {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navigation />
+        
+        {/* Bet Stories Bar */}
+        <div className="border-b border-border">
+          <BetStoriesBar />
+        </div>
+
+        {/* Chat Layout - Full Screen */}
+        <div className="flex-1 overflow-hidden">
+          <ChatLayout />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -256,9 +278,9 @@ const Friends = () => {
           <p className="text-muted-foreground">Chat with friends and manage your betting network</p>
         </div>
 
-        <Tabs defaultValue="discover" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="chat" onClick={() => navigate('/chat')}>
+            <TabsTrigger value="chat">
               <MessageSquare className="w-4 h-4 mr-2" />
               Chat
             </TabsTrigger>

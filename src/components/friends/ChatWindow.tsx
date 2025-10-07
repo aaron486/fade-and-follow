@@ -196,90 +196,100 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
 
   if (!conversation) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background/50">
-        <div className="text-center text-muted-foreground">
-          <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium mb-2">Welcome to Friends</p>
-          <p className="text-sm">Search for a friend to start chatting</p>
+      <div className="flex-1 flex items-center justify-center bg-[#313338]">
+        <div className="text-center text-gray-400">
+          <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-semibold mb-2 text-white">No conversation selected</p>
+          <p className="text-sm">Pick a conversation from the left to start chatting</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col bg-[#313338]">
       {/* Chat Header */}
-      <div className="p-4 border-b flex items-center gap-3">
+      <div className="h-12 px-4 border-b border-[#1e1f22] flex items-center gap-3 shadow-sm">
         {conversation.type === 'dm' ? (
           <>
-            <Avatar className="w-10 h-10">
+            <Avatar className="w-8 h-8">
               <AvatarImage src={conversation.avatar_url} />
-              <AvatarFallback>
+              <AvatarFallback className="text-xs bg-[#5865f2] text-white">
                 {conversation.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold">{conversation.name}</h3>
-              <p className="text-sm text-muted-foreground">Active now</p>
+              <h3 className="font-semibold text-white text-sm">{conversation.name}</h3>
             </div>
           </>
         ) : (
           <>
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Hash className="w-5 h-5 text-primary" />
-            </div>
+            <Hash className="w-5 h-5 text-[#80848e]" />
             <div>
-              <h3 className="font-semibold">{conversation.name}</h3>
-              <p className="text-sm text-muted-foreground">Group channel</p>
+              <h3 className="font-semibold text-white text-sm">{conversation.name}</h3>
             </div>
           </>
         )}
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 px-4 py-4" ref={scrollRef}>
         {loading ? (
-          <div className="text-center text-muted-foreground py-8">
+          <div className="text-center text-gray-400 py-8 text-sm">
             Loading messages...
           </div>
         ) : messages.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            <p className="mb-2">No messages yet</p>
-            <p className="text-sm">Start the conversation!</p>
+          <div className="text-center text-gray-400 py-8">
+            <p className="mb-2 text-white">No messages yet</p>
+            <p className="text-sm">Be the first to send a message!</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {messages.map((message) => {
-              const isOwnMessage = message.sender_id === user?.id;
+          <div className="space-y-0.5">
+            {messages.map((message, index) => {
+              const prevMessage = index > 0 ? messages[index - 1] : null;
+              const showAvatar = !prevMessage || prevMessage.sender_id !== message.sender_id;
+              
               return (
                 <div
                   key={message.id}
-                  className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                  className={`flex gap-3 px-4 py-0.5 hover:bg-[#2e3035] group ${showAvatar ? 'mt-4' : ''}`}
                 >
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={message.sender_profile?.avatar_url} />
-                    <AvatarFallback>
-                      {(message.sender_profile?.display_name || message.sender_profile?.username || 'U')
-                        .charAt(0)
-                        .toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className={`flex-1 ${isOwnMessage ? 'text-right' : ''}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">
-                        {message.sender_profile?.display_name || message.sender_profile?.username}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                  {showAvatar ? (
+                    <Avatar className="w-10 h-10 flex-shrink-0">
+                      <AvatarImage src={message.sender_profile?.avatar_url} />
+                      <AvatarFallback className="text-xs bg-[#5865f2] text-white">
+                        {(message.sender_profile?.display_name || message.sender_profile?.username || 'U')
+                          .charAt(0)
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className="w-10 flex-shrink-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <span className="text-xs text-[#80848e]">
+                        {new Date(message.created_at).toLocaleTimeString('en-US', { 
+                          hour: 'numeric', 
+                          minute: '2-digit',
+                          hour12: true 
+                        })}
                       </span>
                     </div>
-                    <div
-                      className={`inline-block p-3 rounded-lg max-w-md ${
-                        isOwnMessage
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}
-                    >
+                  )}
+                  <div className="flex-1 min-w-0">
+                    {showAvatar && (
+                      <div className="flex items-baseline gap-2 mb-0.5">
+                        <span className="font-medium text-sm text-white">
+                          {message.sender_profile?.display_name || message.sender_profile?.username}
+                        </span>
+                        <span className="text-xs text-[#80848e]">
+                          {new Date(message.created_at).toLocaleTimeString('en-US', { 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    <div className="text-[#dbdee1] text-sm leading-relaxed break-words">
                       {message.content}
                     </div>
                   </div>
@@ -291,17 +301,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation }) => {
       </ScrollArea>
 
       {/* Message Input */}
-      <div className="p-4 border-t">
-        <div className="flex gap-2">
+      <div className="px-4 pb-6 pt-2">
+        <div className="relative">
           <Input
-            placeholder={`Message ${conversation.name}...`}
+            placeholder={`Message ${conversation.type === 'dm' ? '@' : '#'}${conversation.name}`}
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-            className="flex-1"
+            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+            className="bg-[#383a40] border-none text-[#dbdee1] placeholder:text-[#6d6f78] pr-10 rounded-lg h-11"
           />
-          <Button onClick={sendMessage} disabled={!messageInput.trim()}>
-            <Send className="w-4 h-4" />
+          <Button 
+            onClick={sendMessage} 
+            disabled={!messageInput.trim()}
+            size="sm"
+            variant="ghost"
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-transparent"
+          >
+            <Send className="w-4 h-4 text-[#b5bac1]" />
           </Button>
         </div>
       </div>

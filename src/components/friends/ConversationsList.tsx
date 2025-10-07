@@ -139,15 +139,14 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const groupConversations = conversations.filter(c => c.type === 'group');
 
   return (
-    <div className="w-80 border-r flex flex-col bg-muted/30">
-      <div className="p-4 border-b">
+    <div className="w-60 flex flex-col bg-[#2b2d31]">
+      <div className="p-3 border-b border-[#1e1f22] shadow-md">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-lg">Conversations</h2>
+          <h2 className="font-semibold text-sm text-white">Messages</h2>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Plus className="w-4 h-4 mr-1" />
-                New Group
+              <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-[#404249] text-gray-300">
+                <Plus className="w-4 h-4" />
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -176,24 +175,23 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
         
         {/* Friend Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search friends to chat..."
+            placeholder="Find or start a conversation"
             value={friendSearchQuery}
             onChange={(e) => setFriendSearchQuery(e.target.value)}
-            className="pl-9"
+            className="bg-[#1e1f22] border-none text-sm text-gray-200 placeholder:text-gray-500 h-7"
           />
         </div>
 
         {/* Friend Search Results */}
         {friendSearchQuery.length > 0 && (
-          <div className="mt-2 border rounded-lg bg-card max-h-48 overflow-y-auto">
+          <div className="mt-2 rounded-md bg-[#1e1f22] max-h-48 overflow-y-auto">
             {loadingFriends ? (
-              <div className="p-3 text-sm text-muted-foreground text-center">
+              <div className="p-3 text-sm text-gray-400 text-center">
                 Searching...
               </div>
             ) : friends.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground text-center">
+              <div className="p-3 text-sm text-gray-400 text-center">
                 No friends found
               </div>
             ) : (
@@ -201,23 +199,19 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
                 <button
                   key={friend.user_id}
                   onClick={() => handleStartChat(friend.user_id)}
-                  className="w-full flex items-center gap-3 p-2 hover:bg-accent transition-colors"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-[#404249] rounded transition-colors"
                 >
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={friend.avatar_url} />
-                    <AvatarFallback>
+                    <AvatarFallback className="text-xs bg-[#5865f2] text-white">
                       {(friend.display_name || friend.username || 'U').charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 text-left min-w-0">
-                    <div className="font-medium text-sm truncate">
+                    <div className="font-medium text-sm truncate text-white">
                       {friend.display_name || friend.username}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      @{friend.username}
-                    </div>
                   </div>
-                  <MessageSquare className="w-4 h-4 text-muted-foreground" />
                 </button>
               ))
             )}
@@ -227,41 +221,38 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
 
       <ScrollArea className="flex-1">
         {loading ? (
-          <div className="p-4 text-center text-muted-foreground">
-            Loading conversations...
+          <div className="p-4 text-center text-gray-400 text-sm">
+            Loading...
           </div>
         ) : (
           <>
             {/* Direct Messages */}
             {dmConversations.length > 0 && (
-              <div className="p-2">
-                <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase">
+              <div className="px-2 py-2">
+                <div className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
                   Direct Messages
                 </div>
                 {dmConversations.map((conversation) => (
                   <button
                     key={conversation.id}
                     onClick={() => onSelectConversation(conversation)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-accent ${
-                      selectedConversation?.id === conversation.id ? 'bg-accent' : ''
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded transition-colors ${
+                      selectedConversation?.id === conversation.id 
+                        ? 'bg-[#404249] text-white' 
+                        : 'text-gray-300 hover:bg-[#35373c]'
                     }`}
                   >
-                    <Avatar className="w-10 h-10">
+                    <Avatar className="w-8 h-8">
                       <AvatarImage src={conversation.avatar_url} />
-                      <AvatarFallback>
+                      <AvatarFallback className="text-xs bg-[#5865f2] text-white">
                         {conversation.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-left min-w-0">
-                      <div className="font-medium truncate">{conversation.name}</div>
-                      {conversation.lastMessage && (
-                        <div className="text-sm text-muted-foreground truncate">
-                          {conversation.lastMessage}
-                        </div>
-                      )}
+                      <div className="font-medium text-sm truncate">{conversation.name}</div>
                     </div>
                     {conversation.unreadCount && conversation.unreadCount > 0 && (
-                      <div className="bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      <div className="bg-[#f23f42] text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-semibold">
                         {conversation.unreadCount}
                       </div>
                     )}
@@ -272,28 +263,25 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
 
             {/* Group Channels */}
             {groupConversations.length > 0 && (
-              <div className="p-2">
-                <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase">
-                  Group Channels
+              <div className="px-2 py-2">
+                <div className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                  Groups
                 </div>
                 {groupConversations.map((conversation) => (
                   <button
                     key={conversation.id}
                     onClick={() => onSelectConversation(conversation)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-accent ${
-                      selectedConversation?.id === conversation.id ? 'bg-accent' : ''
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded transition-colors ${
+                      selectedConversation?.id === conversation.id 
+                        ? 'bg-[#404249] text-white' 
+                        : 'text-gray-300 hover:bg-[#35373c]'
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Hash className="w-5 h-5 text-primary" />
+                    <div className="w-8 h-8 rounded-full bg-[#5865f2]/20 flex items-center justify-center">
+                      <Hash className="w-4 h-4 text-[#5865f2]" />
                     </div>
                     <div className="flex-1 text-left min-w-0">
-                      <div className="font-medium truncate">{conversation.name}</div>
-                      {conversation.lastMessage && (
-                        <div className="text-sm text-muted-foreground truncate">
-                          {conversation.lastMessage}
-                        </div>
-                      )}
+                      <div className="font-medium text-sm truncate">{conversation.name}</div>
                     </div>
                   </button>
                 ))}
@@ -301,11 +289,11 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
             )}
 
             {conversations.length === 0 && (
-              <div className="p-8 text-center text-muted-foreground">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p className="mb-2">No conversations yet</p>
-                <p className="text-sm">
-                  Add friends to start chatting or create a group channel
+              <div className="p-8 text-center text-gray-400">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="mb-2 text-sm">No conversations yet</p>
+                <p className="text-xs text-gray-500">
+                  Search for friends to start chatting
                 </p>
               </div>
             )}

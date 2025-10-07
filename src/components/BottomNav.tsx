@@ -15,8 +15,8 @@ export const BottomNav = ({ activeView, onViewChange }: BottomNavProps) => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border z-40">
-      <div className="h-full flex items-center justify-around max-w-2xl mx-auto px-4">
+    <div className="flex-shrink-0 h-20 bg-card/95 backdrop-blur-lg border-t border-border safe-area-inset-bottom">
+      <div className="h-full flex items-center justify-around px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id;
@@ -25,14 +25,16 @@ export const BottomNav = ({ activeView, onViewChange }: BottomNavProps) => {
             <button
               key={item.id}
               onClick={() => onViewChange(item.id)}
-              className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-lg transition-all ${
+              className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-h-[3rem] min-w-[3.5rem] ${
                 isActive 
-                  ? 'text-primary bg-primary/10' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  ? 'text-primary' 
+                  : 'text-muted-foreground active:scale-95'
               }`}
             >
-              <Icon className={`h-5 w-5 ${isActive ? 'scale-110' : ''}`} />
-              <span className="text-xs font-medium">{item.label}</span>
+              <Icon className={`h-6 w-6 transition-transform ${isActive ? 'scale-110' : ''}`} />
+              <span className={`text-xs font-medium ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                {item.label}
+              </span>
             </button>
           );
         })}

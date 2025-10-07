@@ -74,25 +74,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-    let lastRefreshTime = 0;
-    const MIN_REFRESH_INTERVAL = 30000; // Minimum 30 seconds between refreshes
+    let isInitialMount = true;
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      // Throttle token refresh events
+      // Ignore TOKEN_REFRESHED events entirely - they're handled automatically
       if (event === 'TOKEN_REFRESHED') {
-        const now = Date.now();
-        const timeSinceLastRefresh = now - lastRefreshTime;
-        
-        if (timeSinceLastRefresh < MIN_REFRESH_INTERVAL) {
-          console.warn(`⚠️ Token refresh too soon (${timeSinceLastRefresh}ms since last). Ignoring state update.`);
-          return; // Skip this refresh
-        }
-        
-        lastRefreshTime = now;
-        console.log('🔄 Token refreshed');
+        return;
       }
       
       console.log('🔐 Auth event:', event);
@@ -103,20 +93,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in:', session.user.email);
-        lastRefreshTime = Date.now(); // Reset on sign in
         // Load profile data after sign in
         setTimeout(() => {
           loadUserProfile(session.user.id);
         }, 0);
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
-        lastRefreshTime = 0;
         setUserProfile(null);
       }
     });
 
-    // THEN check for existing session (only once)
-    if (!isInitialized) {
+    // THEN check for existing session (only once on initial mount)
+    if (isInitialMount) {
+      isInitialMount = false;
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (mounted) {
           setSession(session);
@@ -143,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [isInitialized]);
+  }, []);
 
   const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook, bettorLevel, instagramUrl, tiktokUrl, xUrl, discordUrl, avatarUrl }: SignUpData) => {
     try {

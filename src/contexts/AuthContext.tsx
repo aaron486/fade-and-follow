@@ -74,40 +74,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
+    let isInitialized = false;
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       
-      // Only update state on actual auth changes, not token refreshes
+      // Ignore token refresh events completely
       if (event === 'TOKEN_REFRESHED') {
         return;
       }
       
       console.log('🔐 Auth event:', event);
       
+      // Update session and user state
       setSession(session);
       setUser(session?.user ?? null);
       
+      // Handle sign in
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in:', session.user.email);
-        setTimeout(() => loadUserProfile(session.user.id), 0);
-      } else if (event === 'SIGNED_OUT') {
+        // Load profile after state is set
+        setTimeout(() => {
+          if (mounted) {
+            loadUserProfile(session.user.id);
+          }
+        }, 100);
+      } 
+      // Handle sign out
+      else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
         setUserProfile(null);
+      }
+      // Handle initial session
+      else if (event === 'INITIAL_SESSION' && session?.user && !isInitialized) {
+        console.log('🔄 Initial session:', session.user.email);
+        isInitialized = true;
+        setTimeout(() => {
+          if (mounted) {
+            loadUserProfile(session.user.id);
+          }
+        }, 100);
       }
     });
 
     // Check for existing session once on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
+      if (mounted && !isInitialized) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
         
         if (session) {
           console.log('✅ Session restored:', session.user.email);
-          loadUserProfile(session.user.id);
+          isInitialized = true;
         }
       }
     }).catch((error) => {

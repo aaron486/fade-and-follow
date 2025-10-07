@@ -36,6 +36,7 @@ interface Game {
       outcomes: Array<{
         name: string;
         price: number;
+        point?: number;
       }>;
     }>;
   }>;
@@ -105,7 +106,7 @@ export const BetsPage = () => {
       if (error) throw error;
       
       if (data?.events) {
-        setGames(data.events.slice(0, 20)); // Limit to 20 games
+        setGames(data.events); // Show all available games
       }
     } catch (error) {
       console.error('Error loading games:', error);
@@ -682,12 +683,22 @@ export const BetsPage = () => {
                   const bookmaker = game.bookmakers?.[0];
                   const h2hMarket = bookmaker?.markets?.find(m => m.key === 'h2h');
                   const spreadsMarket = bookmaker?.markets?.find(m => m.key === 'spreads');
+                  const totalsMarket = bookmaker?.markets?.find(m => m.key === 'totals');
+                  
+                  const homeML = h2hMarket?.outcomes?.find(o => o.name === game.home_team);
+                  const awayML = h2hMarket?.outcomes?.find(o => o.name === game.away_team);
+                  const homeSpread = spreadsMarket?.outcomes?.find(o => o.name === game.home_team);
+                  const awaySpread = spreadsMarket?.outcomes?.find(o => o.name === game.away_team);
+                  const over = totalsMarket?.outcomes?.find(o => o.name === 'Over');
+                  const under = totalsMarket?.outcomes?.find(o => o.name === 'Under');
                   
                   return (
                     <Card key={game.id} className="overflow-hidden">
-                      <CardHeader className="pb-3">
+                      <CardHeader className="pb-3 bg-muted/30">
                         <div className="flex items-center justify-between">
-                          <Badge variant="outline">{game.sport_title}</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {game.sport_title}
+                          </Badge>
                           <span className="text-xs text-muted-foreground">
                             {formatTime(game.commence_time)}
                           </span>
@@ -696,28 +707,139 @@ export const BetsPage = () => {
                           {game.away_team} @ {game.home_team}
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-2">
+                      <CardContent className="p-4 space-y-3">
+                        {/* Moneyline */}
                         {h2hMarket && (
-                          <div className="grid grid-cols-2 gap-2">
-                            {h2hMarket.outcomes.map((outcome) => (
-                              <Button
-                                key={outcome.name}
-                                variant="outline"
-                                size="sm"
-                                className="w-full justify-between"
-                                onClick={() => handleQuickBet(game, outcome.name, outcome.price, 'Moneyline')}
-                              >
-                                <span className="truncate">{outcome.name}</span>
-                                <span className="font-semibold ml-2">
-                                  {formatOdds(outcome.price)}
-                                </span>
-                              </Button>
-                            ))}
+                          <div>
+                            <div className="text-xs font-medium text-muted-foreground mb-2">
+                              Moneyline
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {awayML && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full justify-between hover:bg-primary hover:text-primary-foreground"
+                                  onClick={() => handleQuickBet(game, awayML.name, awayML.price, 'Moneyline')}
+                                >
+                                  <span className="truncate text-xs">{game.away_team}</span>
+                                  <span className="font-bold ml-2">
+                                    {formatOdds(awayML.price)}
+                                  </span>
+                                </Button>
+                              )}
+                              {homeML && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full justify-between hover:bg-primary hover:text-primary-foreground"
+                                  onClick={() => handleQuickBet(game, homeML.name, homeML.price, 'Moneyline')}
+                                >
+                                  <span className="truncate text-xs">{game.home_team}</span>
+                                  <span className="font-bold ml-2">
+                                    {formatOdds(homeML.price)}
+                                  </span>
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         )}
-                        {spreadsMarket && (
-                          <div className="text-xs text-muted-foreground text-center pt-1">
-                            Spread available • Tap to place bet
+
+                        {/* Spreads */}
+                        {spreadsMarket && (awaySpread || homeSpread) && (
+                          <div>
+                            <div className="text-xs font-medium text-muted-foreground mb-2">
+                              Spread
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {awaySpread && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full flex-col h-auto py-2 hover:bg-primary hover:text-primary-foreground"
+                                  onClick={() => handleQuickBet(
+                                    game, 
+                                    `${game.away_team} ${awaySpread.point && awaySpread.point > 0 ? '+' : ''}${awaySpread.point}`, 
+                                    awaySpread.price, 
+                                    'Spread'
+                                  )}
+                                >
+                                  <span className="text-xs truncate w-full mb-1">{game.away_team}</span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-bold text-sm">
+                                      {awaySpread.point && awaySpread.point > 0 ? '+' : ''}{awaySpread.point}
+                                    </span>
+                                    <span className="text-xs">({formatOdds(awaySpread.price)})</span>
+                                  </div>
+                                </Button>
+                              )}
+                              {homeSpread && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full flex-col h-auto py-2 hover:bg-primary hover:text-primary-foreground"
+                                  onClick={() => handleQuickBet(
+                                    game, 
+                                    `${game.home_team} ${homeSpread.point && homeSpread.point > 0 ? '+' : ''}${homeSpread.point}`, 
+                                    homeSpread.price, 
+                                    'Spread'
+                                  )}
+                                >
+                                  <span className="text-xs truncate w-full mb-1">{game.home_team}</span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-bold text-sm">
+                                      {homeSpread.point && homeSpread.point > 0 ? '+' : ''}{homeSpread.point}
+                                    </span>
+                                    <span className="text-xs">({formatOdds(homeSpread.price)})</span>
+                                  </div>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Totals */}
+                        {totalsMarket && (over || under) && (
+                          <div>
+                            <div className="text-xs font-medium text-muted-foreground mb-2">
+                              Total
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {over && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full flex-col h-auto py-2 hover:bg-primary hover:text-primary-foreground"
+                                  onClick={() => handleQuickBet(game, `Over ${over.point}`, over.price, 'Total')}
+                                >
+                                  <span className="text-xs mb-1">Over</span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-bold text-sm">{over.point}</span>
+                                    <span className="text-xs">({formatOdds(over.price)})</span>
+                                  </div>
+                                </Button>
+                              )}
+                              {under && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full flex-col h-auto py-2 hover:bg-primary hover:text-primary-foreground"
+                                  onClick={() => handleQuickBet(game, `Under ${under.point}`, under.price, 'Total')}
+                                >
+                                  <span className="text-xs mb-1">Under</span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-bold text-sm">{under.point}</span>
+                                    <span className="text-xs">({formatOdds(under.price)})</span>
+                                  </div>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {bookmaker && (
+                          <div className="text-xs text-muted-foreground pt-2 border-t">
+                            via {bookmaker.title}
                           </div>
                         )}
                       </CardContent>

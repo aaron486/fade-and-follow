@@ -51,25 +51,34 @@ serve(async (req) => {
       );
     }
 
-    // Fetch completed game scores from The Odds API
-    const scoresResponse = await fetch(
-      `https://api.the-odds-api.com/v4/sports/upcoming/scores?apiKey=${ODDS_API_KEY}&daysFrom=1`,
-      {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-      }
-    );
+    // Fetch completed game scores from The Odds API for multiple sports
+    const sports = ['basketball_nba', 'americanfootball_nfl', 'baseball_mlb', 'icehockey_nhl'];
+    let allScores: any[] = [];
+    
+    for (const sport of sports) {
+      try {
+        const scoresResponse = await fetch(
+          `https://api.the-odds-api.com/v4/sports/${sport}/scores?apiKey=${ODDS_API_KEY}&daysFrom=3`,
+          {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+          }
+        );
 
-    if (!scoresResponse.ok) {
-      console.error('Odds API error:', scoresResponse.status);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch scores' }), 
-        { status: scoresResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        if (scoresResponse.ok) {
+          const sportScores = await scoresResponse.json();
+          allScores = allScores.concat(sportScores);
+          console.log(`Fetched ${sportScores.length} ${sport} game scores`);
+        } else {
+          console.error(`Failed to fetch ${sport} scores:`, scoresResponse.status);
+        }
+      } catch (error) {
+        console.error(`Error fetching ${sport} scores:`, error);
+      }
     }
 
-    const scores = await scoresResponse.json();
-    console.log(`Fetched ${scores.length} game scores`);
+    console.log(`Total fetched ${allScores.length} game scores from all sports`);
+    const scores = allScores;
 
     let settledCount = 0;
     const updates = [];

@@ -12,6 +12,7 @@ import BetStoryViewer from '@/components/BetStoryViewer';
 import BetConfirmation from '@/components/BetConfirmation';
 import { BettingStats } from '@/components/BettingStats';
 import { Leaderboard } from '@/components/Leaderboard';
+import { useBetSettlement } from '@/hooks/useBetSettlement';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -25,6 +26,9 @@ const Dashboard = () => {
     stake_units: string;
     notes?: string;
   } | null>(null);
+  
+  // Auto-settle bets when games finish
+  useBetSettlement();
 
   if (loading) {
     return (

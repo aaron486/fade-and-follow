@@ -200,8 +200,8 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
 
   useEffect(() => {
     fetchOdds(selectedSport);
-    // Refresh every 5 minutes
-    const interval = setInterval(() => fetchOdds(selectedSport), 5 * 60 * 1000);
+    // Refresh every 2 minutes for live tracking
+    const interval = setInterval(() => fetchOdds(selectedSport), 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, [selectedSport]);
 

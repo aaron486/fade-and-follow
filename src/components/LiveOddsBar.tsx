@@ -34,12 +34,11 @@ interface OddsEvent {
 }
 
 const SPORTS = [
-  { value: 'upcoming', label: 'All Upcoming' },
+  { value: 'upcoming', label: 'All Games' },
   { value: 'americanfootball_nfl', label: 'NFL' },
   { value: 'basketball_nba', label: 'NBA' },
   { value: 'baseball_mlb', label: 'MLB' },
-  { value: 'icehockey_nhl', label: 'NHL' },
-  { value: 'soccer_epl', label: 'EPL' },
+  { value: 'americanfootball_ncaaf', label: 'College Football' },
 ];
 
 const MOCK_EVENTS: OddsEvent[] = [
@@ -47,7 +46,7 @@ const MOCK_EVENTS: OddsEvent[] = [
     id: 'mock-1',
     sport_key: 'americanfootball_nfl',
     sport_title: 'NFL',
-    commence_time: new Date(Date.now() + 86400000).toISOString(),
+    commence_time: new Date(Date.now() + 7200000).toISOString(),
     home_team: 'Kansas City Chiefs',
     away_team: 'Buffalo Bills',
     bookmakers: [{
@@ -82,7 +81,7 @@ const MOCK_EVENTS: OddsEvent[] = [
     id: 'mock-2',
     sport_key: 'basketball_nba',
     sport_title: 'NBA',
-    commence_time: new Date(Date.now() + 172800000).toISOString(),
+    commence_time: new Date(Date.now() + 14400000).toISOString(),
     home_team: 'Los Angeles Lakers',
     away_team: 'Boston Celtics',
     bookmakers: [{
@@ -117,7 +116,7 @@ const MOCK_EVENTS: OddsEvent[] = [
     id: 'mock-3',
     sport_key: 'baseball_mlb',
     sport_title: 'MLB',
-    commence_time: new Date(Date.now() + 259200000).toISOString(),
+    commence_time: new Date(Date.now() + 21600000).toISOString(),
     home_team: 'New York Yankees',
     away_team: 'Houston Astros',
     bookmakers: [{
@@ -143,6 +142,41 @@ const MOCK_EVENTS: OddsEvent[] = [
           outcomes: [
             { name: 'Over', price: -110, point: 8.5 },
             { name: 'Under', price: -110, point: 8.5 }
+          ]
+        }
+      ]
+    }]
+  },
+  {
+    id: 'mock-4',
+    sport_key: 'americanfootball_ncaaf',
+    sport_title: 'NCAAF',
+    commence_time: new Date(Date.now() + 28800000).toISOString(),
+    home_team: 'Ohio State Buckeyes',
+    away_team: 'Michigan Wolverines',
+    bookmakers: [{
+      key: 'fanduel',
+      title: 'FanDuel',
+      markets: [
+        {
+          key: 'h2h',
+          outcomes: [
+            { name: 'Ohio State Buckeyes', price: -180 },
+            { name: 'Michigan Wolverines', price: 155 }
+          ]
+        },
+        {
+          key: 'spreads',
+          outcomes: [
+            { name: 'Ohio State Buckeyes', price: -110, point: -7.5 },
+            { name: 'Michigan Wolverines', price: -110, point: 7.5 }
+          ]
+        },
+        {
+          key: 'totals',
+          outcomes: [
+            { name: 'Over', price: -110, point: 56.5 },
+            { name: 'Under', price: -110, point: 56.5 }
           ]
         }
       ]

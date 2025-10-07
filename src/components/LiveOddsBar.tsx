@@ -31,6 +31,11 @@ interface OddsEvent {
   home_team: string;
   away_team: string;
   bookmakers: Bookmaker[];
+  scores?: {
+    home_score: number;
+    away_score: number;
+  };
+  completed?: boolean;
 }
 
 const SPORTS = [
@@ -243,6 +248,45 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
     return price > 0 ? `+${price}` : price;
   };
 
+  const formatGameTime = (commenceTime: string) => {
+    const gameDate = new Date(commenceTime);
+    const now = new Date();
+    const diffMs = gameDate.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    
+    const timeStr = gameDate.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+
+    if (diffHours < 0 && diffHours > -4) {
+      // Game likely in progress (within 4 hours after start)
+      return 'LIVE';
+    } else if (diffHours < 24 && diffHours >= 0) {
+      return `Today ${timeStr}`;
+    } else if (diffHours < 48 && diffHours >= 24) {
+      return `Tomorrow ${timeStr}`;
+    } else {
+      return gameDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    }
+  };
+
+  const isGameLive = (commenceTime: string) => {
+    const gameDate = new Date(commenceTime);
+    const now = new Date();
+    const diffMs = gameDate.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    
+    // Game is live if it started within the last 4 hours
+    return diffHours < 0 && diffHours > -4;
+  };
+
   const getSpreadOutcome = (market: Market) => {
     return market.outcomes.find(o => o.name !== 'Over' && o.name !== 'Under');
   };
@@ -311,6 +355,8 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
               const over = totalsMarket?.outcomes.find(o => o.name === 'Over');
               const homeML = h2hMarket?.outcomes.find(o => o.name === event.home_team);
               const awayML = h2hMarket?.outcomes.find(o => o.name === event.away_team);
+              const isLive = isGameLive(event.commence_time);
+              const gameTime = formatGameTime(event.commence_time);
 
               return (
                 <div
@@ -319,17 +365,29 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-xs">
-                        {event.sport_title}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(event.commence_time).toLocaleDateString()}
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {event.sport_title}
+                        </Badge>
+                        {isLive && (
+                          <Badge variant="destructive" className="text-xs animate-pulse">
+                            LIVE
+                          </Badge>
+                        )}
+                      </div>
+                      <span className={`text-xs font-medium ${isLive ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        {gameTime}
                       </span>
                     </div>
 
                     {/* Away Team */}
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium truncate flex-1">{event.away_team}</span>
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="font-medium truncate">{event.away_team}</span>
+                        {isLive && event.scores && (
+                          <span className="font-bold text-primary">{event.scores.away_score}</span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 text-xs">
                         {awaySpread && (
                           <button
@@ -366,7 +424,12 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
 
                     {/* Home Team */}
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium truncate flex-1">{event.home_team}</span>
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="font-medium truncate">{event.home_team}</span>
+                        {isLive && event.scores && (
+                          <span className="font-bold text-primary">{event.scores.home_score}</span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 text-xs">
                         {homeSpread && (
                           <button

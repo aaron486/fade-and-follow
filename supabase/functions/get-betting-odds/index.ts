@@ -24,40 +24,89 @@ serve(async (req) => {
 
     console.log('Fetching odds for sport:', sport);
 
-    // Fetch odds from The Odds API
-    const oddsResponse = await fetch(
-      `https://api.the-odds-api.com/v4/sports/${sport}/odds?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`,
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
-    );
-
-    if (!oddsResponse.ok) {
-      const errorText = await oddsResponse.text();
-      console.error('Odds API error:', oddsResponse.status, errorText);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch odds', details: errorText }), 
-        { status: oddsResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Determine which sports to fetch
+    let sportsToFetch = [];
+    if (sport === 'upcoming') {
+      // Only fetch NBA, NFL, MLB, and NCAAF
+      sportsToFetch = ['americanfootball_nfl', 'basketball_nba', 'baseball_mlb', 'americanfootball_ncaaf'];
+    } else {
+      sportsToFetch = [sport];
     }
 
-    const oddsData = await oddsResponse.json();
-    console.log('Odds fetched successfully, events count:', oddsData.length);
+    let allEvents = [];
 
-    // Get remaining quota from headers
-    const remainingRequests = oddsResponse.headers.get('x-requests-remaining');
-    const usedRequests = oddsResponse.headers.get('x-requests-used');
+    // Fetch odds for each sport
+    for (const sportKey of sportsToFetch) {
+      try {
+        const oddsResponse = await fetch(
+          `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`,
+          {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            },
+          }
+        );
+
+        if (oddsResponse.ok) {
+          const oddsData = await oddsResponse.json();
+          allEvents = allEvents.concat(oddsData);
+        }
+      } catch (error) {
+        console.error(`Error fetching odds for ${sportKey}:`, error);
+      }
+    }
+
+    // Try to fetch live scores for in-progress games
+    try {
+      for (const sportKey of sportsToFetch) {
+        const scoresResponse = await fetch(
+          `https://api.the-odds-api.com/v4/sports/${sportKey}/scores?apiKey=${ODDS_API_KEY}&daysFrom=1`,
+          {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            },
+          }
+        );
+
+        if (scoresResponse.ok) {
+          const scoresData = await scoresResponse.json();
+          
+          // Merge scores with events
+          allEvents = allEvents.map(event => {
+            const scoreData = scoresData.find(s => s.id === event.id);
+            if (scoreData && scoreData.scores) {
+              const homeScore = scoreData.scores.find(s => s.name === event.home_team);
+              const awayScore = scoreData.scores.find(s => s.name === event.away_team);
+              
+              return {
+                ...event,
+                scores: {
+                  home_score: homeScore?.score || 0,
+                  away_score: awayScore?.score || 0,
+                },
+                completed: scoreData.completed || false,
+              };
+            }
+            return event;
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching scores:', error);
+      // Continue without scores if there's an error
+    }
+
+    // Sort by commence time and limit to 20 games
+    allEvents.sort((a, b) => new Date(a.commence_time).getTime() - new Date(b.commence_time).getTime());
+    allEvents = allEvents.slice(0, 20);
+
+    console.log('Odds fetched successfully, events count:', allEvents.length);
 
     return new Response(
       JSON.stringify({ 
-        events: oddsData,
-        quota: {
-          remaining: remainingRequests,
-          used: usedRequests
-        }
+        events: allEvents,
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

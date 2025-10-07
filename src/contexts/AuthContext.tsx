@@ -52,91 +52,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Load user profile
+  // Load user profile with debouncing to prevent excessive requests
   const loadUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('avatar_url, display_name, username')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading profile:', error);
+        return;
+      }
       
       if (data) {
         setUserProfile(data);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
-      setUserProfile(null);
     }
   };
 
   useEffect(() => {
     let mounted = true;
-    let isInitialized = false;
+    let profileLoadTimeout: NodeJS.Timeout;
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       
-      // Ignore token refresh events completely
+      // Completely ignore token refresh events
       if (event === 'TOKEN_REFRESHED') {
         return;
       }
       
       console.log('🔐 Auth event:', event);
       
-      // Update session and user state
+      // Always update session state
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Handle sign in
+      // Clear any pending profile loads
+      if (profileLoadTimeout) {
+        clearTimeout(profileLoadTimeout);
+      }
+      
+      // Handle sign in - load profile once after a delay
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in:', session.user.email);
-        // Load profile after state is set
-        setTimeout(() => {
-          if (mounted) {
+        profileLoadTimeout = setTimeout(() => {
+          if (mounted && session?.user) {
             loadUserProfile(session.user.id);
           }
-        }, 100);
+        }, 200);
       } 
       // Handle sign out
       else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
         setUserProfile(null);
       }
-      // Handle initial session
-      else if (event === 'INITIAL_SESSION' && session?.user && !isInitialized) {
-        console.log('🔄 Initial session:', session.user.email);
-        isInitialized = true;
-        setTimeout(() => {
-          if (mounted) {
+      // Handle initial session - load profile once
+      else if (event === 'INITIAL_SESSION' && session?.user) {
+        profileLoadTimeout = setTimeout(() => {
+          if (mounted && session?.user) {
             loadUserProfile(session.user.id);
           }
-        }, 100);
+        }, 200);
       }
     });
 
-    // Check for existing session once on mount
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted && !isInitialized) {
+      if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        if (session) {
-          console.log('✅ Session restored:', session.user.email);
-          isInitialized = true;
-        }
       }
     }).catch((error) => {
-      console.error('❌ Session restore error:', error);
+      console.error('❌ Session error:', error);
       if (mounted) setLoading(false);
     });
 
     return () => {
       mounted = false;
+      if (profileLoadTimeout) {
+        clearTimeout(profileLoadTimeout);
+      }
       subscription.unsubscribe();
     };
   }, []);

@@ -76,14 +76,32 @@ serve(async (req) => {
 
     // Process each pending bet
     for (const bet of pendingBets) {
-      // Find matching completed game
-      const game = scores.find((g: any) => 
-        g.completed && 
-        (g.home_team + ' vs ' + g.away_team === bet.event_name ||
-         g.away_team + ' vs ' + g.home_team === bet.event_name)
-      );
+      // Find matching completed game with flexible matching
+      const normalizeEventName = (name: string) => 
+        name.toLowerCase().replace(/\s+/g, ' ').trim();
+      
+      const game = scores.find((g: any) => {
+        if (!g.completed) return false;
+        
+        const apiEventName1 = normalizeEventName(g.home_team + ' vs ' + g.away_team);
+        const apiEventName2 = normalizeEventName(g.away_team + ' vs ' + g.home_team);
+        const betEventName = normalizeEventName(bet.event_name);
+        
+        // Also try matching just team names without "vs"
+        const apiTeams = normalizeEventName(g.home_team + ' ' + g.away_team);
+        const apiTeamsReverse = normalizeEventName(g.away_team + ' ' + g.home_team);
+        
+        return betEventName === apiEventName1 || 
+               betEventName === apiEventName2 ||
+               betEventName === apiTeams ||
+               betEventName === apiTeamsReverse ||
+               betEventName.includes(normalizeEventName(g.home_team)) && betEventName.includes(normalizeEventName(g.away_team));
+      });
 
-      if (!game) continue;
+      if (!game) {
+        console.log(`No completed game found for bet: ${bet.event_name}`);
+        continue;
+      }
 
       console.log(`Processing bet for game: ${bet.event_name}`);
 

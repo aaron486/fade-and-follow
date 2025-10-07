@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { BetForm } from '@/components/BetForm';
 import BetConfirmation from '@/components/BetConfirmation';
+import BetImageUpload from '@/components/BetImageUpload';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface Game {
   id: string;
@@ -291,6 +293,7 @@ export const BetsPage = () => {
   const [allBets, setAllBets] = useState<UserBet[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBetForm, setShowBetForm] = useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(false);
   const [updatingBetId, setUpdatingBetId] = useState<string | null>(null);
   const [useMockData, setUseMockData] = useState(true);
   const [selectedBet, setSelectedBet] = useState<{
@@ -462,12 +465,18 @@ export const BetsPage = () => {
   const handleBetSuccess = () => {
     setSelectedBet(null);
     setShowBetForm(false);
+    setShowImageUpload(false);
     loadUserBets();
     loadAllBets();
     toast({
       title: "Bet Placed!",
       description: "Your bet has been recorded successfully.",
     });
+  };
+
+  const handleBetExtracted = (betDetails: any) => {
+    setSelectedBet(betDetails);
+    setShowImageUpload(false);
   };
 
   const updateBetStatus = async (betId: string, status: 'win' | 'loss' | 'push' | 'pending') => {
@@ -578,6 +587,14 @@ export const BetsPage = () => {
               disabled={loading}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setShowImageUpload(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Upload Slip
             </Button>
             <Button
               variant="outline"
@@ -1146,6 +1163,16 @@ export const BetsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Image Upload Dialog */}
+      <Dialog open={showImageUpload} onOpenChange={setShowImageUpload}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <BetImageUpload
+            onBetExtracted={handleBetExtracted}
+            onCancel={() => setShowImageUpload(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

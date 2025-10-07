@@ -57,7 +57,10 @@ const BetStoriesBar = () => {
 
   useEffect(() => {
     if (user) {
-      loadStories();
+      // Stagger load to prevent rate limiting
+      const timer = setTimeout(() => {
+        loadStories();
+      }, 150);
       
       // Subscribe to new stories
       const channel = supabase
@@ -76,10 +79,11 @@ const BetStoriesBar = () => {
         .subscribe();
 
       return () => {
+        clearTimeout(timer);
         supabase.removeChannel(channel);
       };
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id
 
   const loadUserProfile = async () => {
     // Profile is now loaded in AuthContext - this function is no longer needed

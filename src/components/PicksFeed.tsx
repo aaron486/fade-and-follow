@@ -40,8 +40,15 @@ export const PicksFeed = () => {
   const [likedPicks, setLikedPicks] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadPicks();
-  }, [user]);
+    // Stagger load to prevent rate limiting
+    if (user) {
+      const timer = setTimeout(() => {
+        loadPicks();
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user?.id]); // Only depend on user.id
 
   const loadPicks = async () => {
     if (!user) return;

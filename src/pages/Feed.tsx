@@ -59,10 +59,15 @@ const Feed = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      loadFeed();
+    // Add delay to prevent rate limiting when page first loads
+    if (user && !loading) {
+      const timer = setTimeout(() => {
+        loadFeed();
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id to prevent re-running
 
   if (loading) {
     return (

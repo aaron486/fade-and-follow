@@ -231,51 +231,68 @@ serve(async (req) => {
     // Get all public bettors
     const { data: bettors, error: bettorsError } = await supabase
       .from('public_bettors')
-      .select('username, display_name');
+      .select('username, display_name')
+      .limit(100);
 
     if (bettorsError) {
       throw bettorsError;
     }
 
-    let totalPicks = 0;
-    const results: Record<string, number> = {};
+    console.log(`Found ${bettors?.length || 0} celebrity accounts to scrape`);
 
-    for (const bettor of bettors || []) {
-      try {
-        console.log(`Processing ${bettor.display_name} (@${bettor.username})`);
-        
-        // Scrape their recent posts
-        const content = await scrapeTwitterProfile(bettor.username);
-        if (!content) {
-          console.log(`No content found for ${bettor.username}`);
-          continue;
+    // Start background scraping task
+    const scrapeTask = async () => {
+      let totalPicks = 0;
+      const results: Record<string, number> = {};
+
+      for (const bettor of bettors || []) {
+        try {
+          console.log(`Processing ${bettor.display_name} (@${bettor.username})`);
+          
+          // Scrape their recent posts
+          const content = await scrapeTwitterProfile(bettor.username);
+          if (!content) {
+            console.log(`No content found for ${bettor.username}`);
+            results[bettor.display_name] = 0;
+            continue;
+          }
+
+          // Extract picks with AI
+          const picks = await extractPicksWithAI(content, bettor.username);
+          
+          // Save picks
+          const saved = await saveCelebrityPicks(bettor.username, picks);
+          results[bettor.display_name] = saved;
+          totalPicks += saved;
+
+          console.log(`Processed ${bettor.display_name}: ${saved} new picks (Total: ${totalPicks})`);
+
+          // Rate limiting - 3 seconds between accounts
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        } catch (error) {
+          console.error(`Error processing ${bettor.username}:`, error);
+          results[bettor.display_name] = 0;
         }
-
-        // Extract picks with AI
-        const picks = await extractPicksWithAI(content, bettor.username);
-        
-        // Save picks
-        const saved = await saveCelebrityPicks(bettor.username, picks);
-        results[bettor.display_name] = saved;
-        totalPicks += saved;
-
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      } catch (error) {
-        console.error(`Error processing ${bettor.username}:`, error);
       }
-    }
 
+      console.log(`Scraping complete! Total picks: ${totalPicks}`);
+      console.log('Results by celebrity:', JSON.stringify(results, null, 2));
+    };
+
+    // Start background task without waiting
+    EdgeRuntime.waitUntil(scrapeTask());
+
+    // Return immediate response
     return new Response(
       JSON.stringify({
         success: true,
-        totalPicks,
-        results,
-        message: `Successfully scraped ${totalPicks} new celebrity picks`
+        message: `Started scraping ${bettors?.length || 0} celebrity accounts. This will take approximately ${Math.ceil((bettors?.length || 0) * 3 / 60)} minutes.`,
+        status: 'processing',
+        accounts: bettors?.length || 0
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
+        status: 202
       }
     );
   } catch (error) {

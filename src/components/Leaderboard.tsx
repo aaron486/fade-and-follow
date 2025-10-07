@@ -142,16 +142,19 @@ export const Leaderboard = () => {
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: data.message || 'Celebrity picks updated',
+        title: 'Scraping Started',
+        description: data.message || `Processing ${data.accounts || 100} celebrity accounts. This will take a few minutes - check back soon!`,
       });
 
-      await loadLeaderboards();
+      // Refresh after a delay to show any immediate results
+      setTimeout(async () => {
+        await loadLeaderboards();
+      }, 5000);
     } catch (error) {
       console.error('Error refreshing picks:', error);
       toast({
         title: 'Error',
-        description: 'Failed to refresh celebrity picks',
+        description: 'Failed to start celebrity pick scraping',
         variant: 'destructive',
       });
     } finally {

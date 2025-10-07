@@ -11,6 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ChevronLeft, ChevronRight, User, Settings, Users, Globe, Camera } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import fadeLogo from "@/assets/fade-logo.png";
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -456,7 +457,7 @@ const Auth = () => {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold fade-text-gradient mb-2">FADE</h1>
+            <img src={fadeLogo} alt="FADE" className="h-16 mx-auto mb-4" />
             <p className="text-muted-foreground">Join the ultimate betting community</p>
           </div>
 
@@ -534,7 +535,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold fade-text-gradient mb-2">FADE</h1>
+          <img src={fadeLogo} alt="FADE" className="h-16 mx-auto mb-4" />
           <p className="text-muted-foreground">Let's get you set up</p>
           <Button 
             variant="ghost" 

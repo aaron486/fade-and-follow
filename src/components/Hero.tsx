@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-image.jpg";
+import fadeLogo from "@/assets/fade-logo.png";
 
 export const Hero = () => {
   return (
@@ -19,9 +20,7 @@ export const Hero = () => {
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Logo/Brand */}
           <div className="space-y-4">
-            <h1 className="text-6xl md:text-8xl font-black fade-text-gradient animate-fade-pulse">
-              FADE
-            </h1>
+            <img src={fadeLogo} alt="FADE" className="h-32 mx-auto animate-fade-pulse" />
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
               Fade - Betting is better with your friends
             </p>

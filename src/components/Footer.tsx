@@ -1,3 +1,5 @@
+import fadeLogo from "@/assets/fade-logo.png";
+
 export const Footer = () => {
   return (
     <footer className="bg-secondary/20 border-t border-border">
@@ -5,7 +7,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="text-2xl font-black fade-text-gradient">FADE</div>
+            <img src={fadeLogo} alt="FADE" className="h-6" />
             <p className="text-muted-foreground text-sm">
               The social sports betting platform where your picks matter and your streak speaks louder than words.
             </p>

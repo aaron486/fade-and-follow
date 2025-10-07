@@ -8,6 +8,10 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Global flag to track if we're currently refreshing
+let isRefreshing = false;
+let refreshPromise: Promise<any> | null = null;
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
@@ -21,6 +25,50 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   global: {
     headers: {
       'x-application-name': 'fade-bet',
+    },
+    fetch: async (url, options = {}) => {
+      // Custom fetch with rate limit handling
+      const makeRequest = async (retryCount = 0): Promise<Response> => {
+        try {
+          const response = await fetch(url, options);
+          
+          // Handle rate limit errors
+          if (response.status === 429) {
+            const maxRetries = 3;
+            if (retryCount < maxRetries) {
+              // Exponential backoff: 1s, 2s, 4s
+              const delay = Math.pow(2, retryCount) * 1000;
+              console.warn(`⚠️ Rate limit hit, retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+              
+              await new Promise(resolve => setTimeout(resolve, delay));
+              return makeRequest(retryCount + 1);
+            }
+            console.error('❌ Max retries reached for rate limit');
+          }
+          
+          return response;
+        } catch (error) {
+          console.error('Fetch error:', error);
+          throw error;
+        }
+      };
+
+      // If this is a token refresh request, use a singleton pattern
+      if (url.toString().includes('/token?grant_type=refresh_token')) {
+        if (isRefreshing && refreshPromise) {
+          return refreshPromise;
+        }
+        
+        isRefreshing = true;
+        refreshPromise = makeRequest().finally(() => {
+          isRefreshing = false;
+          refreshPromise = null;
+        });
+        
+        return refreshPromise;
+      }
+      
+      return makeRequest();
     },
   },
 });

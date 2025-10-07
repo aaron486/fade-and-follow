@@ -19,9 +19,16 @@ interface SignUpData {
   avatarUrl?: string;
 }
 
+interface UserProfile {
+  avatar_url: string | null;
+  display_name: string | null;
+  username: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  userProfile: UserProfile | null;
   signUp: (data: SignUpData) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   loading: boolean;
@@ -40,9 +47,30 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
+
+  // Load user profile
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('avatar_url, display_name, username')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setUserProfile(data);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      setUserProfile(null);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -76,9 +104,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in:', session.user.email);
         lastRefreshTime = Date.now(); // Reset on sign in
+        // Load profile data after sign in
+        setTimeout(() => {
+          loadUserProfile(session.user.id);
+        }, 0);
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
         lastRefreshTime = 0;
+        setUserProfile(null);
       }
     });
 
@@ -93,6 +126,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           if (session) {
             console.log('✅ Session restored:', session.user.email);
+            // Load profile for existing session
+            loadUserProfile(session.user.id);
           }
         }
       }).catch((error) => {
@@ -193,6 +228,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value: AuthContextType = {
     user,
     session,
+    userProfile,
     signUp,
     signIn,
     loading,

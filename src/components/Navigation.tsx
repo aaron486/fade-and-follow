@@ -8,36 +8,10 @@ import { Users, User, MessageSquare, Newspaper, UserPlus } from "lucide-react";
 
 export const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, loading } = useAuth();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState<string>("");
-
-  useEffect(() => {
-    if (user) {
-      loadUserProfile();
-    }
-  }, [user]);
-
-  const loadUserProfile = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('avatar_url, display_name, username')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) throw error;
-      
-      if (data) {
-        setAvatarUrl(data.avatar_url);
-        setDisplayName(data.display_name || data.username || user.email?.split('@')[0] || 'User');
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    }
-  };
+  const { user, loading, userProfile } = useAuth();
+  
+  const displayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || 'User';
+  const avatarUrl = userProfile?.avatar_url;
 
 
   return (

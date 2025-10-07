@@ -43,19 +43,19 @@ const getPerformanceRing = (winRate?: number) => {
 };
 
 const BetStoriesBar = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [stories, setStories] = useState<BetStory[]>([]);
   const [selectedStory, setSelectedStory] = useState<BetStory | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadStep, setUploadStep] = useState<'upload' | 'confirm'>('upload');
   const [extractedBetDetails, setExtractedBetDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
-  const [userDisplayName, setUserDisplayName] = useState<string>("");
+  
+  const userAvatarUrl = userProfile?.avatar_url;
+  const userDisplayName = userProfile?.display_name || userProfile?.username || user?.email?.split('@')[0] || 'You';
 
   useEffect(() => {
     if (user) {
-      loadUserProfile();
       loadStories();
       
       // Subscribe to new stories
@@ -81,24 +81,8 @@ const BetStoriesBar = () => {
   }, [user]);
 
   const loadUserProfile = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('avatar_url, display_name, username')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) throw error;
-      
-      if (data) {
-        setUserAvatarUrl(data.avatar_url);
-        setUserDisplayName(data.display_name || data.username || 'You');
-      }
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-    }
+    // Profile is now loaded in AuthContext - this function is no longer needed
+    // Keeping empty function to avoid breaking changes
   };
 
   const loadStories = async () => {

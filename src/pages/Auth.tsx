@@ -137,11 +137,8 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await signIn(email, password);
-    
-    if (!error) {
-      navigate('/dashboard', { replace: true });
-    }
+    await signIn(email, password);
+    // Don't manually redirect - let the useEffect handle it to avoid double redirect
     
     setLoading(false);
   };

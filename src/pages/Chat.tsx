@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import ChatLayout from '@/components/friends/ChatLayout';
 import Navigation from '@/components/Navigation';
+import LiveOddsBar from '@/components/LiveOddsBar';
 
 const Chat = () => {
   const { user, loading } = useAuth();
@@ -20,15 +21,16 @@ const Chat = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold fade-text-gradient mb-2">Messages</h1>
-          <p className="text-muted-foreground">Chat with your friends</p>
-        </div>
+      {/* Live Odds Bar */}
+      <div className="border-b border-border">
+        <LiveOddsBar />
+      </div>
 
+      {/* Chat Layout - Full Screen */}
+      <div className="flex-1 overflow-hidden">
         <ChatLayout />
       </div>
     </div>

@@ -58,13 +58,19 @@ export const AdminDashboard = () => {
     loadUsers();
     loadInfluencers();
     loadLatestScrapingJob();
+  }, []);
+
+  // Separate effect for polling to avoid dependency issues
+  useEffect(() => {
+    // Only poll if there's an active running job
+    if (currentJob?.status !== 'running') {
+      return;
+    }
     
-    // Poll for scraping job updates every 3 seconds
+    // Poll every 10 seconds instead of 3 to avoid rate limits
     const interval = setInterval(() => {
-      if (currentJob?.status === 'running') {
-        loadLatestScrapingJob();
-      }
-    }, 3000);
+      loadLatestScrapingJob();
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [currentJob?.status]);

@@ -10,7 +10,7 @@ import { MessageCircle, UserPlus, Users, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Friend {
-  id: string;
+  user_id: string;
   username: string;
   display_name: string;
   avatar_url?: string;
@@ -60,7 +60,7 @@ const FriendsList: React.FC<FriendsListProps> = ({ onSelectFriend, selectedFrien
       // Fetch friend profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url, bettor_level')
+        .select('user_id, username, display_name, avatar_url, bettor_level')
         .in('user_id', friendIds);
 
       if (profilesError) throw profilesError;
@@ -132,10 +132,10 @@ const FriendsList: React.FC<FriendsListProps> = ({ onSelectFriend, selectedFrien
           ) : (
             filteredFriends.map((friend) => (
               <button
-                key={friend.id}
+                key={friend.user_id}
                 onClick={() => onSelectFriend(friend)}
                 className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left ${
-                  selectedFriendId === friend.id ? 'bg-accent' : ''
+                  selectedFriendId === friend.user_id ? 'bg-accent' : ''
                 }`}
               >
                 <Avatar className="h-10 w-10">

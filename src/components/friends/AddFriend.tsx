@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface UserSearchResult {
-  id: string;
+  user_id: string;
   username: string;
   display_name: string;
   avatar_url?: string;
@@ -31,7 +31,7 @@ const AddFriend = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url, bettor_level, user_id')
+        .select('user_id, username, display_name, avatar_url, bettor_level')
         .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`)
         .neq('user_id', user?.id)
         .limit(10);
@@ -101,7 +101,7 @@ const AddFriend = () => {
         description: 'You can now start chatting',
       });
 
-      setSearchResults(prev => prev.filter(u => u.id !== receiverId));
+      setSearchResults(prev => prev.filter(u => u.user_id !== receiverId));
     } catch (error) {
       console.error('Error sending friend request:', error);
       toast({
@@ -135,7 +135,7 @@ const AddFriend = () => {
       <div className="space-y-2">
         {searchResults.map((result) => (
           <div
-            key={result.id}
+            key={result.user_id}
             className="flex items-center gap-3 p-3 rounded-lg border bg-card"
           >
             <Avatar className="h-10 w-10">
@@ -152,8 +152,8 @@ const AddFriend = () => {
             </div>
             <Button
               size="sm"
-              onClick={() => sendFriendRequest(result.id)}
-              disabled={sending === result.id}
+              onClick={() => sendFriendRequest(result.user_id)}
+              disabled={sending === result.user_id}
             >
               <UserPlus className="h-4 w-4 mr-1" />
               Add

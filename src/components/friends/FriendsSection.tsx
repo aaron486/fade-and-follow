@@ -7,7 +7,7 @@ import AddFriend from './AddFriend';
 import DirectMessage from './DirectMessage';
 
 interface Friend {
-  id: string;
+  user_id: string;
   username: string;
   display_name: string;
   avatar_url?: string;
@@ -50,7 +50,7 @@ const FriendsSection = () => {
         <TabsContent value="all" className="flex-1 m-0">
           <FriendsList 
             onSelectFriend={setSelectedFriend}
-            selectedFriendId={selectedFriend?.id}
+            selectedFriendId={selectedFriend?.user_id}
           />
         </TabsContent>
         

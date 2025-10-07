@@ -15,6 +15,7 @@ import { Leaderboard } from '@/components/Leaderboard';
 import { useBetSettlement } from '@/hooks/useBetSettlement';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, X } from 'lucide-react';
+import FriendsSection from '@/components/friends/FriendsSection';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -77,6 +78,12 @@ const Dashboard = () => {
               <h2 className="text-2xl font-bold mb-2">Groups</h2>
               <p className="text-muted-foreground">Group management coming soon</p>
             </div>
+          </div>
+        );
+      case 'friends':
+        return (
+          <div className="h-full overflow-hidden">
+            <FriendsSection />
           </div>
         );
       case 'leaderboard':

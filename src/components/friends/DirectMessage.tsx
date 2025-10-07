@@ -9,7 +9,7 @@ import { Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Friend {
-  id: string;
+  user_id: string;
   username: string;
   display_name: string;
   avatar_url?: string;
@@ -88,7 +88,7 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ friend }) => {
         .from('channels')
         .insert([
           {
-            name: `DM-${user.id}-${friend.id}`,
+            name: `DM-${user.id}-${friend.user_id}`,
             created_by: user.id,
           },
         ])
@@ -102,7 +102,7 @@ const DirectMessage: React.FC<DirectMessageProps> = ({ friend }) => {
         .from('channel_members')
         .insert([
           { channel_id: newChannel.id, user_id: user.id, role: 'admin' },
-          { channel_id: newChannel.id, user_id: friend.id, role: 'member' },
+          { channel_id: newChannel.id, user_id: friend.user_id, role: 'member' },
         ]);
 
       if (memberError) throw memberError;

@@ -1,4 +1,4 @@
-import { User, Newspaper, Trophy, Receipt } from 'lucide-react';
+import { User, Newspaper, Trophy, Receipt, Users } from 'lucide-react';
 
 interface BottomNavProps {
   activeView: string;
@@ -9,6 +9,7 @@ export const BottomNav = ({ activeView, onViewChange }: BottomNavProps) => {
   const navItems = [
     { id: 'feed', icon: Newspaper, label: 'Feed' },
     { id: 'bets', icon: Receipt, label: 'Bets' },
+    { id: 'friends', icon: Users, label: 'Friends' },
     { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' },
     { id: 'profile', icon: User, label: 'Profile' },
   ];

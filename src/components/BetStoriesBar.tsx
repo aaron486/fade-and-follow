@@ -33,9 +33,12 @@ const BetStoriesBar = () => {
   const [uploadStep, setUploadStep] = useState<'upload' | 'confirm'>('upload');
   const [extractedBetDetails, setExtractedBetDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [userDisplayName, setUserDisplayName] = useState<string>("");
 
   useEffect(() => {
     if (user) {
+      loadUserProfile();
       loadStories();
       
       // Subscribe to new stories
@@ -59,6 +62,27 @@ const BetStoriesBar = () => {
       };
     }
   }, [user]);
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('avatar_url, display_name, username')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setUserAvatarUrl(data.avatar_url);
+        setUserDisplayName(data.display_name || data.username || 'You');
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
   const loadStories = async () => {
     try {
@@ -164,9 +188,9 @@ const BetStoriesBar = () => {
             >
               <div className="relative">
                 <Avatar className="h-16 w-16 border-2 border-dashed border-primary/50 group-hover:border-primary transition-colors">
-                  <AvatarImage src={undefined} />
-                  <AvatarFallback className="bg-muted">
-                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                  <AvatarImage src={userAvatarUrl || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    {userDisplayName.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1">

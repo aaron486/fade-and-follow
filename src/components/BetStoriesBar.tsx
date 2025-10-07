@@ -197,10 +197,10 @@ const BetStoriesBar = () => {
 
   useEffect(() => {
     if (user) {
-      // Load mock stories with a small delay
+      // Load mock stories with much longer delay to prevent rate limiting
       const timer = setTimeout(() => {
         loadStories();
-      }, 150);
+      }, 2000); // 2 second delay
       
       return () => clearTimeout(timer);
     }

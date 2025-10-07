@@ -40,11 +40,11 @@ export const PicksFeed = () => {
   const [likedPicks, setLikedPicks] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    // Stagger load to prevent rate limiting - longer delay since this is complex
+    // Stagger load heavily to prevent rate limiting - wait longest
     if (user) {
       const timer = setTimeout(() => {
         loadPicks();
-      }, 1500); // 1.5 second delay
+      }, 4000); // 4 second delay - load last
       
       return () => clearTimeout(timer);
     }

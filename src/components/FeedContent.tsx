@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedCard } from '@/components/FeedCard';
 import { TrendingFriends } from '@/components/TrendingFriends';
+import { PersonalizedFeed } from '@/components/PersonalizedFeed';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw } from 'lucide-react';
@@ -97,6 +98,11 @@ export const FeedContent = () => {
             {/* Trending Friends Section */}
             <div className="w-full">
               <TrendingFriends />
+            </div>
+
+            {/* AI-Generated Insights */}
+            <div className="w-full">
+              <PersonalizedFeed />
             </div>
 
             {/* Feed Items */}

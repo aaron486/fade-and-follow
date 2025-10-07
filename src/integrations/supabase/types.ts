@@ -164,6 +164,51 @@ export type Database = {
         }
         Relationships: []
       }
+      feed_items: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          metadata: Json | null
+          published_at: string | null
+          source_url: string | null
+          sport: string
+          summary: string | null
+          team_ids: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          published_at?: string | null
+          source_url?: string | null
+          sport: string
+          summary?: string | null
+          team_ids?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          published_at?: string | null
+          source_url?: string | null
+          sport?: string
+          summary?: string | null
+          team_ids?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       friend_requests: {
         Row: {
           created_at: string
@@ -397,6 +442,7 @@ export type Database = {
           discord_url: string | null
           display_name: string | null
           favorite_team: string | null
+          favorite_teams: string[] | null
           id: string
           instagram_url: string | null
           losses: number | null
@@ -419,6 +465,7 @@ export type Database = {
           discord_url?: string | null
           display_name?: string | null
           favorite_team?: string | null
+          favorite_teams?: string[] | null
           id?: string
           instagram_url?: string | null
           losses?: number | null
@@ -441,6 +488,7 @@ export type Database = {
           discord_url?: string | null
           display_name?: string | null
           favorite_team?: string | null
+          favorite_teams?: string[] | null
           id?: string
           instagram_url?: string | null
           losses?: number | null

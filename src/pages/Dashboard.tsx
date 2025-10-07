@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import ProfileSidebar from '@/components/ProfileSidebar';
+import { TeamPicker } from '@/components/TeamPicker';
 import { DiscordChat } from '@/components/DiscordChat';
 import { FeedContent } from '@/components/FeedContent';
 import { BetsPage } from '@/components/BetsPage';
@@ -54,8 +55,9 @@ const Dashboard = () => {
       case 'profile':
         return (
           <div className="h-full overflow-y-auto">
-            <div className="max-w-2xl mx-auto p-4 pb-8">
+            <div className="max-w-2xl mx-auto p-4 pb-8 space-y-4">
               <ProfileSidebar />
+              <TeamPicker />
             </div>
           </div>
         );

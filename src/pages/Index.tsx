@@ -27,23 +27,23 @@ const Index = () => {
   // Show landing page for unauthenticated users
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="text-center space-y-8 max-w-2xl mx-auto animate-fade-in">
+      <div className="text-center space-y-8 max-w-4xl mx-auto animate-fade-in">
         {/* Logo */}
         <div className="flex justify-center animate-scale-in">
           <img 
             src={fadeLogo} 
             alt="FADE" 
-            className="h-32 md:h-40 hover:scale-105 transition-transform duration-300"
+            className="h-48 md:h-64 lg:h-80 hover:scale-105 transition-transform duration-300"
           />
         </div>
 
         {/* Headline */}
         <div className="space-y-6">
-          <h1 className="text-7xl sm:text-8xl md:text-9xl lg:text-[12rem] font-logo fade-text-gradient tracking-wider leading-none">
-            BET TOGETHER
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-logo fade-text-gradient tracking-wider leading-none">
+            Bet Together
           </h1>
           <p className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-light">
-            Where friends fade or follow
+            The social sports betting platform where friends fade or follow
           </p>
         </div>
 

@@ -16,12 +16,12 @@ export const Navigation = () => {
 
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <img src={fadeLogo} alt="FADE" className="h-8" />
+            <h1 className="text-2xl font-logo fade-text-gradient tracking-wider">FADE</h1>
           </div>
 
           {/* Desktop Navigation */}
@@ -83,11 +83,11 @@ export const Navigation = () => {
                   <Button 
                     variant="outline" 
                     asChild
-                    className="border-primary text-primary hover:bg-primary/10"
+                    className="border-primary/50 text-primary hover:bg-primary/10 backdrop-blur-sm"
                   >
                     <Link to="/auth">Sign In</Link>
                   </Button>
-                  <Button className="fade-gradient" asChild>
+                  <Button className="fade-gradient hover:opacity-90 transition-all fade-glow" asChild>
                     <Link to="/auth">Get Started</Link>
                   </Button>
                 </>

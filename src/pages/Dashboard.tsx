@@ -83,9 +83,17 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+      <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
+        {/* Animated gradient orbs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 -left-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+        <div className="text-center relative z-10">
+          <div className="h-12 w-12 mx-auto mb-4 relative">
+            <div className="absolute inset-0 rounded-full fade-gradient animate-spin"></div>
+            <div className="absolute inset-1 rounded-full bg-black"></div>
+          </div>
           <p className="text-muted-foreground">Loading your dashboard...</p>
         </div>
       </div>

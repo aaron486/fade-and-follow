@@ -357,12 +357,17 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-black overflow-hidden flex items-center justify-center p-4 relative">
+      {/* Animated background gradient orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 -left-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <img src={fadeLogo} alt="FADE" className="h-20 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold mb-2">Welcome to FADE</h1>
-          <p className="text-muted-foreground">Social sports betting platform</p>
+          <h1 className="text-5xl font-logo fade-text-gradient mb-4 tracking-wider">FADE</h1>
+          <p className="text-muted-foreground text-lg">Bet Together</p>
         </div>
 
         <Tabs defaultValue="signin" className="w-full">
@@ -372,7 +377,7 @@ const Auth = () => {
           </TabsList>
           
           <TabsContent value="signin">
-            <Card>
+            <Card className="backdrop-blur-sm bg-card/80 border-border/50">
               <CardHeader>
                 <CardTitle>Sign In</CardTitle>
                 <CardDescription>
@@ -419,7 +424,7 @@ const Auth = () => {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full fade-gradient hover:opacity-90 transition-all"
                     disabled={loading}
                   >
                     {loading ? 'Signing In...' : 'Sign In'}
@@ -430,7 +435,7 @@ const Auth = () => {
           </TabsContent>
           
           <TabsContent value="signup">
-            <Card>
+            <Card className="backdrop-blur-sm bg-card/80 border-border/50">
               <CardHeader>
                 <CardTitle>Create Account</CardTitle>
                 <CardDescription>
@@ -503,7 +508,7 @@ const Auth = () => {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full fade-gradient hover:opacity-90 transition-all"
                     disabled={loading}
                   >
                     {loading ? 'Creating Account...' : 'Create Account'}

@@ -2,7 +2,6 @@ import React from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import fadeLogo from "@/assets/fade-logo.png";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -27,24 +26,15 @@ const Index = () => {
   // Show landing page for unauthenticated users
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="text-center space-y-8 max-w-4xl mx-auto animate-fade-in">
-        {/* Logo */}
-        <div className="flex justify-center animate-scale-in">
-          <img 
-            src={fadeLogo} 
-            alt="FADE" 
-            className="h-48 md:h-64 lg:h-80 hover:scale-105 transition-transform duration-300"
-          />
-        </div>
-
-        {/* Headline */}
-        <div className="space-y-6">
-          <h1 className="text-6xl md:text-8xl lg:text-9xl font-logo fade-text-gradient tracking-wider leading-none">
-            Bet Together
+      <div className="text-center space-y-12 max-w-6xl mx-auto animate-fade-in">
+        {/* Logo Text */}
+        <div className="space-y-4 animate-scale-in">
+          <h1 className="text-8xl md:text-9xl lg:text-[14rem] font-logo fade-text-gradient tracking-wider leading-none">
+            FADE
           </h1>
-          <p className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-light">
-            The social sports betting platform where friends fade or follow
-          </p>
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-logo text-foreground tracking-wide">
+            Bet Together
+          </h2>
         </div>
 
         {/* CTA Button */}
@@ -58,9 +48,9 @@ const Index = () => {
           </Button>
         </div>
 
-        {/* Subtle tagline */}
-        <p className="text-sm text-muted-foreground pt-8">
-          Track picks • Follow friends • Build your record
+        {/* Tagline */}
+        <p className="text-xl md:text-2xl text-muted-foreground pt-8 tracking-widest uppercase font-logo">
+          fade • follow • win
         </p>
       </div>
     </div>

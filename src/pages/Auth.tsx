@@ -165,13 +165,15 @@ const Auth = () => {
       const result = await signUp({
         email,
         password,
-        username: username || email.split('@')[0], // Use email prefix if no username provided
+        username: username || email.split('@')[0],
       });
       
       if (!result.error) {
-        // Move to team selection step
-        setSignupStep('teams');
-        fetchTeams();
+        // Wait a bit for auth state to update before moving to team selection
+        setTimeout(() => {
+          setSignupStep('teams');
+          fetchTeams();
+        }, 1000);
       }
     } catch (error) {
       // Error is handled by auth context
@@ -190,25 +192,38 @@ const Auth = () => {
       return;
     }
 
+    if (!user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "Please wait a moment and try again",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
+      // Save selected teams to user profile
       const { error } = await supabase
         .from('profiles')
         .update({ favorite_teams: selectedTeams })
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving teams:', error);
+        throw error;
+      }
 
       toast({
         title: "Teams Saved!",
-        description: "Your favorite teams have been set.",
+        description: `You've selected ${selectedTeams.length} team${selectedTeams.length !== 1 ? 's' : ''}`,
       });
 
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
       toast({
         title: "Error Saving Teams",
-        description: error.message,
+        description: error.message || "Please try again",
         variant: "destructive",
       });
     } finally {
@@ -235,13 +250,18 @@ const Auth = () => {
         <div className="container max-w-6xl mx-auto px-4 py-8">
           <div className="text-center mb-8">
             <img src={fadeLogo} alt="FADE" className="h-16 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Pick Your Team(s)</h1>
+            <h1 className="text-3xl font-bold mb-2">Pick Your Teams</h1>
             <p className="text-muted-foreground">
-              Select your favorite teams to personalize your feed
+              Select as many favorite teams as you want to personalize your feed
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              You can select multiple teams
+            <p className="text-sm text-primary font-medium mt-2">
+              ✓ Select unlimited teams • ✓ Multi-sport support
             </p>
+            {selectedTeams.length > 0 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                {selectedTeams.length} team{selectedTeams.length !== 1 ? 's' : ''} selected
+              </p>
+            )}
           </div>
 
           {loadingTeams ? (

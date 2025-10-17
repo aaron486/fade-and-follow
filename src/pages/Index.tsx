@@ -39,10 +39,10 @@ const Index = () => {
 
         {/* Headline */}
         <div className="space-y-4">
-          <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
+          <h1 className="text-6xl md:text-8xl font-logo fade-text-gradient tracking-wider">
             Bet Together
           </h1>
-          <p className="text-xl md:text-2xl text-gray-400 font-light">
+          <p className="text-xl md:text-2xl text-muted-foreground font-light">
             The social sports betting platform where friends fade or follow
           </p>
         </div>
@@ -52,14 +52,14 @@ const Index = () => {
           <Button 
             onClick={() => navigate('/auth')}
             size="lg"
-            className="text-lg md:text-xl px-8 md:px-12 py-6 md:py-8 h-auto font-semibold bg-white text-black hover:bg-gray-200 transition-all duration-300 hover:scale-105 shadow-2xl"
+            className="text-lg md:text-xl px-8 md:px-12 py-6 md:py-8 h-auto font-semibold fade-gradient hover:opacity-90 transition-all duration-300 hover:scale-105 fade-glow"
           >
             Get Started
           </Button>
         </div>
 
         {/* Subtle tagline */}
-        <p className="text-sm text-gray-600 pt-8">
+        <p className="text-sm text-muted-foreground pt-8">
           Track picks • Follow friends • Build your record
         </p>
       </div>

@@ -6,47 +6,47 @@
 
 @layer base {
   :root {
-    /* Core theme colors - Dark betting platform aesthetic */
-    --background: 220 26% 6%;
-    --foreground: 210 20% 95%;
+    /* Fire Red to Freezing Blue color scheme */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
 
-    --card: 220 26% 8%;
-    --card-foreground: 210 20% 95%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 220 26% 8%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Electric blue primary for CTAs and highlights */
-    --primary: 214 100% 60%;
-    --primary-foreground: 220 26% 6%;
+    /* Freezing Blue primary */
+    --primary: 200 85% 60%;
+    --primary-foreground: 0 0% 0%;
 
-    /* Darker secondary for cards and surfaces */
-    --secondary: 220 26% 12%;
-    --secondary-foreground: 210 20% 85%;
+    /* Darker secondary */
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 85%;
 
-    --muted: 220 26% 15%;
-    --muted-foreground: 210 15% 65%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
 
-    /* Neon accent for wins and highlights */
-    --accent: 142 76% 55%;
-    --accent-foreground: 220 26% 6%;
+    /* Fire Red accent */
+    --accent: 0 85% 60%;
+    --accent-foreground: 0 0% 98%;
 
-    /* Red for losses */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 20% 95%;
+    /* Fire Red for destructive */
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 26% 15%;
-    --input: 220 26% 12%;
-    --ring: 214 100% 60%;
+    --border: 0 0% 15%;
+    --input: 0 0% 10%;
+    --ring: 200 85% 60%;
 
     --radius: 0.75rem;
     
-    /* Custom FADE variables */
-    --fade-gradient: linear-gradient(135deg, hsl(214 100% 60%) 0%, hsl(142 76% 55%) 100%);
-    --fade-glow: 0 0 40px hsl(214 100% 60% / 0.3);
-    --fade-loss: 0 84% 60%;
-    --fade-win: 142 76% 55%;
-    --fade-neutral: 210 15% 65%;
+    /* Custom FADE variables - Fire to Ice gradient */
+    --fade-gradient: linear-gradient(135deg, hsl(0 85% 60%) 0%, hsl(200 85% 60%) 100%);
+    --fade-glow: 0 0 40px hsl(200 85% 60% / 0.4);
+    --fade-loss: 0 85% 60%;
+    --fade-win: 200 85% 60%;
+    --fade-neutral: 0 0% 65%;
     
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

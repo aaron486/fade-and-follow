@@ -4,10 +4,11 @@ import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BetConfirmation from './BetConfirmation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TrendingFriend {
   user_id: string;
@@ -30,117 +31,46 @@ interface TrendingFriend {
   };
 }
 
-// Mock trending friends data
-const mockTrendingFriends: TrendingFriend[] = [
-  {
-    user_id: '1',
-    username: 'sharpshooter23',
-    display_name: 'Sharp Shooter',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sharpshooter',
-    team: 'Lakers',
-    best_bet_sport: 'NBA',
-    current_streak: 7,
-    wins: 28,
-    losses: 12,
-    units_won: 18.5,
-    win_rate: 70,
-    trend: 'hot',
-    recent_bet: {
-      event: 'Lakers vs Warriors',
-      selection: 'Lakers -5.5',
-      odds: -110,
-      stake: 2.5
-    }
-  },
-  {
-    user_id: '2',
-    username: 'parlayking',
-    display_name: 'Parlay King',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=parlayking',
-    team: 'Cowboys',
-    best_bet_sport: 'NFL',
-    current_streak: 5,
-    wins: 22,
-    losses: 15,
-    units_won: 12.3,
-    win_rate: 59.5,
-    trend: 'hot',
-    recent_bet: {
-      event: 'Cowboys vs Eagles',
-      selection: 'Over 48.5',
-      odds: -115,
-      stake: 3.0
-    }
-  },
-  {
-    user_id: '3',
-    username: 'fadetheodds',
-    display_name: 'Fade Master',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=fadetheodds',
-    team: 'Red Sox',
-    best_bet_sport: 'MLB',
-    current_streak: -4,
-    wins: 15,
-    losses: 20,
-    units_won: -8.2,
-    win_rate: 42.9,
-    trend: 'cold',
-    recent_bet: {
-      event: 'Red Sox vs Yankees',
-      selection: 'Red Sox ML',
-      odds: +145,
-      stake: 2.0
-    }
-  },
-  {
-    user_id: '4',
-    username: 'underdogbettor',
-    display_name: 'Underdog Bettor',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=underdogbettor',
-    team: 'Celtics',
-    best_bet_sport: 'NBA',
-    current_streak: 6,
-    wins: 19,
-    losses: 11,
-    units_won: 15.7,
-    win_rate: 63.3,
-    trend: 'hot',
-    recent_bet: {
-      event: 'Celtics vs Heat',
-      selection: 'Celtics -3.5',
-      odds: -105,
-      stake: 4.0
-    }
-  },
-  {
-    user_id: '5',
-    username: 'propmaster',
-    display_name: 'Prop Master',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=propmaster',
-    team: 'Chiefs',
-    best_bet_sport: 'NFL',
-    current_streak: 4,
-    wins: 25,
-    losses: 18,
-    units_won: 9.4,
-    win_rate: 58.1,
-    trend: 'hot',
-    recent_bet: {
-      event: 'Chiefs vs Bills',
-      selection: 'Mahomes Over 275.5 Yards',
-      odds: -120,
-      stake: 2.0
-    }
-  }
-];
-
 export const TrendingFriends = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const trendingFriends = mockTrendingFriends;
+  const [trendingFriends, setTrendingFriends] = useState<TrendingFriend[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [actionType, setActionType] = useState<'tail' | 'fade' | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTrendingFriends = async () => {
+      if (!user) return;
+
+      try {
+        const { data: friendships, error } = await supabase
+          .from('friendships')
+          .select(`
+            *,
+            profiles!friendships_user1_id_fkey (
+              user_id,
+              username,
+              display_name,
+              avatar_url
+            )
+          `)
+          .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+          .limit(5);
+
+        if (error) throw error;
+
+        setTrendingFriends([]);
+      } catch (error) {
+        console.error('Error fetching trending friends:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrendingFriends();
+  }, [user]);
 
   const nextFriend = () => {
     setCurrentIndex((prev) => (prev + 1) % trendingFriends.length);
@@ -149,8 +79,6 @@ export const TrendingFriends = () => {
   const prevFriend = () => {
     setCurrentIndex((prev) => (prev - 1 + trendingFriends.length) % trendingFriends.length);
   };
-
-  const currentFriend = trendingFriends[currentIndex];
 
   const formatOdds = (odds: number) => {
     return odds > 0 ? `+${odds}` : odds;
@@ -181,6 +109,28 @@ export const TrendingFriends = () => {
     setActionType('fade');
     setShowConfirmDialog(true);
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center text-muted-foreground">
+          Loading trending friends...
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (trendingFriends.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center text-muted-foreground">
+          No trending friends yet. Add friends to see their picks!
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const currentFriend = trendingFriends[currentIndex];
 
   const getBetDetailsForAction = () => {
     if (actionType === 'tail') {

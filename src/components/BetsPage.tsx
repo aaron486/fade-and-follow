@@ -287,7 +287,7 @@ const MOCK_GAMES: Game[] = [
 export const BetsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [games, setGames] = useState<Game[]>(MOCK_GAMES);
+  const [games, setGames] = useState<Game[]>([]);
   const [friendPicks, setFriendPicks] = useState<FriendPick[]>([]);
   const [userBets, setUserBets] = useState<UserBet[]>([]);
   const [allBets, setAllBets] = useState<UserBet[]>([]);
@@ -295,7 +295,6 @@ export const BetsPage = () => {
   const [showBetForm, setShowBetForm] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [updatingBetId, setUpdatingBetId] = useState<string | null>(null);
-  const [useMockData, setUseMockData] = useState(true);
   const [selectedBet, setSelectedBet] = useState<{
     sport: string;
     event_name: string;
@@ -322,23 +321,19 @@ export const BetsPage = () => {
 
       if (error) {
         console.error('Error loading games:', error);
-        setUseMockData(true);
-        setGames(MOCK_GAMES);
+        setGames([]);
         setLoading(false);
         return;
       }
       
       if (data?.events && data.events.length > 0) {
         setGames(data.events);
-        setUseMockData(false);
       } else {
-        setUseMockData(true);
-        setGames(MOCK_GAMES);
+        setGames([]);
       }
     } catch (error) {
       console.error('Error loading games:', error);
-      setUseMockData(true);
-      setGames(MOCK_GAMES);
+      setGames([]);
     } finally {
       setLoading(false);
     }
@@ -641,7 +636,7 @@ export const BetsPage = () => {
                 My Bets ({userBets.length})
               </TabsTrigger>
               <TabsTrigger value="games">
-                Games {useMockData && <Badge variant="outline" className="ml-1 text-xs">Demo</Badge>}
+                Games
               </TabsTrigger>
               <TabsTrigger value="friends">
                 Friends ({friendPicks.length})

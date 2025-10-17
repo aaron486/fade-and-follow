@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Heart, MessageCircle, Share2, TrendingUp, Clock, Check, X } from 'lucide-react';
 import { formatDistance } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BetPost {
   id: string;
@@ -31,73 +33,66 @@ interface BetPost {
 }
 
 const BettingFeed = () => {
+  const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
+  const [feedPosts, setFeedPosts] = useState<BetPost[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock feed data - this will come from API later
-  const feedPosts: BetPost[] = [
-    {
-      id: '1',
-      user: {
-        username: 'johndoe',
-        displayName: 'John Doe',
-      },
-      bet: {
-        sport: 'NBA',
-        event: 'Lakers vs Warriors',
-        market: 'Moneyline',
-        selection: 'Lakers',
-        odds: 150,
-        stake: 5,
-        status: 'win'
-      },
-      caption: 'Lakers looking strong tonight! LeBron is going to dominate 🔥',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-      likes: 12,
-      comments: 4,
-      isLiked: false
-    },
-    {
-      id: '2',
-      user: {
-        username: 'sportsmike',
-        displayName: 'Sports Mike',
-      },
-      bet: {
-        sport: 'NFL',
-        event: 'Chiefs vs Bills',
-        market: 'Over/Under',
-        selection: 'Over 47.5',
-        odds: -110,
-        stake: 10,
-        status: 'pending'
-      },
-      caption: 'Both offenses are elite. This is going over easy money 💰',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      likes: 8,
-      comments: 2,
-      isLiked: true
-    },
-    {
-      id: '3',
-      user: {
-        username: 'alexluck',
-        displayName: 'Alex Lucky',
-      },
-      bet: {
-        sport: 'NBA',
-        event: 'Celtics vs Heat',
-        market: 'Player Props',
-        selection: 'Jayson Tatum Over 25.5 Points',
-        odds: -115,
-        stake: 3,
-        status: 'loss'
-      },
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
-      likes: 3,
-      comments: 1,
-      isLiked: false
-    }
-  ];
+  useEffect(() => {
+    const fetchFeed = async () => {
+      if (!user) return;
+
+      try {
+        const { data: bets, error } = await supabase
+          .from('bets')
+          .select(`
+            *,
+            profiles!bets_user_id_fkey (
+              username,
+              display_name,
+              avatar_url
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (error) throw error;
+
+        if (bets) {
+          const posts: BetPost[] = bets.map((bet: any) => ({
+            id: bet.id,
+            user: {
+              username: bet.profiles?.username || 'user',
+              displayName: bet.profiles?.display_name || 'User',
+              avatar: bet.profiles?.avatar_url
+            },
+            bet: {
+              sport: bet.sport,
+              event: bet.event_name,
+              market: bet.market,
+              selection: bet.selection,
+              odds: bet.odds,
+              stake: bet.stake_units || bet.units || 0,
+              status: bet.status as 'pending' | 'win' | 'loss' | 'push'
+            },
+            caption: bet.notes,
+            timestamp: new Date(bet.created_at),
+            likes: 0,
+            comments: 0,
+            isLiked: false
+          }));
+
+          setFeedPosts(posts);
+        }
+      } catch (error) {
+        console.error('Error fetching feed:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeed();
+  }, [user]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -129,32 +124,29 @@ const BettingFeed = () => {
     return odds > 0 ? `+${odds}` : `${odds}`;
   };
 
+  if (loading) {
+    return (
+      <div className="flex-1 p-4 max-w-2xl mx-auto">
+        <div className="text-center text-muted-foreground">Loading feed...</div>
+      </div>
+    );
+  }
+
+  if (feedPosts.length === 0) {
+    return (
+      <div className="flex-1 p-4 max-w-2xl mx-auto">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">No bets to show yet. Start placing bets to see them here!</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 p-4 max-w-2xl mx-auto">
       <div className="space-y-6">
-        {/* Create Post */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex gap-3">
-              <Avatar className="w-10 h-10">
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <Input 
-                  placeholder="Share your latest pick..." 
-                  className="mb-3"
-                />
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-muted-foreground">
-                    Share your betting insight with friends
-                  </div>
-                  <Button size="sm">Post Pick</Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Feed Posts */}
         {feedPosts.map((post) => (
           <Card key={post.id}>

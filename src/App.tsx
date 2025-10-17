@@ -13,8 +13,6 @@ import Friends from "./pages/Friends";
 import Groups from "./pages/Groups";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
-import TestFriends from "./pages/TestFriends";
-import TestUsersSetup from "./pages/TestUsersSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,8 +35,6 @@ const App = () => (
             <Route path="/chat" element={<Chat />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
-            <Route path="/test-friends" element={<TestFriends />} />
-            <Route path="/setup-test-users" element={<TestUsersSetup />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

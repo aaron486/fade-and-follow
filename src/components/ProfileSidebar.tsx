@@ -3,14 +3,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Flame, Snowflake, TrendingUp, TrendingDown, Users, Trophy } from 'lucide-react';
-import { BettingStats } from './BettingStats';
+import { Flame, Snowflake, TrendingUp, TrendingDown, Trophy } from 'lucide-react';
 import { AvatarUpload } from './AvatarUpload';
 import { supabase } from '@/integrations/supabase/client';
 
 const ProfileSidebar = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -27,47 +27,64 @@ const ProfileSidebar = () => {
       }
     };
 
+    const fetchStats = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('user_records')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setStats(data);
+      }
+    };
+
     fetchProfile();
+    fetchStats();
   }, [user?.id]);
 
   const handleAvatarUpload = (url: string) => {
     setProfile((prev: any) => ({ ...prev, avatar_url: url }));
   };
 
-  // Mock data - this will come from actual user data/stats later
-  const userStats = {
-    winRate: 68,
-    totalBets: 147,
-    unitsWon: 23.5,
-    currentStreak: 5,
-    streakType: 'win' as 'win' | 'loss',
-    roi: 15.8,
-    rank: 12,
-    totalUsers: 1250
-  };
-
   const getStreakIcon = () => {
-    if (userStats.currentStreak >= 5) {
+    if (!stats) return null;
+    if (stats.current_streak >= 5) {
       return <Flame className="w-4 h-4 text-orange-500" />;
-    } else if (userStats.currentStreak <= -3) {
+    } else if (stats.current_streak <= -3) {
       return <Snowflake className="w-4 h-4 text-blue-500" />;
     }
-    return userStats.streakType === 'win' ? 
+    return stats.current_streak > 0 ? 
       <TrendingUp className="w-4 h-4 text-green-500" /> : 
       <TrendingDown className="w-4 h-4 text-red-500" />;
   };
 
   const getStreakBadge = () => {
-    if (userStats.currentStreak >= 5) {
+    if (!stats) return null;
+    if (stats.current_streak >= 5) {
       return <Badge variant="destructive" className="bg-orange-500">🔥 On Fire</Badge>;
-    } else if (userStats.currentStreak <= -3) {
+    } else if (stats.current_streak <= -3) {
       return <Badge variant="secondary" className="bg-blue-500">🧊 Ice Cold</Badge>;
     }
     return (
-      <Badge variant={userStats.streakType === 'win' ? 'default' : 'destructive'}>
-        {userStats.streakType === 'win' ? '📈 Hot' : '📉 Cold'}
+      <Badge variant={stats.current_streak > 0 ? 'default' : 'destructive'}>
+        {stats.current_streak > 0 ? '📈 Hot' : '📉 Cold'}
       </Badge>
     );
+  };
+
+  const calculateWinRate = () => {
+    if (!stats || (stats.wins + stats.losses) === 0) return 0;
+    return Math.round((stats.wins / (stats.wins + stats.losses)) * 100);
+  };
+
+  const calculateROI = () => {
+    if (!stats || (stats.wins + stats.losses) === 0) return 0;
+    const totalBets = stats.wins + stats.losses + stats.pushes;
+    if (totalBets === 0) return 0;
+    return ((stats.units_won / totalBets) * 100).toFixed(1);
   };
 
   if (!user) return null;
@@ -94,12 +111,8 @@ const ProfileSidebar = () => {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             {getStreakBadge()}
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Trophy className="w-4 h-4" />
-              #{userStats.rank} of {userStats.totalUsers}
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -110,75 +123,44 @@ const ProfileSidebar = () => {
           <CardTitle className="text-lg">Quick Stats</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{userStats.winRate}%</div>
-              <div className="text-sm text-muted-foreground">Win Rate</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">+{userStats.unitsWon}</div>
-              <div className="text-sm text-muted-foreground">Units Won</div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{userStats.totalBets}</div>
-              <div className="text-sm text-muted-foreground">Total Bets</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-500">{userStats.roi}%</div>
-              <div className="text-sm text-muted-foreground">ROI</div>
-            </div>
-          </div>
+          {stats ? (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{calculateWinRate()}%</div>
+                  <div className="text-sm text-muted-foreground">Win Rate</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-500">
+                    {stats.units_won > 0 ? '+' : ''}{stats.units_won.toFixed(1)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Units Won</div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{stats.wins + stats.losses + stats.pushes}</div>
+                  <div className="text-sm text-muted-foreground">Total Bets</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-500">{calculateROI()}%</div>
+                  <div className="text-sm text-muted-foreground">ROI</div>
+                </div>
+              </div>
 
-          <div className="flex items-center justify-center gap-2 p-3 bg-muted/50 rounded-lg">
-            {getStreakIcon()}
-            <span className="font-medium">
-              {Math.abs(userStats.currentStreak)} {userStats.streakType} streak
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Friends Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 text-sm">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <span className="font-medium">@johndoe</span> won their last 3 bets
+              <div className="flex items-center justify-center gap-2 p-3 bg-muted/50 rounded-lg">
+                {getStreakIcon()}
+                <span className="font-medium">
+                  {Math.abs(stats.current_streak)} {stats.current_streak > 0 ? 'win' : 'loss'} streak
+                </span>
               </div>
-              <Badge variant="default" className="text-xs">🔥</Badge>
+            </>
+          ) : (
+            <div className="text-center text-muted-foreground py-8">
+              No betting stats yet. Place your first bet!
             </div>
-            <div className="flex items-center gap-3 text-sm">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback>SM</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <span className="font-medium">@sportsmike</span> placed a +350 bet
-              </div>
-              <Badge variant="outline" className="text-xs">2h</Badge>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback>AL</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <span className="font-medium">@alexluck</span> joined the group
-              </div>
-              <Badge variant="outline" className="text-xs">5h</Badge>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { DiscordChat } from '@/components/DiscordChat';
+import DiscordChat from '@/components/DiscordChat';
 import { FeedContent } from '@/components/FeedContent';
 import { BetsPage } from '@/components/BetsPage';
 import { BottomNav } from '@/components/BottomNav';

@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import fadeLogo from "@/assets/fade-logo.png";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -25,14 +26,43 @@ const Index = () => {
 
   // Show landing page for unauthenticated users
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <Button 
-        onClick={() => navigate('/auth')}
-        variant="outline"
-        className="text-white border-white hover:bg-white hover:text-black text-4xl px-12 py-8 h-auto font-bold"
-      >
-        FADE - Bet Together
-      </Button>
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="text-center space-y-8 max-w-2xl mx-auto animate-fade-in">
+        {/* Logo */}
+        <div className="flex justify-center animate-scale-in">
+          <img 
+            src={fadeLogo} 
+            alt="FADE" 
+            className="h-32 md:h-40 hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+
+        {/* Headline */}
+        <div className="space-y-4">
+          <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
+            Bet Together
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-400 font-light">
+            The social sports betting platform where friends fade or follow
+          </p>
+        </div>
+
+        {/* CTA Button */}
+        <div className="pt-4">
+          <Button 
+            onClick={() => navigate('/auth')}
+            size="lg"
+            className="text-lg md:text-xl px-8 md:px-12 py-6 md:py-8 h-auto font-semibold bg-white text-black hover:bg-gray-200 transition-all duration-300 hover:scale-105 shadow-2xl"
+          >
+            Get Started
+          </Button>
+        </div>
+
+        {/* Subtle tagline */}
+        <p className="text-sm text-gray-600 pt-8">
+          Track picks • Follow friends • Build your record
+        </p>
+      </div>
     </div>
   );
 };

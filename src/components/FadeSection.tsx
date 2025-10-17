@@ -65,19 +65,18 @@ export const FadeSection = () => {
         <TabsContent value="profile" className="flex-1 overflow-y-auto mt-0">
           <div className="max-w-2xl mx-auto p-4 pb-8 space-y-4">
             <ProfileSidebar />
-            <TeamPicker />
             
             {/* Logout Button */}
-            <div className="pt-4">
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Log Out
-              </Button>
-            </div>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Log Out
+            </Button>
+            
+            <TeamPicker />
           </div>
         </TabsContent>
 

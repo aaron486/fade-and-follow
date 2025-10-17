@@ -50,7 +50,7 @@ const Index = () => {
 
         {/* Tagline */}
         <p className="text-xl md:text-2xl text-muted-foreground pt-8 tracking-widest uppercase font-logo">
-          fade • follow • win
+          fade • follow • Cash
         </p>
       </div>
     </div>

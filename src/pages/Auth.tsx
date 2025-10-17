@@ -198,22 +198,26 @@ const Auth = () => {
               <CardContent>
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label htmlFor="signup-username">
+                      Username <span className="text-muted-foreground">(optional)</span>
+                    </Label>
                     <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className={validationErrors.email ? "border-destructive" : ""}
+                      id="signup-username"
+                      type="text"
+                      placeholder="Choose a username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className={validationErrors.username ? "border-destructive" : ""}
                     />
-                    {validationErrors.email && (
+                    {validationErrors.username && (
                       <div className="flex items-center gap-1 text-destructive text-sm">
                         <AlertCircle className="h-4 w-4" />
-                        <span>{validationErrors.email}</span>
+                        <span>{validationErrors.username}</span>
                       </div>
                     )}
+                    <p className="text-xs text-muted-foreground">
+                      Leave blank to use your email as username
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
@@ -238,26 +242,22 @@ const Auth = () => {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-username">
-                      Username <span className="text-muted-foreground">(optional)</span>
-                    </Label>
+                    <Label htmlFor="signup-email">Email</Label>
                     <Input
-                      id="signup-username"
-                      type="text"
-                      placeholder="Choose a username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className={validationErrors.username ? "border-destructive" : ""}
+                      id="signup-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className={validationErrors.email ? "border-destructive" : ""}
                     />
-                    {validationErrors.username && (
+                    {validationErrors.email && (
                       <div className="flex items-center gap-1 text-destructive text-sm">
                         <AlertCircle className="h-4 w-4" />
-                        <span>{validationErrors.username}</span>
+                        <span>{validationErrors.email}</span>
                       </div>
                     )}
-                    <p className="text-xs text-muted-foreground">
-                      Leave blank to use your email as username
-                    </p>
                   </div>
                   <Button
                     type="submit"

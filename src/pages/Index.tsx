@@ -38,12 +38,12 @@ const Index = () => {
         </div>
 
         {/* Headline */}
-        <div className="space-y-4">
-          <h1 className="text-6xl md:text-8xl font-logo fade-text-gradient tracking-wider">
-            Bet Together
+        <div className="space-y-6">
+          <h1 className="text-7xl sm:text-8xl md:text-9xl lg:text-[12rem] font-logo fade-text-gradient tracking-wider leading-none">
+            BET TOGETHER
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground font-light">
-            The social sports betting platform where friends fade or follow
+          <p className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-light">
+            Where friends fade or follow
           </p>
         </div>
 

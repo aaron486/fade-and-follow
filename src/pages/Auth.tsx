@@ -5,11 +5,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Check } from 'lucide-react';
 import { useAuth, emailSchema, passwordSchema, usernameSchema } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import fadeLogo from "@/assets/fade-logo.png";
 import { useToast } from '@/hooks/use-toast';
+
+interface Team {
+  id: string;
+  name: string;
+  mascot: string;
+  logo_url: string | null;
+  league: string;
+  sport: string;
+}
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -17,6 +26,10 @@ const Auth = () => {
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [signupStep, setSignupStep] = useState<'credentials' | 'teams'>('credentials');
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [loadingTeams, setLoadingTeams] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -108,6 +121,36 @@ const Auth = () => {
     }
   };
 
+  const fetchTeams = async () => {
+    setLoadingTeams(true);
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select('*')
+        .order('league', { ascending: true })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setTeams(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error Loading Teams",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingTeams(false);
+    }
+  };
+
+  const toggleTeam = (teamId: string) => {
+    setSelectedTeams(prev => 
+      prev.includes(teamId) 
+        ? prev.filter(id => id !== teamId)
+        : [...prev, teamId]
+    );
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -119,17 +162,179 @@ const Auth = () => {
     setValidationErrors({});
     
     try {
-      await signUp({
+      const result = await signUp({
         email,
         password,
         username: username || email.split('@')[0], // Use email prefix if no username provided
       });
+      
+      if (!result.error) {
+        // Move to team selection step
+        setSignupStep('teams');
+        fetchTeams();
+      }
     } catch (error) {
       // Error is handled by auth context
     } finally {
       setLoading(false);
     }
   };
+
+  const handleTeamSelectionComplete = async () => {
+    if (selectedTeams.length === 0) {
+      toast({
+        title: "Select at least one team",
+        description: "Choose your favorite team(s) to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ favorite_teams: selectedTeams })
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Teams Saved!",
+        description: "Your favorite teams have been set.",
+      });
+
+      navigate('/dashboard', { replace: true });
+    } catch (error: any) {
+      toast({
+        title: "Error Saving Teams",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipTeams = () => {
+    navigate('/dashboard', { replace: true });
+  };
+
+  // Team selection grouping
+  const groupedTeams = teams.reduce((acc, team) => {
+    const key = `${team.sport} - ${team.league}`;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(team);
+    return acc;
+  }, {} as Record<string, Team[]>);
+
+  // Show team selection step during signup
+  if (signupStep === 'teams') {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container max-w-6xl mx-auto px-4 py-8">
+          <div className="text-center mb-8">
+            <img src={fadeLogo} alt="FADE" className="h-16 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold mb-2">Pick Your Team(s)</h1>
+            <p className="text-muted-foreground">
+              Select your favorite teams to personalize your feed
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              You can select multiple teams
+            </p>
+          </div>
+
+          {loadingTeams ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : (
+            <>
+              <div className="space-y-8 mb-8">
+                {Object.entries(groupedTeams).map(([category, categoryTeams]) => (
+                  <div key={category}>
+                    <h2 className="text-lg font-semibold mb-4 text-foreground/80">
+                      {category}
+                    </h2>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {categoryTeams.map((team) => (
+                        <Card
+                          key={team.id}
+                          onClick={() => toggleTeam(team.id)}
+                          className={`
+                            relative cursor-pointer transition-all duration-200 hover:scale-105
+                            ${selectedTeams.includes(team.id) 
+                              ? 'ring-2 ring-primary shadow-lg bg-primary/5' 
+                              : 'hover:shadow-md'
+                            }
+                          `}
+                        >
+                          <div className="p-4 flex flex-col items-center text-center gap-3">
+                            {selectedTeams.includes(team.id) && (
+                              <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
+                                <Check className="h-4 w-4" />
+                              </div>
+                            )}
+                            
+                            {team.logo_url ? (
+                              <img 
+                                src={team.logo_url} 
+                                alt={team.name}
+                                className="h-16 w-16 object-contain"
+                              />
+                            ) : (
+                              <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center">
+                                <span className="text-2xl font-bold text-muted-foreground">
+                                  {team.name.charAt(0)}
+                                </span>
+                              </div>
+                            )}
+                            
+                            <div className="space-y-1">
+                              <p className="font-semibold text-sm leading-tight">
+                                {team.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {team.mascot}
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {teams.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No teams available at the moment.</p>
+                </div>
+              )}
+
+              <div className="flex gap-4 justify-center sticky bottom-6 mt-8">
+                <Button
+                  variant="outline"
+                  onClick={handleSkipTeams}
+                  disabled={loading}
+                  size="lg"
+                >
+                  Skip for Now
+                </Button>
+                <Button
+                  onClick={handleTeamSelectionComplete}
+                  disabled={loading || selectedTeams.length === 0}
+                  size="lg"
+                >
+                  {loading ? 'Saving...' : `Continue with ${selectedTeams.length} team${selectedTeams.length !== 1 ? 's' : ''}`}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

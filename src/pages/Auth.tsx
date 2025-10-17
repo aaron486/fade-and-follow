@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ChevronLeft, ChevronRight, User, Settings, Users, Globe, Camera } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { ChevronLeft, ChevronRight, User, Settings, Users, Globe, Camera, AlertCircle } from 'lucide-react';
+import { useAuth, emailSchema, passwordSchema, usernameSchema } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import fadeLogo from "@/assets/fade-logo.png";
+import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -33,8 +34,14 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [teams, setTeams] = useState<any[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const { signIn, signUp, user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Rate limiting
+  const lastSubmitRef = useRef<number>(0);
+  const SUBMIT_COOLDOWN = 2000; // 2 seconds between attempts
 
   // Major sportsbooks list
   const sportsbooks = [
@@ -134,62 +141,149 @@ const Auth = () => {
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Email validation
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      errors.email = emailResult.error.issues[0].message;
+    }
+
+    // Password validation
+    const passwordResult = passwordSchema.safeParse(password);
+    if (!passwordResult.success) {
+      errors.password = passwordResult.error.issues[0].message;
+    }
+
+    // Username validation (for signup)
+    if (isSignUp && username) {
+      const usernameResult = usernameSchema.safeParse(username);
+      if (!usernameResult.success) {
+        errors.username = usernameResult.error.issues[0].message;
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const checkRateLimit = (): boolean => {
+    const now = Date.now();
+    if (now - lastSubmitRef.current < SUBMIT_COOLDOWN) {
+      toast({
+        title: "Too Fast!",
+        description: "Please wait a moment before trying again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    lastSubmitRef.current = now;
+    return true;
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm() || !checkRateLimit()) {
+      return;
+    }
+    
     setLoading(true);
+    setValidationErrors({});
     
-    await signIn(email, password);
-    // Don't manually redirect - let the useEffect handle it to avoid double redirect
-    
-    setLoading(false);
+    try {
+      await signIn(email, password);
+      // Don't manually redirect - let the useEffect handle it
+    } catch (error) {
+      // Error is handled by auth context
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignUp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setLoading(true);
     
-    let avatarUrl = '';
-    
-    // Upload avatar if provided
-    if (avatarFile) {
-      try {
-        const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
-        
-        const { error: uploadError, data } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, avatarFile);
-        
-        if (uploadError) {
-          console.error('Avatar upload error:', uploadError);
-        } else {
-          const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(fileName);
-          avatarUrl = publicUrl;
-        }
-      } catch (error) {
-        console.error('Error uploading avatar:', error);
-      }
+    if (!validateForm() || !checkRateLimit()) {
+      return;
     }
     
-    const { error } = await signUp({
-      email,
-      password,
-      username,
-      displayName,
-      favoriteTeam,
-      state,
-      preferredSportsbook,
-      bettorLevel,
-      instagramUrl,
-      tiktokUrl,
-      xUrl,
-      discordUrl,
-      avatarUrl
-    });
+    setLoading(true);
+    setValidationErrors({});
     
-    setLoading(false);
+    try {
+      let avatarUrl = '';
+      
+      // Upload avatar if provided
+      if (avatarFile) {
+        try {
+          // Validate file before upload
+          if (avatarFile.size > 5 * 1024 * 1024) {
+            toast({
+              title: "File Too Large",
+              description: "Avatar must be less than 5MB",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          
+          const fileExt = avatarFile.name.split('.').pop()?.toLowerCase();
+          const allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+          if (!fileExt || !allowedTypes.includes(fileExt)) {
+            toast({
+              title: "Invalid File Type",
+              description: "Please upload a JPG, PNG, GIF, or WebP image",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, avatarFile);
+          
+          if (uploadError) {
+            toast({
+              title: "Upload Failed",
+              description: "Could not upload avatar. Please try again.",
+              variant: "destructive",
+            });
+          } else {
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+            avatarUrl = publicUrl;
+          }
+        } catch (error) {
+          // Silent fail - avatar is optional
+        }
+      }
+      
+      await signUp({
+        email,
+        password,
+        username,
+        displayName,
+        favoriteTeam,
+        state,
+        preferredSportsbook,
+        bettorLevel,
+        instagramUrl,
+        tiktokUrl,
+        xUrl,
+        discordUrl,
+        avatarUrl
+      });
+    } catch (error) {
+      // Error is handled by auth context
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -482,9 +576,19 @@ const Auth = () => {
                         type="email"
                         placeholder="Enter your email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setValidationErrors(prev => ({ ...prev, email: '' }));
+                        }}
                         required
+                        className={validationErrors.email ? 'border-destructive' : ''}
                       />
+                      {validationErrors.email && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {validationErrors.email}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signin-password">Password</Label>
@@ -493,9 +597,20 @@ const Auth = () => {
                         type="password"
                         placeholder="Enter your password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setValidationErrors(prev => ({ ...prev, password: '' }));
+                        }}
                         required
+                        minLength={6}
+                        className={validationErrors.password ? 'border-destructive' : ''}
                       />
+                      {validationErrors.password && (
+                        <p className="text-sm text-destructive flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {validationErrors.password}
+                        </p>
+                      )}
                     </div>
                     <Button 
                       type="submit" 

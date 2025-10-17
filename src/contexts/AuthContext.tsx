@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+// Validation schemas
+export const emailSchema = z.string().email('Invalid email address').max(255);
+export const passwordSchema = z.string().min(6, 'Password must be at least 6 characters').max(72);
+export const usernameSchema = z.string().min(3, 'Username must be at least 3 characters').max(50).regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores');
 
 interface SignUpData {
   email: string;
@@ -51,9 +57,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Refs to prevent duplicate operations
+  const profileLoadingRef = useRef<Set<string>>(new Set());
+  const mountedRef = useRef(true);
 
-  // Load user profile with debouncing to prevent excessive requests
+  // Load user profile with proper error handling and duplicate prevention
   const loadUserProfile = async (userId: string) => {
+    // Prevent duplicate loads
+    if (profileLoadingRef.current.has(userId)) {
+      return;
+    }
+
+    profileLoadingRef.current.add(userId);
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -62,174 +79,272 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (error) {
-        console.error('Error loading profile:', error);
+        console.error('Profile load error:', error.message);
         return;
       }
       
-      if (data) {
+      if (data && mountedRef.current) {
         setUserProfile(data);
       }
-    } catch (error) {
-      console.error('Error loading profile:', error);
+    } catch (error: any) {
+      console.error('Profile load exception:', error.message);
+    } finally {
+      profileLoadingRef.current.delete(userId);
     }
   };
 
   useEffect(() => {
-    let mounted = true;
-    let lastSession: Session | null = null;
+    mountedRef.current = true;
 
-    // Get initial session first
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (!mounted) return;
-      
-      // Don't clear session on rate limit errors
-      if (error?.message?.includes('rate limit')) {
-        console.warn('⚠️ Rate limit on session load, keeping existing session');
-        return;
-      }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      lastSession = session;
-      
-      // Load profile if we have a user
-      if (session?.user) {
-        setTimeout(() => {
-          if (mounted) {
-            loadUserProfile(session.user.id);
-          }
-        }, 100);
-      }
-    }).catch(err => {
-      console.error('Session load error:', err);
-      setLoading(false);
-    });
+    // Initialize session
+    let currentSession: Session | null = null;
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
+    const initAuth = async () => {
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session init error:', error.message);
+        }
+        
+        if (initialSession && mountedRef.current) {
+          currentSession = initialSession;
+          setSession(initialSession);
+          setUser(initialSession.user);
+          
+          // Load profile asynchronously
+          setTimeout(() => {
+            if (mountedRef.current && initialSession.user) {
+              loadUserProfile(initialSession.user.id);
+            }
+          }, 100);
+        }
+      } catch (error: any) {
+        console.error('Auth init error:', error.message);
+      } finally {
+        if (mountedRef.current) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initAuth();
+
+    // Set up auth listener - CRITICAL: Keep this synchronous
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (!mountedRef.current) return;
       
-      // Ignore token refresh events to reduce noise
+      // Only process meaningful events
       if (event === 'TOKEN_REFRESHED') {
-        // Only update if session changed
-        if (session && JSON.stringify(session) !== JSON.stringify(lastSession)) {
-          lastSession = session;
-          setSession(session);
+        // Silent refresh - only update session if changed
+        if (newSession && JSON.stringify(newSession) !== JSON.stringify(currentSession)) {
+          currentSession = newSession;
+          setSession(newSession);
         }
         return;
       }
       
-      console.log('🔐 Auth event:', event);
-      
-      // Don't clear session on rate limit or network errors
-      if (!session && lastSession && event !== 'SIGNED_OUT') {
-        console.warn('⚠️ No session in event, but we have a previous session. Keeping it.');
-        return;
-      }
-      
-      // Update session state
-      lastSession = session;
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Handle specific events
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in:', session.user.email);
+      // Handle sign in/out events
+      if (event === 'SIGNED_IN' && newSession) {
+        currentSession = newSession;
+        setSession(newSession);
+        setUser(newSession.user);
+        
+        // Load profile async
         setTimeout(() => {
-          if (mounted && session?.user) {
-            loadUserProfile(session.user.id);
+          if (mountedRef.current && newSession.user) {
+            loadUserProfile(newSession.user.id);
           }
         }, 100);
       } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out');
+        currentSession = null;
+        setSession(null);
+        setUser(null);
         setUserProfile(null);
+      } else if (newSession) {
+        // Other events with session
+        currentSession = newSession;
+        setSession(newSession);
+        setUser(newSession.user);
       }
     });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  const signUp = async ({ email, password, username, displayName, favoriteTeam, state, preferredSportsbook, bettorLevel, instagramUrl, tiktokUrl, xUrl, discordUrl, avatarUrl }: SignUpData) => {
+  const signUp = async ({ 
+    email, 
+    password, 
+    username, 
+    displayName, 
+    favoriteTeam, 
+    state, 
+    preferredSportsbook, 
+    bettorLevel, 
+    instagramUrl, 
+    tiktokUrl, 
+    xUrl, 
+    discordUrl, 
+    avatarUrl 
+  }: SignUpData) => {
     try {
+      // Validate inputs
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
+        const error = { message: emailResult.error.issues[0].message };
+        toast({
+          title: "Invalid Email",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error };
+      }
+
+      const passwordResult = passwordSchema.safeParse(password);
+      if (!passwordResult.success) {
+        const error = { message: passwordResult.error.issues[0].message };
+        toast({
+          title: "Invalid Password",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error };
+      }
+
+      if (username) {
+        const usernameResult = usernameSchema.safeParse(username);
+        if (!usernameResult.success) {
+          const error = { message: usernameResult.error.issues[0].message };
+          toast({
+            title: "Invalid Username",
+            description: error.message,
+            variant: "destructive",
+          });
+          return { error };
+        }
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            username,
-            display_name: displayName || username,
+            username: username?.trim(),
+            display_name: displayName?.trim() || username?.trim(),
             favorite_team: favoriteTeam,
-            state,
+            state: state?.trim(),
             preferred_sportsbook: preferredSportsbook,
             bettor_level: bettorLevel,
-            instagram_url: instagramUrl,
-            tiktok_url: tiktokUrl,
-            x_url: xUrl,
-            discord_url: discordUrl,
+            instagram_url: instagramUrl?.trim(),
+            tiktok_url: tiktokUrl?.trim(),
+            x_url: xUrl?.trim(),
+            discord_url: discordUrl?.trim(),
             avatar_url: avatarUrl
           }
         }
       });
 
       if (error) {
+        // Handle specific errors
+        let errorMessage = error.message;
+        if (error.message.includes('already registered')) {
+          errorMessage = 'An account with this email already exists. Try signing in instead.';
+        } else if (error.message.includes('Password')) {
+          errorMessage = 'Password must be at least 6 characters long.';
+        }
+        
         toast({
           title: "Sign Up Error",
-          description: error.message,
+          description: errorMessage,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Account Created!",
-          description: "You're all set. Signing you in...",
-        });
+        return { error: { ...error, message: errorMessage } };
       }
 
-      return { error };
+      toast({
+        title: "Account Created!",
+        description: "You're all set. Signing you in...",
+      });
+
+      return { error: null };
     } catch (error: any) {
+      const errorMessage = error.message || 'An unexpected error occurred';
       toast({
         title: "Sign Up Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
-      return { error };
+      return { error: { message: errorMessage } };
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Validate inputs
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
+        const error = { message: emailResult.error.issues[0].message };
+        toast({
+          title: "Invalid Email",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error };
+      }
+
+      const passwordResult = passwordSchema.safeParse(password);
+      if (!passwordResult.success) {
+        const error = { message: passwordResult.error.issues[0].message };
+        toast({
+          title: "Invalid Password",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error };
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (error) {
+        // Handle specific errors
+        let errorMessage = error.message;
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please confirm your email address before signing in.';
+        }
+        
         toast({
           title: "Sign In Error",
-          description: error.message,
+          description: errorMessage,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Welcome back!",
-          description: "Successfully signed in.",
-        });
+        return { error: { ...error, message: errorMessage } };
       }
 
-      return { error };
+      toast({
+        title: "Welcome back!",
+        description: "Successfully signed in.",
+      });
+
+      return { error: null };
     } catch (error: any) {
+      const errorMessage = error.message || 'An unexpected error occurred';
       toast({
         title: "Sign In Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
-      return { error };
+      return { error: { message: errorMessage } };
     }
   };
 
@@ -244,10 +359,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "You have been signed out successfully.",
       });
     } catch (error: any) {
-      console.error('Sign out error:', error);
+      console.error('Sign out error:', error.message);
       toast({
         title: "Sign Out Error",
-        description: error.message,
+        description: 'Failed to sign out. Please try again.',
         variant: "destructive",
       });
     }

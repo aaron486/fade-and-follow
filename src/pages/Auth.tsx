@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle } from 'lucide-react';
 import { useAuth, emailSchema, passwordSchema, usernameSchema } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import fadeLogo from "@/assets/fade-logo.png";
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,7 +28,23 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true });
+      // Check if user has selected teams
+      const checkTeamSelection = async () => {
+        const { data } = await supabase
+          .from('profiles')
+          .select('favorite_teams')
+          .eq('user_id', user.id)
+          .single();
+        
+        // If no teams selected, redirect to team selection
+        if (!data?.favorite_teams || data.favorite_teams.length === 0) {
+          navigate('/select-teams', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
+      };
+      
+      checkTeamSelection();
     }
   }, [user, navigate]);
 

@@ -44,15 +44,15 @@ const BetStoriesBar = () => {
         .from('bet_stories')
         .select(`
           *,
-          bets (
+          bets!inner (
             sport,
             event_name,
             selection,
             odds,
-            units,
+            stake_units,
             notes
           ),
-          profiles!bet_stories_user_id_fkey (
+          profiles!inner (
             username,
             display_name,
             avatar_url
@@ -74,7 +74,7 @@ const BetStoriesBar = () => {
             eventName: story.bets?.event_name || '',
             selection: story.bets?.selection || '',
             odds: story.bets?.odds || 0,
-            stake: story.bets?.units || 0,
+            stake: story.bets?.stake_units || 0,
             notes: story.bets?.notes
           },
           timestamp: story.created_at

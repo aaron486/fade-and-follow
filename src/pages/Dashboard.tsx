@@ -51,7 +51,7 @@ const Dashboard = () => {
     switch (activeView) {
       case 'fade':
         return (
-          <div className="h-full overflow-hidden">
+          <div className="h-full overflow-y-auto">
             <FadeSection />
           </div>
         );

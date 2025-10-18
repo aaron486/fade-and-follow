@@ -192,22 +192,26 @@ const Auth = () => {
       return;
     }
 
-    if (!user?.id) {
-      toast({
-        title: "Authentication Error",
-        description: "Please wait a moment and try again",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
     try {
+      // Get current session to ensure we have the user ID
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user?.id) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in and try again",
+          variant: "destructive",
+        });
+        setSignupStep('credentials');
+        return;
+      }
+
       // Save selected teams to user profile
       const { error } = await supabase
         .from('profiles')
         .update({ favorite_teams: selectedTeams })
-        .eq('user_id', user.id);
+        .eq('user_id', session.user.id);
 
       if (error) {
         console.error('Error saving teams:', error);

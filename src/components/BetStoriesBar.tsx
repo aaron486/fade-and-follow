@@ -27,10 +27,19 @@ interface BetStory {
   timestamp: string;
 }
 
+interface UserStories {
+  userId: string;
+  userName: string;
+  avatarUrl?: string;
+  stories: BetStory[];
+  hasViewed?: boolean;
+}
+
 const BetStoriesBar = () => {
   const { user } = useAuth();
   const [stories, setStories] = useState<BetStory[]>([]);
-  const [selectedStory, setSelectedStory] = useState<BetStory | null>(null);
+  const [userStories, setUserStories] = useState<UserStories[]>([]);
+  const [selectedUserStories, setSelectedUserStories] = useState<UserStories | null>(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [showUpload, setShowUpload] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -93,6 +102,25 @@ const BetStoriesBar = () => {
         });
 
         setStories(formattedStories);
+        
+        // Group stories by user
+        const grouped = formattedStories.reduce((acc, story) => {
+          const existing = acc.find(u => u.userId === story.userId);
+          if (existing) {
+            existing.stories.push(story);
+          } else {
+            acc.push({
+              userId: story.userId,
+              userName: story.userName,
+              avatarUrl: story.avatarUrl,
+              stories: [story],
+              hasViewed: false
+            });
+          }
+          return acc;
+        }, [] as UserStories[]);
+        
+        setUserStories(grouped);
       }
     } catch (error) {
       console.error('Error loading bet stories:', error);
@@ -103,30 +131,78 @@ const BetStoriesBar = () => {
     loadStories();
   }, [user]);
 
-  const handleStoryClick = (story: BetStory, index: number) => {
-    setSelectedStory(story);
-    setCurrentStoryIndex(index);
+  const handleUserStoriesClick = (userStoriesData: UserStories, userIndex: number) => {
+    setSelectedUserStories(userStoriesData);
+    setCurrentStoryIndex(0);
   };
 
   const handleCloseStory = () => {
-    setSelectedStory(null);
+    setSelectedUserStories(null);
+    setCurrentStoryIndex(0);
   };
 
   const handleNextStory = () => {
-    if (currentStoryIndex < stories.length - 1) {
-      const nextIndex = currentStoryIndex + 1;
-      setCurrentStoryIndex(nextIndex);
-      setSelectedStory(stories[nextIndex]);
+    if (!selectedUserStories) return;
+    
+    if (currentStoryIndex < selectedUserStories.stories.length - 1) {
+      // Next story for same user
+      setCurrentStoryIndex(currentStoryIndex + 1);
     } else {
-      handleCloseStory();
+      // Move to next user's stories
+      const currentUserIndex = userStories.findIndex(u => u.userId === selectedUserStories.userId);
+      if (currentUserIndex < userStories.length - 1) {
+        const nextUser = userStories[currentUserIndex + 1];
+        setSelectedUserStories(nextUser);
+        setCurrentStoryIndex(0);
+      } else {
+        handleCloseStory();
+      }
     }
   };
 
   const handlePrevStory = () => {
+    if (!selectedUserStories) return;
+    
     if (currentStoryIndex > 0) {
-      const prevIndex = currentStoryIndex - 1;
-      setCurrentStoryIndex(prevIndex);
-      setSelectedStory(stories[prevIndex]);
+      // Previous story for same user
+      setCurrentStoryIndex(currentStoryIndex - 1);
+    } else {
+      // Move to previous user's stories
+      const currentUserIndex = userStories.findIndex(u => u.userId === selectedUserStories.userId);
+      if (currentUserIndex > 0) {
+        const prevUser = userStories[currentUserIndex - 1];
+        setSelectedUserStories(prevUser);
+        setCurrentStoryIndex(prevUser.stories.length - 1);
+      }
+    }
+  };
+
+  const handleDeleteStory = async (storyId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bet_stories')
+        .delete()
+        .eq('id', storyId);
+
+      if (error) throw error;
+
+      // Reload stories
+      await loadStories();
+      
+      // If viewing deleted story, close viewer
+      if (selectedUserStories) {
+        const updatedUser = userStories.find(u => u.userId === selectedUserStories.userId);
+        if (!updatedUser || updatedUser.stories.length === 0) {
+          handleCloseStory();
+        } else {
+          setSelectedUserStories(updatedUser);
+          if (currentStoryIndex >= updatedUser.stories.length) {
+            setCurrentStoryIndex(updatedUser.stories.length - 1);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting story:', error);
     }
   };
 
@@ -168,21 +244,26 @@ const BetStoriesBar = () => {
               <span className="text-xs font-medium">Add Story</span>
             </button>
 
-            {/* Friend Stories */}
-            {stories.map((story, index) => (
+            {/* User Stories - Grouped by user like Instagram */}
+            {userStories.map((userStory, index) => (
               <button
-                key={story.id}
-                onClick={() => handleStoryClick(story, index)}
+                key={userStory.userId}
+                onClick={() => handleUserStoriesClick(userStory, index)}
                 className="flex flex-col items-center gap-2 flex-shrink-0"
               >
                 <div className="relative">
                   <Avatar className="w-16 h-16 ring-2 ring-primary ring-offset-2 ring-offset-background">
-                    <AvatarImage src={story.avatarUrl} />
-                    <AvatarFallback>{story.userName[0]}</AvatarFallback>
+                    <AvatarImage src={userStory.avatarUrl} />
+                    <AvatarFallback>{userStory.userName[0]}</AvatarFallback>
                   </Avatar>
+                  {userStory.stories.length > 1 && (
+                    <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                      {userStory.stories.length}
+                    </div>
+                  )}
                 </div>
                 <span className="text-xs font-medium max-w-[70px] truncate">
-                  {story.userName}
+                  {userStory.userName}
                 </span>
               </button>
             ))}
@@ -192,12 +273,16 @@ const BetStoriesBar = () => {
       </div>
 
       {/* Story Viewer */}
-      {selectedStory && (
+      {selectedUserStories && (
         <BetStoryViewer
-          story={selectedStory}
+          story={selectedUserStories.stories[currentStoryIndex]}
+          stories={selectedUserStories.stories}
+          currentIndex={currentStoryIndex}
           onClose={handleCloseStory}
-          onNext={currentStoryIndex < stories.length - 1 ? handleNextStory : undefined}
-          onPrevious={currentStoryIndex > 0 ? handlePrevStory : undefined}
+          onNext={handleNextStory}
+          onPrevious={currentStoryIndex > 0 || userStories.findIndex(u => u.userId === selectedUserStories.userId) > 0 ? handlePrevStory : undefined}
+          onDelete={handleDeleteStory}
+          isOwnStory={selectedUserStories.userId === user?.id}
         />
       )}
 

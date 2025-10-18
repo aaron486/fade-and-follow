@@ -75,12 +75,7 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
 
       setUploadedImageUrl(publicUrl);
 
-      // Open bet form immediately - OCR skipped for speed
-      toast({
-        title: '✅ Image Uploaded',
-        description: 'Fill in your bet details below',
-      });
-
+      // Open form immediately with placeholder data
       onBetExtracted({
         sport: 'NFL',
         event_name: '',
@@ -91,6 +86,47 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
         image_url: publicUrl,
         notes: ''
       });
+
+      // Process OCR in background to auto-fill details
+      try {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onloadend = async () => {
+          const base64String = (reader.result as string).split(',')[1];
+          
+          const { data: ocrData, error: ocrError } = await supabase.functions.invoke(
+            'extract-bet-from-image',
+            {
+              body: { imageBase64: base64String }
+            }
+          );
+
+          if (ocrError) {
+            console.error('OCR error:', ocrError);
+            toast({
+              title: 'OCR Failed',
+              description: 'Please fill in details manually',
+              variant: 'destructive',
+            });
+            return;
+          }
+
+          if (ocrData?.betDetails) {
+            // Update form with OCR results
+            onBetExtracted({
+              ...ocrData.betDetails,
+              image_url: publicUrl,
+            });
+            
+            toast({
+              title: '✅ Details Extracted',
+              description: 'Bet details auto-filled from image',
+            });
+          }
+        };
+      } catch (ocrError) {
+        console.error('OCR processing error:', ocrError);
+      }
 
     } catch (error) {
       console.error('Error uploading image:', error);

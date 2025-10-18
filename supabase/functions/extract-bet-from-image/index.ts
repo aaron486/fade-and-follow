@@ -38,31 +38,28 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-flash-lite',
         messages: [
           {
             role: 'system',
-            content: `You are a betting slip analyzer. Extract betting information from images of betting slips.
-Return ONLY a JSON object with these exact fields (no additional text):
+            content: `Extract bet info from betting slip images. Return JSON only:
 {
-  "sport": "sport name (e.g., NBA, NFL, MLB, NHL, Soccer, etc.)",
-  "event_name": "full event name (e.g., Lakers vs Warriors, Chiefs vs Bills)",
-  "market": "market type - one of: ML, Spread, Total, Prop, Future, Parlay",
-  "selection": "the specific pick (e.g., Lakers -5.5, Over 220.5, Mahomes Over 2.5 TDs)",
-  "odds": "american odds as number (e.g., -110, +150)",
-  "stake_units": "stake amount as number (default to 1.0 if not visible)",
-  "notes": "any additional context or reasoning visible on the slip"
+  "sport": "NBA/NFL/MLB/NHL/Soccer",
+  "event_name": "Team1 vs Team2",
+  "market": "ML/Spread/Total/Prop/Future/Parlay",
+  "selection": "specific pick",
+  "odds": "american odds (e.g., -110)",
+  "stake_units": "number (default 1.0)",
+  "notes": "optional context"
 }
-
-If the image is not a betting slip or you cannot extract the information, return an error field:
-{ "error": "Unable to extract bet information from image" }`
+If error: { "error": "message" }`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Please extract the betting information from this betting slip image.'
+                text: 'Extract bet info from this image.'
               },
               {
                 type: 'image_url',
@@ -73,7 +70,6 @@ If the image is not a betting slip or you cannot extract the information, return
             ]
           }
         ],
-        temperature: 0.1,
       }),
     });
 

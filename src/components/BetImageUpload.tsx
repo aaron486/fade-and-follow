@@ -20,6 +20,46 @@ interface BetImageUploadProps {
   onCancel: () => void;
 }
 
+// Helper function to resize image for faster OCR
+const resizeImageForOCR = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context not available'));
+          return;
+        }
+
+        // Resize to max 1200px width while maintaining aspect ratio
+        const maxWidth = 1200;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to base64 with compression
+        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(resizedBase64);
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+};
+
 const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCancel }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -89,15 +129,16 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
 
       // Process OCR in background to auto-fill details
       try {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onloadend = async () => {
-          const base64String = (reader.result as string).split(',')[1];
+        // Resize image for faster OCR processing
+        const resizedBase64 = await resizeImageForOCR(file);
+        if (!resizedBase64) {
+          throw new Error('Failed to resize image');
+        }
           
           const { data: ocrData, error: ocrError } = await supabase.functions.invoke(
             'extract-bet-from-image',
             {
-              body: { imageBase64: base64String }
+              body: { imageBase64: resizedBase64 }
             }
           );
 
@@ -123,7 +164,6 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
               description: 'Bet details auto-filled from image',
             });
           }
-        };
       } catch (ocrError) {
         console.error('OCR processing error:', ocrError);
       }

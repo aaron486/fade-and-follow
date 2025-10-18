@@ -42,6 +42,28 @@ const Bets = () => {
     }
 
     loadUserBets();
+    
+    // Subscribe to real-time bet updates
+    const channel = supabase
+      .channel('user-bets-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bets',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Bet updated:', payload);
+          loadUserBets(); // Reload all bets when any bet changes
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, loading]);
 
   const loadUserBets = async () => {

@@ -27,6 +27,28 @@ export const BettingStats: React.FC<BettingStatsProps> = ({ userId }) => {
 
   useEffect(() => {
     loadBettingStats();
+    
+    // Subscribe to real-time stats updates
+    const channel = supabase
+      .channel('user-stats-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_records',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          console.log('Stats updated, reloading...');
+          loadBettingStats();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   const loadBettingStats = async () => {

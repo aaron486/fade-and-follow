@@ -9,6 +9,7 @@ import BetStoriesBar from '@/components/BetStoriesBar';
 import LiveOddsBar from '@/components/LiveOddsBar';
 import BetConfirmation from '@/components/BetConfirmation';
 import { useBetSettlement } from '@/hooks/useBetSettlement';
+import { BetSettlementNotifier } from '@/components/BetSettlementNotifier';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, X } from 'lucide-react';
 import { AdminDashboard } from '@/components/AdminDashboard';
@@ -106,6 +107,9 @@ const Dashboard = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background pt-[env(safe-area-inset-top)]">
+      {/* Real-time bet settlement notifications */}
+      <BetSettlementNotifier />
+      
       {/* Top Bars - Stories & Live Odds - Hidden for admin view */}
       {activeView !== 'admin' && (
         <div className="flex-shrink-0">

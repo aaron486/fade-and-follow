@@ -67,17 +67,25 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('get-betting-odds', {
-        body: { sport }
-      });
+      const response = await fetch(
+        'https://btteqktyhnyeycmognox.supabase.co/functions/v1/get-betting-odds',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sport })
+        }
+      );
 
-      if (error) {
-        console.error('Error fetching odds:', error);
+      if (!response.ok) {
+        console.error('Error fetching odds:', response.status);
         setError('Failed to load odds');
         setLoading(false);
         return;
       }
 
+      const data = await response.json();
       if (data?.events) {
         setEvents(data.events);
       }

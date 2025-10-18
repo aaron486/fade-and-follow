@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plus } from 'lucide-react';
+import { Plus, UserPlus } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import BetStoryViewer from './BetStoryViewer';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import BetImageUpload from './BetImageUpload';
 import BetConfirmation from './BetConfirmation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface BetStory {
   id: string;
@@ -43,7 +46,12 @@ const BetStoriesBar = () => {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [showUpload, setShowUpload] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
   const [extractedBet, setExtractedBet] = useState<any>(null);
+  const { toast } = useToast();
 
   const loadStories = async () => {
     if (!user) return;
@@ -218,6 +226,96 @@ const BetStoriesBar = () => {
     await loadStories();
   };
 
+  const searchUsers = async (query: string) => {
+    if (!query.trim() || !user) return;
+    
+    setSearching(true);
+    try {
+      const { data: users, error } = await supabase
+        .from('profiles')
+        .select('user_id, username, display_name, avatar_url')
+        .neq('user_id', user.id)
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+        .limit(10);
+
+      if (error) throw error;
+
+      // Check existing friendships and pending requests
+      const { data: existingFriends } = await supabase
+        .from('friendships')
+        .select('user1_id, user2_id')
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+
+      const { data: pendingRequests } = await supabase
+        .from('friend_requests')
+        .select('sender_id, receiver_id, status')
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .eq('status', 'pending');
+
+      const friendIds = new Set(
+        existingFriends?.flatMap(f => [f.user1_id, f.user2_id]) || []
+      );
+      const requestUserIds = new Set(
+        pendingRequests?.flatMap(r => [r.sender_id, r.receiver_id]) || []
+      );
+
+      const results = users?.map(u => ({
+        ...u,
+        isFriend: friendIds.has(u.user_id),
+        hasPendingRequest: requestUserIds.has(u.user_id)
+      })) || [];
+
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const sendFriendRequest = async (receiverId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('friend_requests')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Friend Request Sent!",
+        description: "Your request has been sent",
+      });
+
+      // Refresh search results
+      if (searchQuery) {
+        await searchUsers(searchQuery);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send friend request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (searchQuery) {
+      const debounce = setTimeout(() => {
+        searchUsers(searchQuery);
+      }, 300);
+      return () => clearTimeout(debounce);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
   if (!user) return null;
 
   return (
@@ -225,6 +323,17 @@ const BetStoriesBar = () => {
       <div className="mb-6">
         <ScrollArea className="w-full whitespace-nowrap">
           <div className="flex gap-4 p-2">
+            {/* Add Friend Button */}
+            <button
+              onClick={() => setShowAddFriend(true)}
+              className="flex flex-col items-center gap-2 flex-shrink-0"
+            >
+              <div className="w-16 h-16 rounded-full border-2 border-dashed border-primary/50 bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors">
+                <UserPlus className="w-6 h-6 text-primary" />
+              </div>
+              <span className="text-xs font-medium">Add Friend</span>
+            </button>
+
             {/* Add Story Button */}
             <button
               onClick={() => setShowUpload(true)}
@@ -311,6 +420,82 @@ const BetStoriesBar = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Add Friend Dialog */}
+      <Dialog open={showAddFriend} onOpenChange={setShowAddFriend}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Friends</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Search by username..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+            />
+            
+            {searching && (
+              <div className="text-center py-4 text-muted-foreground">
+                Searching...
+              </div>
+            )}
+
+            {searchResults.length > 0 && (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {searchResults.map((result) => (
+                  <div
+                    key={result.user_id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={result.avatar_url} />
+                        <AvatarFallback>
+                          {(result.display_name || result.username)?.[0] || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">
+                          {result.display_name || result.username}
+                        </p>
+                        {result.username && result.display_name && (
+                          <p className="text-xs text-muted-foreground">
+                            @{result.username}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      disabled={result.isFriend || result.hasPendingRequest}
+                      onClick={() => sendFriendRequest(result.user_id)}
+                    >
+                      {result.isFriend 
+                        ? 'Friends' 
+                        : result.hasPendingRequest 
+                        ? 'Pending' 
+                        : 'Add'}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {searchQuery && !searching && searchResults.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No users found
+              </div>
+            )}
+
+            {!searchQuery && (
+              <div className="text-center py-8 text-muted-foreground">
+                Search for friends by username
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

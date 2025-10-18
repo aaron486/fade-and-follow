@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { ShareableBetCard } from './ShareableBetCard';
 
 interface BetConfirmationProps {
   betDetails: {
@@ -37,10 +38,12 @@ const MARKET_OPTIONS = [
 ];
 
 const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationProps) => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(betDetails);
+  const [showShareCard, setShowShareCard] = useState(false);
+  const [placedBet, setPlacedBet] = useState<any>(null);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -98,12 +101,17 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
         // Don't fail the whole operation if story creation fails
       }
 
-      toast({
-        title: 'Bet Placed!',
-        description: 'Your bet has been successfully recorded and shared with friends.',
+      // Store the bet data and show share card
+      setPlacedBet({
+        sport: formData.sport,
+        event_name: formData.event_name,
+        market: formData.market,
+        selection: formData.selection,
+        odds: odds,
+        stake_units: stakeUnits,
+        notes: formData.notes,
       });
-
-      onSuccess();
+      setShowShareCard(true);
     } catch (error: any) {
       console.error('Error creating bet:', error);
       toast({
@@ -115,6 +123,32 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
       setLoading(false);
     }
   };
+
+  // Show share card after successful bet placement
+  if (showShareCard && placedBet) {
+    return (
+      <Dialog open={true} onOpenChange={(open) => !open && onSuccess()}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Bet Placed Successfully! 🎉</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <ShareableBetCard 
+              bet={placedBet}
+              username={userProfile?.username || userProfile?.display_name}
+            />
+          </div>
+
+          <div className="flex justify-center pt-4">
+            <Button onClick={onSuccess} className="w-full max-w-xs">
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>

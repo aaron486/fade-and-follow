@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface Server {
   id: string;
@@ -61,6 +62,10 @@ const DiscordChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [onlineMembers, setOnlineMembers] = useState<string[]>([]);
+  
+  // Refs to track subscriptions for proper cleanup
+  const messageChannelRef = useRef<RealtimeChannel | null>(null);
+  const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   
   // Dialog states
   const [showCreateServer, setShowCreateServer] = useState(false);
@@ -208,6 +213,11 @@ const DiscordChat: React.FC = () => {
   };
 
   const subscribeToMessages = (channelId: string) => {
+    // Clean up existing subscription first
+    if (messageChannelRef.current) {
+      supabase.removeChannel(messageChannelRef.current);
+    }
+    
     const channel = supabase
       .channel(`messages:${channelId}`)
       .on(
@@ -238,12 +248,22 @@ const DiscordChat: React.FC = () => {
       )
       .subscribe();
 
+    messageChannelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (messageChannelRef.current) {
+        supabase.removeChannel(messageChannelRef.current);
+        messageChannelRef.current = null;
+      }
     };
   };
 
   const subscribeToPresence = (serverId: string) => {
+    // Clean up existing presence subscription
+    if (presenceChannelRef.current) {
+      supabase.removeChannel(presenceChannelRef.current);
+    }
+    
     const channel = supabase.channel(`server:${serverId}`);
     
     channel
@@ -264,8 +284,13 @@ const DiscordChat: React.FC = () => {
         }
       });
 
+    presenceChannelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
     };
   };
 

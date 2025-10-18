@@ -26,15 +26,21 @@ export const useBetSettlement = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Check for bet settlements every 5 minutes
+    // Check for bet settlements every 15 minutes (reduced frequency to avoid rate limits)
     const interval = setInterval(() => {
       settleBets();
-    }, 300000);
+    }, 900000); // 15 minutes instead of 5
 
-    // Run immediately on mount
-    settleBets();
+    // Don't run immediately on mount to reduce initial load
+    // Run first check after 1 minute
+    const initialTimeout = setTimeout(() => {
+      settleBets();
+    }, 60000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(initialTimeout);
+    };
   }, [settleBets]);
 
   return { settleBets };

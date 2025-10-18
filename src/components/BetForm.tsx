@@ -109,9 +109,17 @@ export const BetForm: React.FC<BetFormProps> = ({ onCancel, onSuccess }) => {
       onSuccess();
     } catch (error: any) {
       console.error('Error creating bet:', error);
+      
+      // Check if it's a rate limit error
+      const isRateLimit = error.message?.includes('rate limit') || 
+                          error.code === 'PGRST301' ||
+                          error.status === 429;
+      
       toast({
         title: 'Error',
-        description: 'Failed to place bet. Please try again.',
+        description: isRateLimit 
+          ? 'Too many requests. Please wait a moment and try again.'
+          : 'Failed to place bet. Please try again.',
         variant: 'destructive',
       });
     } finally {

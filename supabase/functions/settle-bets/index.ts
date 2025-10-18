@@ -1,6 +1,77 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
+// Team matching utilities
+const normalizeTeamName = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^\w\s]/g, '')
+    .trim();
+};
+
+// College Football team mappings
+const NCAAF_MAPPINGS: Record<string, string> = {
+  'alabama': 'Alabama Crimson Tide',
+  'arkansas': 'Arkansas Razorbacks',
+  'auburn': 'Auburn Tigers',
+  'michigan': 'Michigan Wolverines',
+  'ohio state': 'Ohio State Buckeyes',
+  'georgia': 'Georgia Bulldogs',
+  'florida': 'Florida Gators',
+  'lsu': 'LSU Tigers',
+  'texas': 'Texas Longhorns',
+  'oklahoma': 'Oklahoma Sooners',
+  'usc': 'USC Trojans',
+  'oregon': 'Oregon Ducks',
+  'penn state': 'Penn State Nittany Lions',
+  'clemson': 'Clemson Tigers',
+  'notre dame': 'Notre Dame Fighting Irish',
+  'florida state': 'Florida State Seminoles',
+  'miami': 'Miami Hurricanes',
+  'texas am': 'Texas A&M Aggies',
+  'tennessee': 'Tennessee Volunteers',
+  'wisconsin': 'Wisconsin Badgers',
+};
+
+// College Basketball team mappings
+const NCAAB_MAPPINGS: Record<string, string> = {
+  'duke': 'Duke Blue Devils',
+  'north carolina': 'North Carolina Tar Heels',
+  'kentucky': 'Kentucky Wildcats',
+  'kansas': 'Kansas Jayhawks',
+  'villanova': 'Villanova Wildcats',
+  'uconn': 'UConn Huskies',
+  'gonzaga': 'Gonzaga Bulldogs',
+  'ucla': 'UCLA Bruins',
+  'michigan state': 'Michigan State Spartans',
+  'syracuse': 'Syracuse Orange',
+  'louisville': 'Louisville Cardinals',
+  'arizona': 'Arizona Wildcats',
+  'indiana': 'Indiana Hoosiers',
+  'maryland': 'Maryland Terrapins',
+  'virginia': 'Virginia Cavaliers',
+  'purdue': 'Purdue Boilermakers',
+  'illinois': 'Illinois Fighting Illini',
+  'texas': 'Texas Longhorns',
+  'baylor': 'Baylor Bears',
+  'michigan': 'Michigan Wolverines',
+};
+
+const matchTeamName = (teamName: string, sport: string): string => {
+  const normalized = normalizeTeamName(teamName);
+  
+  if (sport.includes('ncaaf') || sport.includes('college football')) {
+    return NCAAF_MAPPINGS[normalized] || teamName;
+  }
+  
+  if (sport.includes('ncaab') || sport.includes('college basketball')) {
+    return NCAAB_MAPPINGS[normalized] || teamName;
+  }
+  
+  return teamName;
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -108,21 +179,26 @@ serve(async (req) => {
     for (const bet of pendingBets) {
       const betTeams = extractTeamNames(bet.event_name);
       
-      // Find matching completed game with flexible matching
+      // Determine sport type for team matching
+      const sportKey = bet.sport.toLowerCase();
+      
+      // Find matching completed game with flexible matching and team name normalization
       const game = scores.find((g: any) => {
         if (!g.completed) return false;
         
-        const apiHomeTeam = normalizeText(g.home_team);
-        const apiAwayTeam = normalizeText(g.away_team);
+        // Normalize and match team names based on sport
+        const apiHomeTeam = normalizeText(matchTeamName(g.home_team, sportKey));
+        const apiAwayTeam = normalizeText(matchTeamName(g.away_team, sportKey));
         
         // Check if both teams match (in any order)
         if (betTeams.length >= 2) {
-          const hasHomeTeam = betTeams.some(bt => 
-            apiHomeTeam.includes(bt) || bt.includes(apiHomeTeam)
-          );
-          const hasAwayTeam = betTeams.some(bt => 
-            apiAwayTeam.includes(bt) || bt.includes(apiAwayTeam)
-          );
+          const betTeam1 = normalizeText(matchTeamName(betTeams[0], sportKey));
+          const betTeam2 = normalizeText(matchTeamName(betTeams[1], sportKey));
+          
+          const hasHomeTeam = betTeam1.includes(apiHomeTeam) || apiHomeTeam.includes(betTeam1) ||
+                             betTeam2.includes(apiHomeTeam) || apiHomeTeam.includes(betTeam2);
+          const hasAwayTeam = betTeam1.includes(apiAwayTeam) || apiAwayTeam.includes(betTeam1) ||
+                             betTeam2.includes(apiAwayTeam) || apiAwayTeam.includes(betTeam2);
           
           return hasHomeTeam && hasAwayTeam;
         }
@@ -133,11 +209,11 @@ serve(async (req) => {
       });
 
       if (!game) {
-        console.log(`No match for bet: ${bet.event_name} | Teams: ${betTeams.join(', ')}`);
+        console.log(`No match for bet: ${bet.event_name} | Sport: ${bet.sport} | Teams: ${betTeams.join(', ')}`);
         continue;
       }
 
-      console.log(`✓ Matched bet: ${bet.event_name} -> ${game.home_team} vs ${game.away_team}`);
+      console.log(`✓ Matched bet: ${bet.event_name} -> ${game.home_team} vs ${game.away_team} (${bet.sport})`);
 
       let betStatus = 'pending';
       const homeScore = game.scores?.[0]?.score || 0;
@@ -149,11 +225,15 @@ serve(async (req) => {
       if (bet.market === 'Spread') {
         const spreadMatch = bet.selection.match(/([+-]?\d+\.?\d*)/);
         const spread = parseFloat(spreadMatch?.[1] || '0');
-        const selectionTeam = normalizeText(bet.selection.replace(/[+-]?\d+\.?\d*/, ''));
         
-        const apiHomeTeam = normalizeText(game.home_team);
-        const apiAwayTeam = normalizeText(game.away_team);
+        // Extract team name from selection and normalize
+        const selectionTeamRaw = bet.selection.replace(/[+-]?\d+\.?\d*/, '').trim();
+        const selectionTeam = normalizeText(matchTeamName(selectionTeamRaw, bet.sport));
         
+        const apiHomeTeam = normalizeText(matchTeamName(game.home_team, bet.sport));
+        const apiAwayTeam = normalizeText(matchTeamName(game.away_team, bet.sport));
+        
+        // Match the selection team to home or away
         const isHomeTeam = apiHomeTeam.includes(selectionTeam) || selectionTeam.includes(apiHomeTeam);
         
         const adjustedScore = isHomeTeam ? homeScore + spread : awayScore + spread;
@@ -167,12 +247,13 @@ serve(async (req) => {
           betStatus = 'push';
         }
         
-        console.log(`Spread: ${bet.selection} -> ${betStatus}`);
+        console.log(`Spread: ${bet.selection} (${selectionTeam} ${isHomeTeam ? 'home' : 'away'}) -> ${betStatus}`);
         
-      } else if (bet.market === 'Moneyline') {
-        const selectionTeam = normalizeText(bet.selection);
-        const apiHomeTeam = normalizeText(game.home_team);
-        const apiAwayTeam = normalizeText(game.away_team);
+      } else if (bet.market === 'Moneyline' || bet.market === 'ML') {
+        const selectionTeamRaw = bet.selection.trim();
+        const selectionTeam = normalizeText(matchTeamName(selectionTeamRaw, bet.sport));
+        const apiHomeTeam = normalizeText(matchTeamName(game.home_team, bet.sport));
+        const apiAwayTeam = normalizeText(matchTeamName(game.away_team, bet.sport));
         
         const isHomeTeam = apiHomeTeam.includes(selectionTeam) || selectionTeam.includes(apiHomeTeam);
         
@@ -182,7 +263,7 @@ serve(async (req) => {
           betStatus = awayScore > homeScore ? 'win' : (homeScore === awayScore ? 'push' : 'loss');
         }
         
-        console.log(`Moneyline: ${bet.selection} -> ${betStatus}`);
+        console.log(`Moneyline: ${bet.selection} (${selectionTeam} ${isHomeTeam ? 'home' : 'away'}) -> ${betStatus}`);
         
       } else if (bet.market === 'Total' || bet.market === 'Totals') {
         const totalScore = homeScore + awayScore;
@@ -196,7 +277,7 @@ serve(async (req) => {
           betStatus = totalScore < line ? 'win' : (totalScore === line ? 'push' : 'loss');
         }
         
-        console.log(`Total: ${bet.selection} (${totalScore}) -> ${betStatus}`);
+        console.log(`Total: ${bet.selection} (${totalScore} vs ${line}) -> ${betStatus}`);
       }
 
       if (betStatus !== 'pending') {

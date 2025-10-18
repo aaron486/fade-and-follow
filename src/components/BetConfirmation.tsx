@@ -97,12 +97,16 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
           if (error) console.error('Failed to create story:', error);
         });
 
-      toast({
-        title: '✅ Bet Placed!',
-        description: `${formData.selection} • ${odds > 0 ? '+' : ''}${odds}`,
-      });
-      
+      // Close dialog immediately for better UX
       onSuccess();
+      
+      // Show success toast after closing
+      setTimeout(() => {
+        toast({
+          title: '✅ Bet Placed!',
+          description: `${formData.selection} • ${odds > 0 ? '+' : ''}${odds}`,
+        });
+      }, 100);
     } catch (error: any) {
       console.error('Error creating bet:', error);
       toast({

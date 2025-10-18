@@ -297,33 +297,30 @@ const BetStoryViewer = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - Fixed at Bottom */}
         {!isOwnStory && (
-          <div className="flex items-center justify-center gap-4 mt-6">
-            <button onClick={handleTail} className="flex flex-col items-center gap-1 group">
-              <div className="bg-green-500/20 border border-green-500/50 p-3 rounded-full group-hover:bg-green-500/30 transition-colors">
-                <TrendingUp className="h-6 w-6 text-green-400" />
-              </div>
-              <span className="text-white text-xs font-semibold">Tail</span>
-            </button>
-            <button onClick={handleFade} className="flex flex-col items-center gap-1 group">
-              <div className="bg-red-500/20 border border-red-500/50 p-3 rounded-full group-hover:bg-red-500/30 transition-colors">
-                <TrendingDown className="h-6 w-6 text-red-400" />
-              </div>
-              <span className="text-white text-xs font-semibold">Fade</span>
-            </button>
-            <button className="flex flex-col items-center gap-1 group">
-              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
-                <Heart className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-white text-xs">Like</span>
-            </button>
-            <button className="flex flex-col items-center gap-1 group">
-              <div className="bg-white/20 p-3 rounded-full group-hover:bg-white/30 transition-colors">
-                <MessageCircle className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-white text-xs">Comment</span>
-            </button>
+          <div className="absolute bottom-6 left-0 right-0 px-6">
+            <div className="flex items-center justify-center gap-6">
+              <button 
+                onClick={handleTail} 
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="bg-green-500/20 backdrop-blur-md border-2 border-green-500/50 p-4 rounded-full group-hover:bg-green-500/30 group-active:scale-95 transition-all">
+                  <TrendingUp className="h-7 w-7 text-green-400" />
+                </div>
+                <span className="text-white text-sm font-bold drop-shadow-lg">Tail</span>
+              </button>
+              
+              <button 
+                onClick={handleFade} 
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="bg-red-500/20 backdrop-blur-md border-2 border-red-500/50 p-4 rounded-full group-hover:bg-red-500/30 group-active:scale-95 transition-all">
+                  <TrendingDown className="h-7 w-7 text-red-400" />
+                </div>
+                <span className="text-white text-sm font-bold drop-shadow-lg">Fade</span>
+              </button>
+            </div>
           </div>
         )}
       </div>

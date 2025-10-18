@@ -153,15 +153,26 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
           }
 
           if (ocrData?.betDetails) {
-            // Update form with OCR results
-            onBetExtracted({
-              ...ocrData.betDetails,
+            // Validate and normalize OCR data
+            const normalizedData = {
+              sport: ocrData.betDetails.sport || 'NFL',
+              event_name: ocrData.betDetails.event_name || '',
+              selection: ocrData.betDetails.selection || '',
+              market: ocrData.betDetails.market || 'ML',
+              odds: ocrData.betDetails.odds || '-110',
+              stake_units: ocrData.betDetails.stake_units?.toString() || '1',
+              notes: ocrData.betDetails.notes || '',
               image_url: publicUrl,
-            });
+            };
+            
+            console.log('OCR extracted data:', normalizedData);
+            
+            // Update form with OCR results
+            onBetExtracted(normalizedData);
             
             toast({
               title: '✅ Details Extracted',
-              description: 'Bet details auto-filled from image',
+              description: `${normalizedData.sport} - ${normalizedData.event_name || 'Fill in game details'}`,
             });
           }
       } catch (ocrError) {

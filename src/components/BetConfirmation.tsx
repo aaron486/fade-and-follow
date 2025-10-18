@@ -86,16 +86,21 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
 
       if (betError) throw betError;
 
-      // Create story in background (non-blocking)
-      supabase
+      console.log('✅ Bet placed:', betData.id);
+
+      // Create bet story
+      const { error: storyError } = await supabase
         .from('bet_stories')
         .insert({
           user_id: user.id,
           bet_id: betData.id,
-        })
-        .then(({ error }) => {
-          if (error) console.error('Failed to create story:', error);
         });
+
+      if (storyError) {
+        console.error('Story creation failed:', storyError);
+      } else {
+        console.log('✅ Bet story created for bet:', betData.id);
+      }
 
       // Close dialog immediately for better UX
       onSuccess();

@@ -56,8 +56,7 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
-      console.log('Uploading image to storage...');
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('bet-screenshots')
         .upload(fileName, file, {
           cacheControl: '3600',
@@ -75,56 +74,22 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
         .getPublicUrl(fileName);
 
       setUploadedImageUrl(publicUrl);
-      console.log('Image uploaded:', publicUrl);
 
-      // Show bet form immediately with placeholder data
+      // Open bet form immediately - OCR skipped for speed
       toast({
-        title: '📸 Image Uploaded',
-        description: 'Analyzing bet details...',
+        title: '✅ Image Uploaded',
+        description: 'Fill in your bet details below',
       });
 
-      // Open bet confirmation immediately with loading state
       onBetExtracted({
-        sport: 'NFL', // Default placeholder
-        event_name: 'Analyzing...',
+        sport: 'NFL',
+        event_name: '',
         market: 'ML',
-        selection: 'Processing image...',
+        selection: '',
         odds: '-110',
         stake_units: '1',
         image_url: publicUrl,
-        notes: 'OCR in progress - you can edit these details'
-      });
-
-      // Process OCR in background (non-blocking)
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-
-      console.log('Processing image with AI in background...');
-      
-      // Fire and forget - OCR runs in background
-      fetch(
-        'https://btteqktyhnyeycmognox.supabase.co/functions/v1/extract-bet-from-image',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0dGVxa3R5aG55ZXljbW9nbm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NTM5ODgsImV4cCI6MjA3NDEyOTk4OH0.xnYWkXWDWgD-4aLy1zFUHV5TvsVoH-QxF3d0cqDBW8k',
-          },
-          body: JSON.stringify({ imageBase64: base64 })
-        }
-      ).then(async (response) => {
-        if (response.ok) {
-          const data = await response.json();
-          if (data?.betDetails) {
-            console.log('OCR complete:', data.betDetails);
-            // User will see bet form update automatically via parent state
-          }
-        }
-      }).catch(err => {
-        console.error('Background OCR failed:', err);
+        notes: ''
       });
 
     } catch (error) {
@@ -165,7 +130,7 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Upload Betting Slip</h2>
-        <p className="text-muted-foreground">AI will automatically extract your bet details</p>
+        <p className="text-muted-foreground">Attach your screenshot and fill in the details</p>
       </div>
 
       {previewUrl ? (
@@ -194,7 +159,7 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
               <div className="text-center space-y-2">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-                <p className="text-sm font-medium">Analyzing betting slip...</p>
+                <p className="text-sm font-medium">Uploading image...</p>
               </div>
             </div>
           )}

@@ -83,80 +83,120 @@ serve(async (req) => {
     let settledCount = 0;
     const updates = [];
 
+    // Helper function to normalize team names and event names
+    const normalizeText = (text: string) => {
+      return text
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/[^\w\s]/g, '')
+        .trim();
+    };
+
+    // Helper to extract team names from various formats
+    const extractTeamNames = (eventName: string): string[] => {
+      // Handle various separators: vs, vs., @, -, etc.
+      const separators = [' vs ', ' vs. ', ' @ ', ' - ', ' v '];
+      for (const sep of separators) {
+        if (eventName.toLowerCase().includes(sep)) {
+          return eventName.split(new RegExp(sep, 'i')).map(t => normalizeText(t));
+        }
+      }
+      return [normalizeText(eventName)];
+    };
+
     // Process each pending bet
     for (const bet of pendingBets) {
-      // Find matching completed game with flexible matching
-      const normalizeEventName = (name: string) => 
-        name.toLowerCase().replace(/\s+/g, ' ').trim();
+      const betTeams = extractTeamNames(bet.event_name);
       
+      // Find matching completed game with flexible matching
       const game = scores.find((g: any) => {
         if (!g.completed) return false;
         
-        const apiEventName1 = normalizeEventName(g.home_team + ' vs ' + g.away_team);
-        const apiEventName2 = normalizeEventName(g.away_team + ' vs ' + g.home_team);
-        const betEventName = normalizeEventName(bet.event_name);
+        const apiHomeTeam = normalizeText(g.home_team);
+        const apiAwayTeam = normalizeText(g.away_team);
         
-        // Also try matching just team names without "vs"
-        const apiTeams = normalizeEventName(g.home_team + ' ' + g.away_team);
-        const apiTeamsReverse = normalizeEventName(g.away_team + ' ' + g.home_team);
+        // Check if both teams match (in any order)
+        if (betTeams.length >= 2) {
+          const hasHomeTeam = betTeams.some(bt => 
+            apiHomeTeam.includes(bt) || bt.includes(apiHomeTeam)
+          );
+          const hasAwayTeam = betTeams.some(bt => 
+            apiAwayTeam.includes(bt) || bt.includes(apiAwayTeam)
+          );
+          
+          return hasHomeTeam && hasAwayTeam;
+        }
         
-        return betEventName === apiEventName1 || 
-               betEventName === apiEventName2 ||
-               betEventName === apiTeams ||
-               betEventName === apiTeamsReverse ||
-               betEventName.includes(normalizeEventName(g.home_team)) && betEventName.includes(normalizeEventName(g.away_team));
+        // Fallback: check if event name contains both team names
+        const normalizedBetName = normalizeText(bet.event_name);
+        return normalizedBetName.includes(apiHomeTeam) && normalizedBetName.includes(apiAwayTeam);
       });
 
       if (!game) {
-        console.log(`No completed game found for bet: ${bet.event_name}`);
+        console.log(`No match for bet: ${bet.event_name} | Teams: ${betTeams.join(', ')}`);
         continue;
       }
 
-      console.log(`Processing bet for game: ${bet.event_name}`);
+      console.log(`✓ Matched bet: ${bet.event_name} -> ${game.home_team} vs ${game.away_team}`);
 
       let betStatus = 'pending';
+      const homeScore = game.scores?.[0]?.score || 0;
+      const awayScore = game.scores?.[1]?.score || 0;
+      
+      console.log(`Scores: ${game.home_team} ${homeScore} - ${game.away_team} ${awayScore}`);
       
       // Determine bet outcome based on market type
       if (bet.market === 'Spread') {
-        const selection = bet.selection;
-        const spread = parseFloat(selection.match(/([+-]?\d+\.?\d*)/)?.[1] || '0');
-        const team = selection.replace(/[+-]?\d+\.?\d*/, '').trim();
+        const spreadMatch = bet.selection.match(/([+-]?\d+\.?\d*)/);
+        const spread = parseFloat(spreadMatch?.[1] || '0');
+        const selectionTeam = normalizeText(bet.selection.replace(/[+-]?\d+\.?\d*/, ''));
         
-        const isHomeTeam = team === game.home_team;
-        const actualScore = isHomeTeam 
-          ? (game.scores?.[0]?.score || 0) + spread
-          : (game.scores?.[1]?.score || 0) + spread;
-        const opponentScore = isHomeTeam 
-          ? (game.scores?.[1]?.score || 0)
-          : (game.scores?.[0]?.score || 0);
+        const apiHomeTeam = normalizeText(game.home_team);
+        const apiAwayTeam = normalizeText(game.away_team);
         
-        if (actualScore > opponentScore) {
+        const isHomeTeam = apiHomeTeam.includes(selectionTeam) || selectionTeam.includes(apiHomeTeam);
+        
+        const adjustedScore = isHomeTeam ? homeScore + spread : awayScore + spread;
+        const opponentScore = isHomeTeam ? awayScore : homeScore;
+        
+        if (adjustedScore > opponentScore) {
           betStatus = 'win';
-        } else if (actualScore < opponentScore) {
+        } else if (adjustedScore < opponentScore) {
           betStatus = 'loss';
         } else {
           betStatus = 'push';
         }
-      } else if (bet.market === 'Moneyline') {
-        const team = bet.selection;
-        const homeScore = game.scores?.[0]?.score || 0;
-        const awayScore = game.scores?.[1]?.score || 0;
         
-        if (team === game.home_team) {
+        console.log(`Spread: ${bet.selection} -> ${betStatus}`);
+        
+      } else if (bet.market === 'Moneyline') {
+        const selectionTeam = normalizeText(bet.selection);
+        const apiHomeTeam = normalizeText(game.home_team);
+        const apiAwayTeam = normalizeText(game.away_team);
+        
+        const isHomeTeam = apiHomeTeam.includes(selectionTeam) || selectionTeam.includes(apiHomeTeam);
+        
+        if (isHomeTeam) {
           betStatus = homeScore > awayScore ? 'win' : (homeScore === awayScore ? 'push' : 'loss');
         } else {
           betStatus = awayScore > homeScore ? 'win' : (homeScore === awayScore ? 'push' : 'loss');
         }
-      } else if (bet.market === 'Total') {
-        const totalScore = (game.scores?.[0]?.score || 0) + (game.scores?.[1]?.score || 0);
-        const line = parseFloat(bet.selection.match(/\d+\.?\d*/)?.[0] || '0');
-        const isOver = bet.selection.toLowerCase().includes('over');
+        
+        console.log(`Moneyline: ${bet.selection} -> ${betStatus}`);
+        
+      } else if (bet.market === 'Total' || bet.market === 'Totals') {
+        const totalScore = homeScore + awayScore;
+        const lineMatch = bet.selection.match(/\d+\.?\d*/);
+        const line = parseFloat(lineMatch?.[0] || '0');
+        const isOver = bet.selection.toLowerCase().includes('over') || bet.selection.toLowerCase().includes('o ');
         
         if (isOver) {
           betStatus = totalScore > line ? 'win' : (totalScore === line ? 'push' : 'loss');
         } else {
           betStatus = totalScore < line ? 'win' : (totalScore === line ? 'push' : 'loss');
         }
+        
+        console.log(`Total: ${bet.selection} (${totalScore}) -> ${betStatus}`);
       }
 
       if (betStatus !== 'pending') {

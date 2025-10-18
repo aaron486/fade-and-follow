@@ -1148,15 +1148,11 @@ export const BetsPage = () => {
 
       {/* Bet Confirmation Dialog */}
       {selectedBet && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <BetConfirmation
-              betDetails={selectedBet}
-              onCancel={() => setSelectedBet(null)}
-              onSuccess={handleBetSuccess}
-            />
-          </div>
-        </div>
+        <BetConfirmation
+          betDetails={selectedBet}
+          onCancel={() => setSelectedBet(null)}
+          onSuccess={handleBetSuccess}
+        />
       )}
 
       {/* Image Upload Dialog */}

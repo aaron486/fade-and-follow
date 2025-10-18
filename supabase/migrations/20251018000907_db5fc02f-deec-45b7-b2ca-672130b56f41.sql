@@ -1,0 +1,11 @@
+-- Update existing NBA teams to use ESPN CDN logos
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/atl.png' WHERE id = '1610612737';
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png' WHERE id = '1610612738';
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/bkn.png' WHERE id = '1610612739';
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/cha.png' WHERE id = '1610612740';
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/chi.png' WHERE id = '1610612741';
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/cle.png' WHERE id = '1610612742';
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/dal.png' WHERE id = '1610612743';
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/den.png' WHERE id = '1610612744';
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/det.png' WHERE id = '1610612745';
+UPDATE public.teams SET logo_url = 'https://a.espncdn.com/i/teamlogos/nba/500/gs.png' WHERE id = '1610612746';

@@ -7,8 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ShareableBetCard } from './ShareableBetCard';
 
 interface BetFormProps {
   onCancel: () => void;
@@ -29,11 +27,9 @@ const MARKET_OPTIONS = [
 ];
 
 export const BetForm: React.FC<BetFormProps> = ({ onCancel, onSuccess }) => {
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [showShareCard, setShowShareCard] = useState(false);
-  const [placedBet, setPlacedBet] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     sport: '',
@@ -94,30 +90,23 @@ export const BetForm: React.FC<BetFormProps> = ({ onCancel, onSuccess }) => {
 
       if (betError) throw betError;
 
-      // Automatically create a story for this bet
-      const { error: storyError } = await supabase
+      // Create story in background (non-blocking)
+      supabase
         .from('bet_stories')
         .insert({
           user_id: user.id,
           bet_id: betData.id,
+        })
+        .then(({ error }) => {
+          if (error) console.error('Failed to create story:', error);
         });
 
-      if (storyError) {
-        console.error('Failed to create story:', storyError);
-        // Don't fail the whole operation if story creation fails
-      }
-
-      // Store the bet data and show share card
-      setPlacedBet({
-        sport: formData.sport,
-        event_name: formData.event_name,
-        market: formData.market,
-        selection: formData.selection,
-        odds: odds,
-        stake_units: stakeUnits,
-        notes: formData.notes,
+      toast({
+        title: '✅ Bet Placed!',
+        description: `${formData.selection} • ${odds > 0 ? '+' : ''}${odds}`,
       });
-      setShowShareCard(true);
+      
+      onSuccess();
     } catch (error: any) {
       console.error('Error creating bet:', error);
       toast({
@@ -133,32 +122,6 @@ export const BetForm: React.FC<BetFormProps> = ({ onCancel, onSuccess }) => {
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
-  // Show share card after successful bet placement
-  if (showShareCard && placedBet) {
-    return (
-      <Dialog open={true} onOpenChange={(open) => !open && onSuccess()}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Bet Placed Successfully! 🎉</DialogTitle>
-          </DialogHeader>
-
-          <div className="py-4">
-            <ShareableBetCard 
-              bet={placedBet}
-              username={userProfile?.username || userProfile?.display_name}
-            />
-          </div>
-
-          <div className="flex justify-center pt-4">
-            <Button onClick={onSuccess} className="w-full max-w-xs">
-              Done
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

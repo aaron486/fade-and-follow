@@ -54,21 +54,33 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
 
       console.log('Sending image to AI for processing...');
       
-      const { data, error } = await supabase.functions.invoke('extract-bet-from-image', {
-        body: { imageBase64: base64 }
-      });
+      // Use direct fetch for better reliability with public functions
+      const response = await fetch(
+        'https://btteqktyhnyeycmognox.supabase.co/functions/v1/extract-bet-from-image',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0dGVxa3R5aG55ZXljbW9nbm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NTM5ODgsImV4cCI6MjA3NDEyOTk4OH0.xnYWkXWDWgD-4aLy1zFUHV5TvsVoH-QxF3d0cqDBW8k',
+          },
+          body: JSON.stringify({ imageBase64: base64 })
+        }
+      );
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to process image');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Edge function error:', response.status, errorText);
+        throw new Error(`Failed to process image: ${response.status}`);
       }
+
+      const data = await response.json();
 
       if (data?.error) {
         throw new Error(data.error);
       }
 
       if (!data?.betDetails) {
-        throw new Error('No bet details extracted');
+        throw new Error('No bet details extracted from image. Please try a clearer photo.');
       }
 
       console.log('Bet details extracted:', data.betDetails);

@@ -1,9 +1,10 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { PicksFeed } from '@/components/PicksFeed';
 import { TrendingFriends } from '@/components/TrendingFriends';
+import { FriendsPicks } from '@/components/FriendsPicks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Sparkles } from 'lucide-react';
+import { TrendingUp, Sparkles, Users } from 'lucide-react';
 
 export const FeedContent = () => {
   const { user } = useAuth();
@@ -27,6 +28,15 @@ export const FeedContent = () => {
               Hot Picks
             </h3>
             <TrendingFriends />
+          </div>
+
+          {/* Friends Picks */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Friends' Picks
+            </h3>
+            <FriendsPicks />
           </div>
 
           {/* AI Insights Placeholder */}

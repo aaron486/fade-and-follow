@@ -67,8 +67,8 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
     setLoading(true);
 
     try {
-      // Insert bet - no need to wait for response
-      const betPromise = supabase
+      // Insert bet (story is auto-created by database trigger)
+      const { error: betError } = await supabase
         .from('bets')
         .insert([
           {
@@ -82,34 +82,16 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
             notes: formData.notes || null,
             image_url: formData.image_url || null,
           },
-        ])
-        .select()
-        .maybeSingle();
+        ]);
 
-      // Show success immediately for instant feedback
+      if (betError) throw betError;
+
       toast({
         title: '✅ Bet Placed!',
         description: `${formData.selection} • ${odds > 0 ? '+' : ''}${odds}`,
       });
       
-      // Close dialog immediately
       onSuccess();
-
-      // Handle bet creation and story in background
-      betPromise.then(({ data: betData, error: betError }) => {
-        if (betError) {
-          console.error('Bet creation failed:', betError);
-          return;
-        }
-        
-        if (betData) {
-          // Create bet story in background (fire and forget)
-          supabase.from('bet_stories').insert({
-            user_id: user.id,
-            bet_id: betData.id,
-          });
-        }
-      });
     } catch (error: any) {
       console.error('Error creating bet:', error);
       

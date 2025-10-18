@@ -191,11 +191,17 @@ const Auth = () => {
         return;
       }
 
-      // Save selected teams to user profile
+      // Use upsert to create or update profile with selected teams
       const { error } = await supabase
         .from('profiles')
-        .update({ favorite_teams: selectedTeams })
-        .eq('user_id', session.user.id);
+        .upsert({ 
+          user_id: session.user.id,
+          favorite_teams: selectedTeams,
+          username: username || email.split('@')[0],
+          display_name: username || email.split('@')[0]
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) {
         console.error('Error saving teams:', error);

@@ -278,10 +278,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "friend_requests_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "friend_requests_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "friend_requests_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["user_id"]
           },
         ]
@@ -314,10 +328,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "friendships_user1_id_fkey"
+            columns: ["user1_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "friendships_user2_id_fkey"
             columns: ["user2_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "friendships_user2_id_fkey"
+            columns: ["user2_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["user_id"]
           },
         ]
@@ -834,7 +862,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          current_streak: number | null
+          display_name: string | null
+          losses: number | null
+          streak_type: string | null
+          total_bets: number | null
+          user_id: string | null
+          username: string | null
+          wins: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          current_streak?: number | null
+          display_name?: string | null
+          losses?: number | null
+          streak_type?: string | null
+          total_bets?: number | null
+          user_id?: string | null
+          username?: string | null
+          wins?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          current_streak?: number | null
+          display_name?: string | null
+          losses?: number | null
+          streak_type?: string | null
+          total_bets?: number | null
+          user_id?: string | null
+          username?: string | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       are_users_friends: {

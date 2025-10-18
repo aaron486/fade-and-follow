@@ -1,16 +1,16 @@
 project_id = "btteqktyhnyeycmognox"
 
 [functions.extract-bet-from-image]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-betting-odds]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-feed]
 verify_jwt = true
 
 [functions.scrape-sports-news]
-verify_jwt = false
+verify_jwt = true
 
 [functions.scrape-celebrity-picks]
-verify_jwt = false
+verify_jwt = true

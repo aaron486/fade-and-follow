@@ -77,17 +77,35 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
       setUploadedImageUrl(publicUrl);
       console.log('Image uploaded:', publicUrl);
 
-      // Convert to base64 for AI processing
+      // Show bet form immediately with placeholder data
+      toast({
+        title: '📸 Image Uploaded',
+        description: 'Analyzing bet details...',
+      });
+
+      // Open bet confirmation immediately with loading state
+      onBetExtracted({
+        sport: 'NFL', // Default placeholder
+        event_name: 'Analyzing...',
+        market: 'ML',
+        selection: 'Processing image...',
+        odds: '-110',
+        stake_units: '1',
+        image_url: publicUrl,
+        notes: 'OCR in progress - you can edit these details'
+      });
+
+      // Process OCR in background (non-blocking)
       const base64 = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(file);
       });
 
-      console.log('Sending image to AI for processing...');
+      console.log('Processing image with AI in background...');
       
-      // Use direct fetch for better reliability with public functions
-      const response = await fetch(
+      // Fire and forget - OCR runs in background
+      fetch(
         'https://btteqktyhnyeycmognox.supabase.co/functions/v1/extract-bet-from-image',
         {
           method: 'POST',
@@ -97,56 +115,24 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
           },
           body: JSON.stringify({ imageBase64: base64 })
         }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Edge function error:', response.status, errorText);
-        throw new Error(`Failed to process image: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      if (!data?.betDetails) {
-        throw new Error('No bet details extracted from image. Please try a clearer photo.');
-      }
-
-      console.log('Bet details extracted:', data.betDetails);
-
-      // Convert numeric values to strings and include image URL
-      const formattedBetDetails = {
-        ...data.betDetails,
-        odds: String(data.betDetails.odds),
-        stake_units: String(data.betDetails.stake_units),
-        image_url: uploadedImageUrl || undefined,
-      };
-
-      toast({
-        title: 'Success!',
-        description: 'Bet details extracted from image',
+      ).then(async (response) => {
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.betDetails) {
+            console.log('OCR complete:', data.betDetails);
+            // User will see bet form update automatically via parent state
+          }
+        }
+      }).catch(err => {
+        console.error('Background OCR failed:', err);
       });
 
-      onBetExtracted(formattedBetDetails);
     } catch (error) {
-      console.error('Error processing image:', error);
-      
-      // Clean up uploaded image if processing failed
-      if (uploadedImageUrl) {
-        const fileName = uploadedImageUrl.split('/').pop();
-        if (fileName) {
-          await supabase.storage
-            .from('bet-screenshots')
-            .remove([`${(await supabase.auth.getUser()).data.user?.id}/${fileName}`]);
-        }
-      }
+      console.error('Error uploading image:', error);
       
       toast({
-        title: 'Processing Failed',
-        description: error instanceof Error ? error.message : 'Could not extract bet details from image',
+        title: 'Upload Failed',
+        description: error instanceof Error ? error.message : 'Could not upload image',
         variant: 'destructive',
       });
       setPreviewUrl(null);

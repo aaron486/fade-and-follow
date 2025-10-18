@@ -153,9 +153,11 @@ const Auth = () => {
       });
       
       if (!result.error) {
-        // Move to team selection immediately - auth state will update naturally
-        setSignupStep('teams');
-        fetchTeams();
+        // Wait a bit for auth state to update
+        setTimeout(() => {
+          setSignupStep('teams');
+          fetchTeams();
+        }, 500);
       }
     } catch (error) {
       // Error is handled by auth context
@@ -176,8 +178,10 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      // Use the user from auth context
-      if (!user?.id) {
+      // Get current session to ensure we have authenticated user
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user?.id) {
         toast({
           title: "Authentication Error",
           description: "Please sign in and try again",
@@ -193,7 +197,7 @@ const Auth = () => {
         .update({ 
           favorite_teams: selectedTeams
         })
-        .eq('user_id', user.id);
+        .eq('user_id', session.user.id);
 
       if (error) {
         console.error('Error saving teams:', error);

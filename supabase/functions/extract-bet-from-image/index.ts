@@ -42,17 +42,29 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Extract bet info from betting slip images. Return JSON only:
+            content: `You are a betting slip OCR extractor. Analyze the betting slip image and extract structured data.
+
+Return ONLY valid JSON in this exact format:
 {
-  "sport": "exact sport (NFL, NBA, MLB, etc.)",
-  "event_name": "full game name (Team1 vs Team2)",
-  "selection": "exact pick (Lakers -5.5, Over 45.5, etc.)",
+  "sport": "NFL/NBA/MLB/NHL/etc",
+  "event_name": "Team1 vs Team2",
+  "selection": "Team/Player name or outcome",
   "market": "ML/Spread/Total/Prop/Future/Parlay",
-  "odds": "american odds (e.g., -110, +150)",
-  "stake_units": "number (e.g., 1.0, 5.0)",
-  "notes": "optional notes"
+  "odds": "-110",
+  "stake_units": "1.0",
+  "notes": "optional additional info"
 }
-If error: { "error": "message" }`
+
+Rules:
+- sport: Must be exact league (NFL, NBA, MLB, NHL, UFC, Soccer, etc)
+- event_name: Full matchup "Team A vs Team B" or "Team A @ Team B"
+- selection: The bet pick (team name, player name, over/under value)
+- market: One of: ML, Spread, Total, Prop, Future, Parlay
+- odds: American odds format (e.g., -110, +150, -200)
+- stake_units: Number only (1, 2, 5.5, etc)
+- notes: Any additional context
+
+Return only the JSON object, no markdown formatting.`
           },
           {
             role: 'user',

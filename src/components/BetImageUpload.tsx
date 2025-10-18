@@ -85,12 +85,19 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
 
       console.log('Bet details extracted:', data.betDetails);
 
+      // Convert numeric values to strings for BetConfirmation component
+      const formattedBetDetails = {
+        ...data.betDetails,
+        odds: String(data.betDetails.odds),
+        stake_units: String(data.betDetails.stake_units),
+      };
+
       toast({
         title: 'Success!',
         description: 'Bet details extracted from image',
       });
 
-      onBetExtracted(data.betDetails);
+      onBetExtracted(formattedBetDetails);
     } catch (error) {
       console.error('Error processing image:', error);
       toast({

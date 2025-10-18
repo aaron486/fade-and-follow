@@ -41,23 +41,7 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      // Check if user has selected teams
-      const checkTeamSelection = async () => {
-        const { data } = await supabase
-          .from('profiles')
-          .select('favorite_teams')
-          .eq('user_id', user.id)
-          .single();
-        
-        // If no teams selected, redirect to team selection
-        if (!data?.favorite_teams || data.favorite_teams.length === 0) {
-          navigate('/select-teams', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
-      };
-      
-      checkTeamSelection();
+      navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
 

@@ -12,6 +12,7 @@ interface BetDetails {
   odds: string;
   stake_units: string;
   notes?: string;
+  image_url?: string;
 }
 
 interface BetImageUploadProps {
@@ -22,6 +23,7 @@ interface BetImageUploadProps {
 const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCancel }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -45,7 +47,37 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
     // Process the image
     setIsProcessing(true);
     try {
-      // Convert to base64
+      // Upload image to storage first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to upload bets');
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      console.log('Uploading image to storage...');
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('bet-screenshots')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('Failed to upload image');
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('bet-screenshots')
+        .getPublicUrl(fileName);
+
+      setUploadedImageUrl(publicUrl);
+      console.log('Image uploaded:', publicUrl);
+
+      // Convert to base64 for AI processing
       const base64 = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -85,11 +117,12 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
 
       console.log('Bet details extracted:', data.betDetails);
 
-      // Convert numeric values to strings for BetConfirmation component
+      // Convert numeric values to strings and include image URL
       const formattedBetDetails = {
         ...data.betDetails,
         odds: String(data.betDetails.odds),
         stake_units: String(data.betDetails.stake_units),
+        image_url: uploadedImageUrl || undefined,
       };
 
       toast({
@@ -100,12 +133,24 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
       onBetExtracted(formattedBetDetails);
     } catch (error) {
       console.error('Error processing image:', error);
+      
+      // Clean up uploaded image if processing failed
+      if (uploadedImageUrl) {
+        const fileName = uploadedImageUrl.split('/').pop();
+        if (fileName) {
+          await supabase.storage
+            .from('bet-screenshots')
+            .remove([`${(await supabase.auth.getUser()).data.user?.id}/${fileName}`]);
+        }
+      }
+      
       toast({
         title: 'Processing Failed',
         description: error instanceof Error ? error.message : 'Could not extract bet details from image',
         variant: 'destructive',
       });
       setPreviewUrl(null);
+      setUploadedImageUrl(null);
     } finally {
       setIsProcessing(false);
     }

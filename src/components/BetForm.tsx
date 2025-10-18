@@ -83,6 +83,7 @@ export const BetForm: React.FC<BetFormProps> = ({ onCancel, onSuccess }) => {
             odds: odds,
             stake_units: stakeUnits,
             notes: formData.notes || null,
+            image_url: null, // Manual bets don't have screenshots
           },
         ])
         .select()

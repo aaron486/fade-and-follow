@@ -56,6 +56,7 @@ export type Database = {
           created_at: string
           event_name: string
           id: string
+          image_url: string | null
           market: string
           notes: string | null
           odds: number
@@ -78,6 +79,7 @@ export type Database = {
           created_at?: string
           event_name: string
           id?: string
+          image_url?: string | null
           market: string
           notes?: string | null
           odds: number
@@ -100,6 +102,7 @@ export type Database = {
           created_at?: string
           event_name?: string
           id?: string
+          image_url?: string | null
           market?: string
           notes?: string | null
           odds?: number

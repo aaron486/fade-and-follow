@@ -19,6 +19,7 @@ interface BetConfirmationProps {
     odds: string;
     stake_units: string;
     notes?: string;
+    image_url?: string;
   };
   onCancel: () => void;
   onSuccess: () => void;
@@ -79,6 +80,7 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
             odds: odds,
             stake_units: stakeUnits,
             notes: formData.notes || null,
+            image_url: formData.image_url || null,
           },
         ])
         .select()

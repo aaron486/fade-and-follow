@@ -141,102 +141,51 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
           <DialogTitle>Confirm Your Bet</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="sport">Sport *</Label>
-            <Select value={formData.sport} onValueChange={(value) => handleChange('sport', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select sport" />
-              </SelectTrigger>
-              <SelectContent>
-                {SPORTS_OPTIONS.map((sport) => (
-                  <SelectItem key={sport} value={sport}>
-                    {sport}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Summary Card */}
+        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Sport</span>
+            <span className="font-medium">{formData.sport}</span>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="market">Market Type *</Label>
-            <Select value={formData.market} onValueChange={(value) => handleChange('market', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select market" />
-              </SelectTrigger>
-              <SelectContent>
-                {MARKET_OPTIONS.map((market) => (
-                  <SelectItem key={market.value} value={market.value}>
-                    {market.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Game</span>
+            <span className="font-medium text-sm">{formData.event_name}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Pick</span>
+            <span className="font-medium">{formData.selection}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Odds</span>
+            <span className="font-semibold text-primary">
+              {parseFloat(formData.odds) > 0 ? '+' : ''}{formData.odds}
+            </span>
           </div>
         </div>
 
+        {/* Only editable field: Stake */}
         <div className="space-y-2">
-          <Label htmlFor="event_name">Event/Game *</Label>
+          <Label htmlFor="stake_units">Stake (Units) *</Label>
           <Input
-            id="event_name"
-            value={formData.event_name}
-            onChange={(e) => handleChange('event_name', e.target.value)}
+            id="stake_units"
+            type="number"
+            step="0.5"
+            min="0.5"
+            value={formData.stake_units}
+            onChange={(e) => handleChange('stake_units', e.target.value)}
+            className="text-lg font-semibold"
             required
+            autoFocus
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="selection">Your Pick *</Label>
-          <Input
-            id="selection"
-            value={formData.selection}
-            onChange={(e) => handleChange('selection', e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="odds">Odds (American) *</Label>
-            <Input
-              id="odds"
-              type="number"
-              value={formData.odds}
-              onChange={(e) => handleChange('odds', e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="stake_units">Stake (Units) *</Label>
-            <Input
-              id="stake_units"
-              type="number"
-              step="0.1"
-              value={formData.stake_units}
-              onChange={(e) => handleChange('stake_units', e.target.value)}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="notes">Notes (Optional)</Label>
-          <Textarea
-            id="notes"
-            value={formData.notes || ''}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            rows={3}
-          />
-        </div>
-
-        <div className="flex justify-end space-x-2">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+        <div className="flex justify-end space-x-2 pt-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={loading} size="lg">
             Cancel
           </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Placing Bet...' : 'Confirm & Place Bet'}
+          <Button type="submit" disabled={loading} size="lg" className="min-w-[140px]">
+            {loading ? 'Placing...' : 'Place Bet'}
           </Button>
         </div>
       </form>

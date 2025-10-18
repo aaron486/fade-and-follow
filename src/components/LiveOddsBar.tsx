@@ -267,14 +267,24 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
                       <div className="flex items-center gap-2 text-xs">
                         {awaySpread && (
                           <button
-                            onClick={() => onBetClick?.({
-                              sport: event.sport_title,
-                              event_name: `${event.away_team} vs ${event.home_team}`,
-                              market: 'Spread',
-                              selection: `${event.away_team} ${awaySpread.point > 0 ? '+' : ''}${awaySpread.point}`,
-                              odds: awaySpread.price.toString(),
-                              stake_units: '1'
-                            })}
+                          onClick={() => {
+                              const sportMapping: Record<string, string> = {
+                                'NCAAF': 'College Football',
+                                'NCAAB': 'College Basketball',
+                                'NFL': 'NFL',
+                                'NBA': 'NBA',
+                                'MLB': 'MLB',
+                                'NHL': 'NHL'
+                              };
+                              onBetClick?.({
+                                sport: sportMapping[event.sport_key.split('_').pop()?.toUpperCase() || ''] || event.sport_title,
+                                event_name: `${event.away_team} vs ${event.home_team}`,
+                                market: 'Spread',
+                                selection: `${event.away_team} ${awaySpread.point > 0 ? '+' : ''}${awaySpread.point}`,
+                                odds: awaySpread.price.toString(),
+                                stake_units: '1'
+                              });
+                            }}
                             className="font-mono bg-muted px-2 py-1 rounded hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
                           >
                             {awaySpread.point > 0 ? '+' : ''}{awaySpread.point} ({formatOdds(awaySpread.price)})
@@ -282,14 +292,24 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
                         )}
                         {awayML && (
                           <button
-                            onClick={() => onBetClick?.({
-                              sport: event.sport_title,
-                              event_name: `${event.away_team} vs ${event.home_team}`,
-                              market: 'Moneyline',
-                              selection: event.away_team,
-                              odds: awayML.price.toString(),
-                              stake_units: '1'
-                            })}
+                          onClick={() => {
+                              const sportMapping: Record<string, string> = {
+                                'NCAAF': 'College Football',
+                                'NCAAB': 'College Basketball',
+                                'NFL': 'NFL',
+                                'NBA': 'NBA',
+                                'MLB': 'MLB',
+                                'NHL': 'NHL'
+                              };
+                              onBetClick?.({
+                                sport: sportMapping[event.sport_key.split('_').pop()?.toUpperCase() || ''] || event.sport_title,
+                                event_name: `${event.away_team} vs ${event.home_team}`,
+                                market: 'Moneyline',
+                                selection: event.away_team,
+                                odds: awayML.price.toString(),
+                                stake_units: '1'
+                              });
+                            }}
                             className="font-mono font-semibold text-primary hover:bg-primary hover:text-primary-foreground px-2 py-1 rounded transition-colors cursor-pointer"
                           >
                             {formatOdds(awayML.price)}
@@ -309,14 +329,24 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
                       <div className="flex items-center gap-2 text-xs">
                         {homeSpread && (
                           <button
-                            onClick={() => onBetClick?.({
-                              sport: event.sport_title,
-                              event_name: `${event.away_team} vs ${event.home_team}`,
-                              market: 'Spread',
-                              selection: `${event.home_team} ${homeSpread.point > 0 ? '+' : ''}${homeSpread.point}`,
-                              odds: homeSpread.price.toString(),
-                              stake_units: '1'
-                            })}
+                          onClick={() => {
+                              const sportMapping: Record<string, string> = {
+                                'NCAAF': 'College Football',
+                                'NCAAB': 'College Basketball',
+                                'NFL': 'NFL',
+                                'NBA': 'NBA',
+                                'MLB': 'MLB',
+                                'NHL': 'NHL'
+                              };
+                              onBetClick?.({
+                                sport: sportMapping[event.sport_key.split('_').pop()?.toUpperCase() || ''] || event.sport_title,
+                                event_name: `${event.away_team} vs ${event.home_team}`,
+                                market: 'Spread',
+                                selection: `${event.home_team} ${homeSpread.point > 0 ? '+' : ''}${homeSpread.point}`,
+                                odds: homeSpread.price.toString(),
+                                stake_units: '1'
+                              });
+                            }}
                             className="font-mono bg-muted px-2 py-1 rounded hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
                           >
                             {homeSpread.point > 0 ? '+' : ''}{homeSpread.point} ({formatOdds(homeSpread.price)})
@@ -324,14 +354,24 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
                         )}
                         {homeML && (
                           <button
-                            onClick={() => onBetClick?.({
-                              sport: event.sport_title,
-                              event_name: `${event.away_team} vs ${event.home_team}`,
-                              market: 'Moneyline',
-                              selection: event.home_team,
-                              odds: homeML.price.toString(),
-                              stake_units: '1'
-                            })}
+                          onClick={() => {
+                              const sportMapping: Record<string, string> = {
+                                'NCAAF': 'College Football',
+                                'NCAAB': 'College Basketball',
+                                'NFL': 'NFL',
+                                'NBA': 'NBA',
+                                'MLB': 'MLB',
+                                'NHL': 'NHL'
+                              };
+                              onBetClick?.({
+                                sport: sportMapping[event.sport_key.split('_').pop()?.toUpperCase() || ''] || event.sport_title,
+                                event_name: `${event.away_team} vs ${event.home_team}`,
+                                market: 'Moneyline',
+                                selection: event.home_team,
+                                odds: homeML.price.toString(),
+                                stake_units: '1'
+                              });
+                            }}
                             className="font-mono font-semibold text-primary hover:bg-primary hover:text-primary-foreground px-2 py-1 rounded transition-colors cursor-pointer"
                           >
                             {formatOdds(homeML.price)}
@@ -346,25 +386,43 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
                         <span className="text-muted-foreground">Total</span>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => onBetClick?.({
-                              sport: event.sport_title,
-                              event_name: `${event.away_team} vs ${event.home_team}`,
-                              market: 'Total',
-                              selection: `Over ${over.point}`,
-                              odds: over.price.toString(),
-                              stake_units: '1'
-                            })}
+                          onClick={() => {
+                              const sportMapping: Record<string, string> = {
+                                'NCAAF': 'College Football',
+                                'NCAAB': 'College Basketball',
+                                'NFL': 'NFL',
+                                'NBA': 'NBA',
+                                'MLB': 'MLB',
+                                'NHL': 'NHL'
+                              };
+                              onBetClick?.({
+                                sport: sportMapping[event.sport_key.split('_').pop()?.toUpperCase() || ''] || event.sport_title,
+                                event_name: `${event.away_team} vs ${event.home_team}`,
+                                market: 'Total',
+                                selection: `Over ${over.point}`,
+                                odds: over.price.toString(),
+                                stake_units: '1'
+                              });
+                            }}
                             className="font-mono hover:bg-primary hover:text-primary-foreground px-2 py-0.5 rounded transition-colors cursor-pointer"
                           >
                             O {over.point} ({formatOdds(over.price)})
                           </button>
                           {totalsMarket?.outcomes.find(o => o.name === 'Under') && (
                             <button
-                              onClick={() => {
+                            onClick={() => {
                                 const under = totalsMarket.outcomes.find(o => o.name === 'Under');
                                 if (under) {
+                                  const sportMapping: Record<string, string> = {
+                                    'NCAAF': 'College Football',
+                                    'NCAAB': 'College Basketball',
+                                    'NFL': 'NFL',
+                                    'NBA': 'NBA',
+                                    'MLB': 'MLB',
+                                    'NHL': 'NHL'
+                                  };
                                   onBetClick?.({
-                                    sport: event.sport_title,
+                                    sport: sportMapping[event.sport_key.split('_').pop()?.toUpperCase() || ''] || event.sport_title,
                                     event_name: `${event.away_team} vs ${event.home_team}`,
                                     market: 'Total',
                                     selection: `Under ${under.point}`,

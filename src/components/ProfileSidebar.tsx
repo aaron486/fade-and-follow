@@ -55,17 +55,25 @@ const ProfileSidebar = () => {
   };
 
   const handleLogout = async () => {
+    console.log('🚪 Logout button clicked');
     try {
+      console.log('🔓 Attempting to sign out...');
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Logout error:', error);
+        throw error;
+      }
       
+      console.log('✅ Signed out successfully');
       toast({
         title: "Logged out",
         description: "See you next time!",
       });
       
+      console.log('🔄 Navigating to home...');
       navigate('/');
     } catch (error: any) {
+      console.error('❌ Caught error during logout:', error);
       toast({
         title: "Error logging out",
         description: error.message,

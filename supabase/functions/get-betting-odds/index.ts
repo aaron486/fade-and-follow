@@ -27,8 +27,8 @@ serve(async (req) => {
     // Determine which sports to fetch
     let sportsToFetch = [];
     if (sport === 'upcoming') {
-      // Only fetch NBA, NFL, MLB, and NCAAF
-      sportsToFetch = ['americanfootball_nfl', 'basketball_nba', 'baseball_mlb', 'americanfootball_ncaaf'];
+      // Fetch all major sports including college
+      sportsToFetch = ['americanfootball_nfl', 'americanfootball_ncaaf', 'basketball_nba', 'basketball_ncaab', 'baseball_mlb', 'icehockey_nhl'];
     } else {
       sportsToFetch = [sport];
     }

@@ -52,7 +52,7 @@ serve(async (req) => {
     }
 
     // Fetch completed game scores from The Odds API for multiple sports
-    const sports = ['basketball_nba', 'americanfootball_nfl', 'baseball_mlb', 'icehockey_nhl'];
+    const sports = ['basketball_nba', 'basketball_ncaab', 'americanfootball_nfl', 'americanfootball_ncaaf', 'baseball_mlb', 'icehockey_nhl'];
     let allScores: any[] = [];
     
     for (const sport of sports) {

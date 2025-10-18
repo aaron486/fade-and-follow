@@ -130,33 +130,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth();
 
-    // Set up auth listener - CRITICAL: Keep this synchronous
+    // Set up auth listener - CRITICAL: Keep this synchronous and minimal
+    let lastEventTime = 0;
+    const DEBOUNCE_MS = 1000; // Prevent rapid-fire updates
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mountedRef.current) return;
       
-      // Ignore TOKEN_REFRESHED events completely - they happen automatically
-      if (event === 'TOKEN_REFRESHED') {
+      // Debounce to prevent rapid-fire auth events
+      const now = Date.now();
+      if (now - lastEventTime < DEBOUNCE_MS && event !== 'SIGNED_OUT') {
         return;
       }
+      lastEventTime = now;
       
-      // Handle sign in/out events
-      if (event === 'SIGNED_IN' && newSession) {
-        currentSession = newSession;
-        setSession(newSession);
-        setUser(newSession.user);
-        
-        // Load profile async
-        setTimeout(() => {
-          if (mountedRef.current && newSession.user) {
-            loadUserProfile(newSession.user.id);
+      // ONLY handle critical auth events - ignore everything else
+      // TOKEN_REFRESHED, USER_UPDATED, etc. are handled automatically
+      if (event === 'SIGNED_IN') {
+        // Only update if session actually changed
+        if (!currentSession || currentSession.access_token !== newSession?.access_token) {
+          currentSession = newSession;
+          setSession(newSession);
+          setUser(newSession?.user || null);
+          
+          // Load profile async (deferred)
+          if (newSession?.user) {
+            setTimeout(() => {
+              if (mountedRef.current) {
+                loadUserProfile(newSession.user.id);
+              }
+            }, 500);
           }
-        }, 100);
+        }
       } else if (event === 'SIGNED_OUT') {
         currentSession = null;
         setSession(null);
         setUser(null);
         setUserProfile(null);
       }
+      // Ignore all other events (TOKEN_REFRESHED, USER_UPDATED, etc.)
     });
 
     return () => {

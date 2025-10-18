@@ -40,10 +40,15 @@ const BetStoriesBar = () => {
     if (!user) return;
 
     try {
+      // Query bet_stories with joins - use simple column references
       const { data: betStories, error } = await supabase
         .from('bet_stories')
         .select(`
-          *,
+          id,
+          user_id,
+          bet_id,
+          created_at,
+          expires_at,
           bets!inner (
             sport,
             event_name,
@@ -51,11 +56,6 @@ const BetStoriesBar = () => {
             odds,
             stake_units,
             notes
-          ),
-          profiles!inner (
-            username,
-            display_name,
-            avatar_url
           )
         `)
         .gt('expires_at', new Date().toISOString())
@@ -64,21 +64,33 @@ const BetStoriesBar = () => {
       if (error) throw error;
 
       if (betStories) {
-        const formattedStories: BetStory[] = betStories.map((story: any) => ({
-          id: story.id,
-          userId: story.user_id,
-          userName: story.profiles?.display_name || story.profiles?.username || 'User',
-          avatarUrl: story.profiles?.avatar_url,
-          betDetails: {
-            sport: story.bets?.sport || '',
-            eventName: story.bets?.event_name || '',
-            selection: story.bets?.selection || '',
-            odds: story.bets?.odds || 0,
-            stake: story.bets?.stake_units || 0,
-            notes: story.bets?.notes
-          },
-          timestamp: story.created_at
-        }));
+        // Fetch user profiles separately to avoid FK issues
+        const userIds = [...new Set(betStories.map(s => s.user_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, username, display_name, avatar_url')
+          .in('user_id', userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+        const formattedStories: BetStory[] = betStories.map((story: any) => {
+          const profile = profileMap.get(story.user_id);
+          return {
+            id: story.id,
+            userId: story.user_id,
+            userName: profile?.display_name || profile?.username || 'User',
+            avatarUrl: profile?.avatar_url,
+            betDetails: {
+              sport: story.bets?.sport || '',
+              eventName: story.bets?.event_name || '',
+              selection: story.bets?.selection || '',
+              odds: story.bets?.odds || 0,
+              stake: story.bets?.stake_units || 0,
+              notes: story.bets?.notes
+            },
+            timestamp: story.created_at
+          };
+        });
 
         setStories(formattedStories);
       }

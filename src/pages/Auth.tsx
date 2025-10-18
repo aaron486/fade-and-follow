@@ -47,10 +47,21 @@ const Auth = () => {
   const validateForm = (isSignup: boolean): boolean => {
     const errors: Record<string, string> = {};
 
-    // Username validation
-    const usernameResult = usernameSchema.safeParse(username);
-    if (!usernameResult.success) {
-      errors.username = usernameResult.error.issues[0].message;
+    // For signin, accept both username and email
+    if (!isSignup && username.includes('@')) {
+      // If it looks like an email, validate as email
+      const emailResult = emailSchema.safeParse(username);
+      if (!emailResult.success) {
+        errors.username = emailResult.error.issues[0].message;
+      }
+    } else if (username) {
+      // Validate as username
+      const usernameResult = usernameSchema.safeParse(username);
+      if (!usernameResult.success) {
+        errors.username = usernameResult.error.issues[0].message;
+      }
+    } else {
+      errors.username = 'Username is required';
     }
 
     // Password validation
@@ -88,8 +99,13 @@ const Auth = () => {
     setValidationErrors({});
     
     try {
-      // Convert username to email format for Supabase
-      const email = `${username.toLowerCase()}@fadebet.app`;
+      let email = username;
+      
+      // If input doesn't contain @, it's a username - convert to email format
+      if (!username.includes('@')) {
+        email = `${username.toLowerCase()}@fadebet.app`;
+      }
+      
       await signIn(email, password);
     } catch (error) {
       // Error is handled by auth context
@@ -372,11 +388,11 @@ const Auth = () => {
               <CardContent>
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-username">Username</Label>
+                    <Label htmlFor="signin-username">Username or Email</Label>
                     <Input
                       id="signin-username"
                       type="text"
-                      placeholder="Enter your username"
+                      placeholder="Enter your username or email"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
@@ -388,6 +404,9 @@ const Auth = () => {
                         <span>{validationErrors.username}</span>
                       </div>
                     )}
+                    <p className="text-xs text-muted-foreground">
+                      Existing users can use their email
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signin-password">Password</Label>

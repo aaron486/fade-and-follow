@@ -176,7 +176,7 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      // Use the user from auth context instead of fetching session
+      // Use the user from auth context
       if (!user?.id) {
         toast({
           title: "Authentication Error",
@@ -187,17 +187,13 @@ const Auth = () => {
         return;
       }
 
-      // Use upsert to create or update profile with selected teams
+      // Only update favorite_teams - profile already created by trigger
       const { error } = await supabase
         .from('profiles')
-        .upsert({ 
-          user_id: user.id,
-          favorite_teams: selectedTeams,
-          username: username || email.split('@')[0],
-          display_name: username || email.split('@')[0]
-        }, {
-          onConflict: 'user_id'
-        });
+        .update({ 
+          favorite_teams: selectedTeams
+        })
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error saving teams:', error);

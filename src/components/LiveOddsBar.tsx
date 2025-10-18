@@ -73,6 +73,7 @@ const LiveOddsBar = ({ onBetClick }: LiveOddsBarProps) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0dGVxa3R5aG55ZXljbW9nbm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NTM5ODgsImV4cCI6MjA3NDEyOTk4OH0.xnYWkXWDWgD-4aLy1zFUHV5TvsVoH-QxF3d0cqDBW8k',
           },
           body: JSON.stringify({ sport })
         }

@@ -38,41 +38,28 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-flash-lite',
         messages: [
           {
             role: 'system',
-            content: `You are an expert at reading betting slips. Extract EXACT information from the betting slip image.
-
-CRITICAL: Be precise and accurate. Extract exactly what you see on the slip.
-
-Return ONLY valid JSON with these fields:
+            content: `Extract bet info from betting slip images. Return JSON only:
 {
-  "sport": "exact sport (NFL, NBA, MLB, NHL, Soccer, UFC, etc.)",
-  "event_name": "full game/match name exactly as shown (e.g., 'Los Angeles Lakers vs Golden State Warriors', 'Kansas City Chiefs @ Buffalo Bills')",
-  "selection": "the exact pick being made (e.g., 'Lakers -5.5', 'Chiefs ML', 'Over 45.5', 'Patrick Mahomes Over 2.5 TDs')",
-  "market": "bet type - one of: ML, Spread, Total, Prop, Future, Parlay",
-  "odds": "american odds as shown (e.g., '-110', '+150', '-200')",
-  "stake_units": "exact stake amount as number (e.g., 1.0, 5.0, 10.0)",
-  "notes": "any additional info visible (confidence, reasoning, etc.)"
+  "sport": "exact sport (NFL, NBA, MLB, etc.)",
+  "event_name": "full game name (Team1 vs Team2)",
+  "selection": "exact pick (Lakers -5.5, Over 45.5, etc.)",
+  "market": "ML/Spread/Total/Prop/Future/Parlay",
+  "odds": "american odds (e.g., -110, +150)",
+  "stake_units": "number (e.g., 1.0, 5.0)",
+  "notes": "optional notes"
 }
-
-IMPORTANT EXTRACTION RULES:
-- Sport: Look for league logos, team names to identify (NFL/NBA/MLB/NHL/etc)
-- Event: Copy the full team/player matchup exactly as written
-- Selection: Include the specific bet (spread number, totals, prop details)
-- Odds: Must include +/- sign (e.g., -110, +150)
-- Stake: Look for amount wagered, bet size, units - extract the number
-- Market: ML=moneyline, Spread=point spread, Total=over/under, Prop=player props
-
-If you cannot read the information clearly, return: { "error": "Unable to read betting slip clearly" }`
+If error: { "error": "message" }`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Read this betting slip and extract the exact information shown. Be precise and accurate.'
+                text: 'Extract bet info from this image quickly.'
               },
               {
                 type: 'image_url',
@@ -83,7 +70,6 @@ If you cannot read the information clearly, return: { "error": "Unable to read b
             ]
           }
         ],
-        temperature: 0.1,
       }),
     });
 

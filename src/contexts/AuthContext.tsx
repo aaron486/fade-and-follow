@@ -134,13 +134,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mountedRef.current) return;
       
-      // Only process meaningful events
+      // Ignore TOKEN_REFRESHED events completely - they happen automatically
       if (event === 'TOKEN_REFRESHED') {
-        // Silent refresh - only update session if changed
-        if (newSession && JSON.stringify(newSession) !== JSON.stringify(currentSession)) {
-          currentSession = newSession;
-          setSession(newSession);
-        }
         return;
       }
       
@@ -161,11 +156,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(null);
         setUser(null);
         setUserProfile(null);
-      } else if (newSession) {
-        // Other events with session
-        currentSession = newSession;
-        setSession(newSession);
-        setUser(newSession.user);
       }
     });
 

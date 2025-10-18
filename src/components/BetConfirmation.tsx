@@ -67,8 +67,8 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
     setLoading(true);
 
     try {
-      // Insert bet and get the created bet ID
-      const { data: betData, error: betError } = await supabase
+      // Insert bet - no need to wait for response
+      const betPromise = supabase
         .from('bets')
         .insert([
           {
@@ -84,36 +84,32 @@ const BetConfirmation = ({ betDetails, onCancel, onSuccess }: BetConfirmationPro
           },
         ])
         .select()
-        .single();
+        .maybeSingle();
 
-      if (betError) throw betError;
-
-      console.log('✅ Bet placed:', betData.id);
-
-      // Create bet story
-      const { error: storyError } = await supabase
-        .from('bet_stories')
-        .insert({
-          user_id: user.id,
-          bet_id: betData.id,
-        });
-
-      if (storyError) {
-        console.error('Story creation failed:', storyError);
-      } else {
-        console.log('✅ Bet story created for bet:', betData.id);
-      }
-
-      // Close dialog immediately for better UX
-      onSuccess();
+      // Show success immediately for instant feedback
+      toast({
+        title: '✅ Bet Placed!',
+        description: `${formData.selection} • ${odds > 0 ? '+' : ''}${odds}`,
+      });
       
-      // Show success toast after closing
-      setTimeout(() => {
-        toast({
-          title: '✅ Bet Placed!',
-          description: `${formData.selection} • ${odds > 0 ? '+' : ''}${odds}`,
-        });
-      }, 100);
+      // Close dialog immediately
+      onSuccess();
+
+      // Handle bet creation and story in background
+      betPromise.then(({ data: betData, error: betError }) => {
+        if (betError) {
+          console.error('Bet creation failed:', betError);
+          return;
+        }
+        
+        if (betData) {
+          // Create bet story in background (fire and forget)
+          supabase.from('bet_stories').insert({
+            user_id: user.id,
+            bet_id: betData.id,
+          });
+        }
+      });
     } catch (error: any) {
       console.error('Error creating bet:', error);
       

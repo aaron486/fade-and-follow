@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, MessageSquare } from 'lucide-react';
+import { Users, UserPlus, MessageSquare, Globe } from 'lucide-react';
 import FriendsList from './FriendsList';
 import FriendRequests from './FriendRequests';
 import AddFriend from './AddFriend';
+import AllUsers from './AllUsers';
 import DirectMessage from './DirectMessage';
 
 interface Friend {
@@ -29,7 +30,14 @@ const FriendsSection = () => {
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
           >
             <Users className="w-4 h-4 mr-2" />
-            All Friends
+            Friends
+          </TabsTrigger>
+          <TabsTrigger 
+            value="discover"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+          >
+            <Globe className="w-4 h-4 mr-2" />
+            All Users
           </TabsTrigger>
           <TabsTrigger 
             value="requests"
@@ -43,7 +51,7 @@ const FriendsSection = () => {
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
           >
             <UserPlus className="w-4 h-4 mr-2" />
-            Add Friend
+            Add by Username
           </TabsTrigger>
         </TabsList>
         
@@ -52,6 +60,10 @@ const FriendsSection = () => {
             onSelectFriend={setSelectedFriend}
             selectedFriendId={selectedFriend?.user_id}
           />
+        </TabsContent>
+
+        <TabsContent value="discover" className="flex-1 m-0">
+          <AllUsers />
         </TabsContent>
         
         <TabsContent value="requests" className="flex-1 m-0">

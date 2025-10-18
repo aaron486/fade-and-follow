@@ -1,39 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import ProfileSidebar from '@/components/ProfileSidebar';
 import { TeamPicker } from '@/components/TeamPicker';
 import FriendsSection from '@/components/friends/FriendsSection';
 import { Leaderboard } from '@/components/Leaderboard';
-import { User, Users, Trophy, LogOut } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { User, Users, Trophy } from 'lucide-react';
 
 export const FadeSection = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      toast({
-        title: "Logged out",
-        description: "See you next time!",
-      });
-      
-      navigate('/');
-    } catch (error: any) {
-      toast({
-        title: "Error logging out",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className="h-full flex flex-col">
@@ -65,17 +39,6 @@ export const FadeSection = () => {
         <TabsContent value="profile" className="flex-1 overflow-y-auto mt-0">
           <div className="max-w-2xl mx-auto p-4 pb-8 space-y-4">
             <ProfileSidebar />
-            
-            {/* Logout Button */}
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Log Out
-            </Button>
-            
             <TeamPicker />
           </div>
         </TabsContent>

@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Flame, Snowflake, TrendingUp, TrendingDown, Trophy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Flame, Snowflake, TrendingUp, TrendingDown, Trophy, LogOut } from 'lucide-react';
 import { AvatarUpload } from './AvatarUpload';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const ProfileSidebar = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
 
@@ -47,6 +52,26 @@ const ProfileSidebar = () => {
 
   const handleAvatarUpload = (url: string) => {
     setProfile((prev: any) => ({ ...prev, avatar_url: url }));
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out",
+        description: "See you next time!",
+      });
+      
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Error logging out",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const getStreakIcon = () => {
@@ -107,6 +132,17 @@ const ProfileSidebar = () => {
               <p className="text-sm text-muted-foreground">
                 @{profile?.username || user.user_metadata?.username || 'username'}
               </p>
+              
+              {/* Logout Button */}
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="mt-3 border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                <LogOut className="mr-2 h-3 w-3" />
+                Log Out
+              </Button>
             </div>
           </div>
         </CardHeader>

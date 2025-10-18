@@ -21,9 +21,8 @@ interface Team {
 }
 
 const Auth = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [signupStep, setSignupStep] = useState<'credentials' | 'teams'>('credentials');
@@ -48,24 +47,16 @@ const Auth = () => {
   const validateForm = (isSignup: boolean): boolean => {
     const errors: Record<string, string> = {};
 
-    // Email validation
-    const emailResult = emailSchema.safeParse(email);
-    if (!emailResult.success) {
-      errors.email = emailResult.error.issues[0].message;
+    // Username validation
+    const usernameResult = usernameSchema.safeParse(username);
+    if (!usernameResult.success) {
+      errors.username = usernameResult.error.issues[0].message;
     }
 
     // Password validation
     const passwordResult = passwordSchema.safeParse(password);
     if (!passwordResult.success) {
       errors.password = passwordResult.error.issues[0].message;
-    }
-
-    // Username validation (optional for signup)
-    if (isSignup && username) {
-      const usernameResult = usernameSchema.safeParse(username);
-      if (!usernameResult.success) {
-        errors.username = usernameResult.error.issues[0].message;
-      }
     }
 
     setValidationErrors(errors);
@@ -97,6 +88,8 @@ const Auth = () => {
     setValidationErrors({});
     
     try {
+      // Convert username to email format for Supabase
+      const email = `${username.toLowerCase()}@fadebet.app`;
       await signIn(email, password);
     } catch (error) {
       // Error is handled by auth context
@@ -146,10 +139,12 @@ const Auth = () => {
     setValidationErrors({});
     
     try {
+      // Convert username to email format for Supabase
+      const email = `${username.toLowerCase()}@fadebet.app`;
       const result = await signUp({
         email,
         password,
-        username: username || email.split('@')[0],
+        username: username.toLowerCase(),
       });
       
       if (!result.error) {
@@ -377,20 +372,20 @@ const Auth = () => {
               <CardContent>
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
+                    <Label htmlFor="signin-username">Username</Label>
                     <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="signin-username"
+                      type="text"
+                      placeholder="Enter your username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       required
-                      className={validationErrors.email ? "border-destructive" : ""}
+                      className={validationErrors.username ? "border-destructive" : ""}
                     />
-                    {validationErrors.email && (
+                    {validationErrors.username && (
                       <div className="flex items-center gap-1 text-destructive text-sm">
                         <AlertCircle className="h-4 w-4" />
-                        <span>{validationErrors.email}</span>
+                        <span>{validationErrors.username}</span>
                       </div>
                     )}
                   </div>
@@ -453,7 +448,7 @@ const Auth = () => {
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Leave blank to use your email as username
+                      Letters, numbers, and underscores only
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -477,24 +472,6 @@ const Auth = () => {
                     <p className="text-xs text-muted-foreground">
                       At least 6 characters
                     </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className={validationErrors.email ? "border-destructive" : ""}
-                    />
-                    {validationErrors.email && (
-                      <div className="flex items-center gap-1 text-destructive text-sm">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{validationErrors.email}</span>
-                      </div>
-                    )}
                   </div>
                   <Button
                     type="submit"

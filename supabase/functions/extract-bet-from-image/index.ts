@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 // Sportsbook detection patterns
-const SPORTSBOOK_PATTERNS = {
+const SPORTSBOOK_PATTERNS: any = {
   draftkings: ['draftkings', 'dk', 'dkng'],
   fanduel: ['fanduel', 'fd'],
   betmgm: ['betmgm', 'mgm'],
@@ -20,7 +20,7 @@ const SPORTSBOOK_PATTERNS = {
 };
 
 // Team name normalization mappings
-const TEAM_MAPPINGS: Record<string, { league: string; fullName: string; aliases: string[] }> = {
+const TEAM_MAPPINGS: any = {
   // NFL
   'chiefs': { league: 'NFL', fullName: 'Kansas City Chiefs', aliases: ['kc', 'kansas city'] },
   '49ers': { league: 'NFL', fullName: 'San Francisco 49ers', aliases: ['sf', 'san francisco', 'niners'] },
@@ -35,25 +35,26 @@ const TEAM_MAPPINGS: Record<string, { league: string; fullName: string; aliases:
   'celtics': { league: 'NBA', fullName: 'Boston Celtics', aliases: ['bos', 'boston'] },
   'warriors': { league: 'NBA', fullName: 'Golden State Warriors', aliases: ['gs', 'gsw', 'golden state'] },
   'nets': { league: 'NBA', fullName: 'Brooklyn Nets', aliases: ['bkn', 'brooklyn'] },
-  // Add more as needed
 };
 
 function detectSportsbook(text: string): string {
   const lowerText = text.toLowerCase();
   for (const [book, patterns] of Object.entries(SPORTSBOOK_PATTERNS)) {
-    if (patterns.some(p => lowerText.includes(p))) {
+    const patternArray = patterns as string[];
+    if (patternArray.some((p: string) => lowerText.includes(p))) {
       return book;
     }
   }
   return 'unknown';
 }
 
-function normalizeTeamName(teamName: string): { normalized: string; league: string } {
+function normalizeTeamName(teamName: string): any {
   const lower = teamName.toLowerCase().trim();
   
   for (const [key, value] of Object.entries(TEAM_MAPPINGS)) {
-    if (lower.includes(key) || value.aliases.some(alias => lower.includes(alias))) {
-      return { normalized: value.fullName, league: value.league };
+    const mapping = value as any;
+    if (lower.includes(key) || mapping.aliases.some((alias: string) => lower.includes(alias))) {
+      return { normalized: mapping.fullName, league: mapping.league };
     }
   }
   
@@ -179,7 +180,7 @@ Extract team names exactly as shown. Include ALL visible text in raw_text for ve
     }
 
     // Step 2: Parse the JSON response from AI
-    let rawExtraction;
+    let rawExtraction: any;
     try {
       const cleanedContent = content.replace(/```json\n?|\n?```/g, '').trim();
       rawExtraction = JSON.parse(cleanedContent);

@@ -22,6 +22,7 @@ interface Team {
 
 const Auth = () => {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -47,21 +48,32 @@ const Auth = () => {
   const validateForm = (isSignup: boolean): boolean => {
     const errors: Record<string, string> = {};
 
-    // For signin, accept both username and email
-    if (!isSignup && username.includes('@')) {
-      // If it looks like an email, validate as email
-      const emailResult = emailSchema.safeParse(username);
-      if (!emailResult.success) {
-        errors.username = emailResult.error.issues[0].message;
-      }
-    } else if (username) {
-      // Validate as username
+    if (isSignup) {
+      // Signup validation: username, email, password
       const usernameResult = usernameSchema.safeParse(username);
       if (!usernameResult.success) {
         errors.username = usernameResult.error.issues[0].message;
       }
+
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
+        errors.email = emailResult.error.issues[0].message;
+      }
     } else {
-      errors.username = 'Username is required';
+      // Signin validation: username/email and password
+      if (!username) {
+        errors.username = 'Username or email is required';
+      } else if (username.includes('@')) {
+        const emailResult = emailSchema.safeParse(username);
+        if (!emailResult.success) {
+          errors.username = emailResult.error.issues[0].message;
+        }
+      } else {
+        const usernameResult = usernameSchema.safeParse(username);
+        if (!usernameResult.success) {
+          errors.username = usernameResult.error.issues[0].message;
+        }
+      }
     }
 
     // Password validation
@@ -155,10 +167,8 @@ const Auth = () => {
     setValidationErrors({});
     
     try {
-      // Convert username to email format for Supabase
-      const email = `${username.toLowerCase()}@fadebet.app`;
       const result = await signUp({
-        email,
+        email: email.toLowerCase(),
         password,
         username: username.toLowerCase(),
       });
@@ -449,15 +459,14 @@ const Auth = () => {
               <CardContent>
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-username">
-                      Username <span className="text-muted-foreground">(optional)</span>
-                    </Label>
+                    <Label htmlFor="signup-username">Username</Label>
                     <Input
                       id="signup-username"
                       type="text"
                       placeholder="Choose a username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
+                      required
                       className={validationErrors.username ? "border-destructive" : ""}
                     />
                     {validationErrors.username && (
@@ -469,6 +478,24 @@ const Auth = () => {
                     <p className="text-xs text-muted-foreground">
                       Letters, numbers, and underscores only
                     </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className={validationErrors.email ? "border-destructive" : ""}
+                    />
+                    {validationErrors.email && (
+                      <div className="flex items-center gap-1 text-destructive text-sm">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{validationErrors.email}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>

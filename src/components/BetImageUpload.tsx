@@ -9,10 +9,16 @@ interface BetDetails {
   event_name: string;
   market: string;
   selection: string;
+  line?: string;
   odds: string;
   stake_units: string;
+  potential_payout?: string;
   notes?: string;
   image_url?: string;
+  sportsbook?: string;
+  confidence?: number;
+  raw_text?: string;
+  needs_confirmation?: boolean;
 }
 
 interface BetImageUploadProps {
@@ -153,27 +159,47 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
           }
 
           if (ocrData?.betDetails) {
-            // Validate and normalize OCR data
+            const details = ocrData.betDetails;
+            
+            // Validate and normalize OCR data with enhanced fields
             const normalizedData = {
-              sport: ocrData.betDetails.sport || 'NFL',
-              event_name: ocrData.betDetails.event_name || '',
-              selection: ocrData.betDetails.selection || '',
-              market: ocrData.betDetails.market || 'ML',
-              odds: ocrData.betDetails.odds || '-110',
-              stake_units: ocrData.betDetails.stake_units?.toString() || '1',
-              notes: ocrData.betDetails.notes || '',
+              sport: details.sport || 'NFL',
+              event_name: details.event_name || '',
+              selection: details.selection || '',
+              market: details.market || 'ML',
+              line: details.line || '',
+              odds: details.odds || '-110',
+              stake_units: details.stake_units?.toString() || '1',
+              potential_payout: details.potential_payout || '',
+              notes: details.notes || '',
               image_url: publicUrl,
+              sportsbook: details.sportsbook || '',
+              confidence: details.confidence || 50,
+              raw_text: details.raw_text || '',
+              needs_confirmation: details.needs_confirmation || false
             };
             
-            console.log('OCR extracted data:', normalizedData);
+            console.log('Enhanced OCR extracted data:', normalizedData);
             
             // Update form with OCR results
             onBetExtracted(normalizedData);
             
-            toast({
-              title: '✅ Details Extracted',
-              description: `${normalizedData.sport} - ${normalizedData.event_name || 'Fill in game details'}`,
-            });
+            // Show appropriate message based on confidence
+            if (normalizedData.needs_confirmation) {
+              toast({
+                title: '⚠️ Low Confidence Detection',
+                description: `${normalizedData.confidence}% confidence - Please verify all details carefully`,
+                variant: 'destructive',
+                duration: 5000,
+              });
+            } else {
+              const sportsbookText = normalizedData.sportsbook ? ` from ${normalizedData.sportsbook}` : '';
+              toast({
+                title: '✅ Details Extracted',
+                description: `${normalizedData.sport} - ${normalizedData.event_name || 'Fill in game details'}${sportsbookText} (${normalizedData.confidence}% confidence)`,
+                duration: 4000,
+              });
+            }
           }
       } catch (ocrError) {
         console.error('OCR processing error:', ocrError);

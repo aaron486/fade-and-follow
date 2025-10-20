@@ -26,7 +26,7 @@ interface BetImageUploadProps {
   onCancel: () => void;
 }
 
-// Helper function to resize image for faster OCR
+// Helper function to resize image for faster OCR - aggressive compression
 const resizeImageForOCR = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -40,8 +40,8 @@ const resizeImageForOCR = (file: File): Promise<string> => {
           return;
         }
 
-        // Resize to max 1200px width while maintaining aspect ratio
-        const maxWidth = 1200;
+        // Resize to max 800px width for smaller payload
+        const maxWidth = 800;
         let width = img.width;
         let height = img.height;
         
@@ -54,8 +54,9 @@ const resizeImageForOCR = (file: File): Promise<string> => {
         canvas.height = height;
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Convert to base64 with compression
-        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        // Convert to base64 with more compression
+        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+        console.log('Image resized, base64 length:', resizedBase64.length);
         resolve(resizedBase64);
       };
       img.onerror = () => reject(new Error('Failed to load image'));
@@ -135,74 +136,87 @@ const BetImageUpload: React.FC<BetImageUploadProps> = ({ onBetExtracted, onCance
 
       // Process OCR in background to auto-fill details
       try {
+        console.log('Starting OCR processing...');
+        
         // Resize image for faster OCR processing
         const resizedBase64 = await resizeImageForOCR(file);
         if (!resizedBase64) {
           throw new Error('Failed to resize image');
         }
+        
+        console.log('Calling edge function with resized image...');
+        
+        const { data: ocrData, error: ocrError } = await supabase.functions.invoke(
+          'extract-bet-from-image',
+          {
+            body: { imageBase64: resizedBase64 }
+          }
+        );
+
+        console.log('Edge function response:', { data: ocrData, error: ocrError });
+
+        if (ocrError) {
+          console.error('OCR error details:', ocrError);
+          toast({
+            title: 'OCR Failed',
+            description: ocrError.message || 'Please fill in details manually',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        if (ocrData?.betDetails) {
+          const details = ocrData.betDetails;
           
-          const { data: ocrData, error: ocrError } = await supabase.functions.invoke(
-            'extract-bet-from-image',
-            {
-              body: { imageBase64: resizedBase64 }
-            }
-          );
-
-          if (ocrError) {
-            console.error('OCR error:', ocrError);
+          // Validate and normalize OCR data with enhanced fields
+          const normalizedData = {
+            sport: details.sport || 'NFL',
+            event_name: details.event_name || '',
+            selection: details.selection || '',
+            market: details.market || 'ML',
+            line: details.line || '',
+            odds: details.odds || '-110',
+            stake_units: details.stake_units?.toString() || '1',
+            potential_payout: details.potential_payout || '',
+            notes: details.notes || '',
+            image_url: publicUrl,
+            sportsbook: details.sportsbook || '',
+            confidence: details.confidence || 50,
+            raw_text: details.raw_text || '',
+            needs_confirmation: details.needs_confirmation || false
+          };
+          
+          console.log('Enhanced OCR extracted data:', normalizedData);
+          
+          // Update form with OCR results
+          onBetExtracted(normalizedData);
+          
+          // Show appropriate message based on confidence
+          if (normalizedData.needs_confirmation) {
             toast({
-              title: 'OCR Failed',
-              description: 'Please fill in details manually',
+              title: '⚠️ Low Confidence Detection',
+              description: `${normalizedData.confidence}% confidence - Please verify all details carefully`,
               variant: 'destructive',
+              duration: 5000,
             });
-            return;
+          } else {
+            const sportsbookText = normalizedData.sportsbook ? ` from ${normalizedData.sportsbook}` : '';
+            toast({
+              title: '✅ Details Extracted',
+              description: `${normalizedData.sport} - ${normalizedData.event_name || 'Fill in game details'}${sportsbookText} (${normalizedData.confidence}% confidence)`,
+              duration: 4000,
+            });
           }
-
-          if (ocrData?.betDetails) {
-            const details = ocrData.betDetails;
-            
-            // Validate and normalize OCR data with enhanced fields
-            const normalizedData = {
-              sport: details.sport || 'NFL',
-              event_name: details.event_name || '',
-              selection: details.selection || '',
-              market: details.market || 'ML',
-              line: details.line || '',
-              odds: details.odds || '-110',
-              stake_units: details.stake_units?.toString() || '1',
-              potential_payout: details.potential_payout || '',
-              notes: details.notes || '',
-              image_url: publicUrl,
-              sportsbook: details.sportsbook || '',
-              confidence: details.confidence || 50,
-              raw_text: details.raw_text || '',
-              needs_confirmation: details.needs_confirmation || false
-            };
-            
-            console.log('Enhanced OCR extracted data:', normalizedData);
-            
-            // Update form with OCR results
-            onBetExtracted(normalizedData);
-            
-            // Show appropriate message based on confidence
-            if (normalizedData.needs_confirmation) {
-              toast({
-                title: '⚠️ Low Confidence Detection',
-                description: `${normalizedData.confidence}% confidence - Please verify all details carefully`,
-                variant: 'destructive',
-                duration: 5000,
-              });
-            } else {
-              const sportsbookText = normalizedData.sportsbook ? ` from ${normalizedData.sportsbook}` : '';
-              toast({
-                title: '✅ Details Extracted',
-                description: `${normalizedData.sport} - ${normalizedData.event_name || 'Fill in game details'}${sportsbookText} (${normalizedData.confidence}% confidence)`,
-                duration: 4000,
-              });
-            }
-          }
+        } else {
+          console.warn('No bet details in OCR response');
+        }
       } catch (ocrError) {
         console.error('OCR processing error:', ocrError);
+        toast({
+          title: 'OCR Processing Failed',
+          description: ocrError instanceof Error ? ocrError.message : 'Could not process image',
+          variant: 'destructive',
+        });
       }
 
     } catch (error) {

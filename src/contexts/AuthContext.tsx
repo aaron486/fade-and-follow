@@ -255,14 +255,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         // Handle specific errors
         let errorMessage = error.message;
+        let errorTitle = "Sign Up Error";
+        
         if (error.message.includes('already registered')) {
           errorMessage = 'An account with this email already exists. Try signing in instead.';
         } else if (error.message.includes('Password')) {
           errorMessage = 'Password must be at least 6 characters long.';
+        } else if (error.message.includes('invalid') || error.message.includes('Email address')) {
+          errorTitle = "Email Validation Failed";
+          errorMessage = `${error.message}. Please check your Supabase Auth settings - email confirmation may need to be disabled for testing, or the email domain may be restricted.`;
         }
         
         toast({
-          title: "Sign Up Error",
+          title: errorTitle,
           description: errorMessage,
           variant: "destructive",
         });

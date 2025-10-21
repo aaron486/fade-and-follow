@@ -6,12 +6,16 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
+  console.log('🚀 Function invoked:', req.method);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ OPTIONS request handled');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('📝 Processing request...');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

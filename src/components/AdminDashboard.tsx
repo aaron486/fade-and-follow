@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Download, Loader2, Users, TrendingUp, Database, Activity, Trash2, UserPlus } from 'lucide-react';
+import { Download, Loader2, Users, TrendingUp, Database, Activity, Trash2, UserPlus, Bell, Send } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface User {
   id: string;
@@ -64,6 +66,14 @@ export const AdminDashboard = () => {
   });
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
+  const [sendingNotification, setSendingNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({
+    userId: '',
+    title: '',
+    message: '',
+    type: 'system',
+    link: '',
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -253,6 +263,42 @@ export const AdminDashboard = () => {
     }
   };
 
+  const handleSendNotification = async () => {
+    if (!notificationData.userId || !notificationData.title || !notificationData.message) {
+      toast({
+        title: "Validation Error",
+        description: "User, title, and message are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingNotification(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: notificationData
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "📬 Notification Sent!",
+        description: `Successfully sent notification to user`,
+      });
+
+      setNotificationData({ userId: '', title: '', message: '', type: 'system', link: '' });
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send notification",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingNotification(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6 h-full">
       <div className="flex items-center justify-between">
@@ -311,10 +357,14 @@ export const AdminDashboard = () => {
 
       {/* Tabs for Users and Influencers */}
       <Tabs defaultValue="overview" className="flex-1">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">All Users</TabsTrigger>
           <TabsTrigger value="influencers">Influencers</TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Bell className="mr-2 h-4 w-4" />
+            Notifications
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
@@ -612,6 +662,128 @@ export const AdminDashboard = () => {
                   ))}
                 </div>
               </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Send Notification</CardTitle>
+              <CardDescription>
+                Send real-time notifications to users (push + toast)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="notification-user">Select User *</Label>
+                <Select
+                  value={notificationData.userId}
+                  onValueChange={(value) => setNotificationData({ ...notificationData, userId: value })}
+                >
+                  <SelectTrigger id="notification-user">
+                    <SelectValue placeholder="Choose a user..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map((user) => (
+                      <SelectItem key={user.user_id} value={user.user_id}>
+                        {user.display_name || user.username || 'Unknown'} (@{user.username})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notification-type">Notification Type</Label>
+                <Select
+                  value={notificationData.type}
+                  onValueChange={(value) => setNotificationData({ ...notificationData, type: value })}
+                >
+                  <SelectTrigger id="notification-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="system">🔔 System</SelectItem>
+                    <SelectItem value="admin">👑 Admin</SelectItem>
+                    <SelectItem value="bet_settlement">💰 Bet Settlement</SelectItem>
+                    <SelectItem value="friend_request">👥 Friend Request</SelectItem>
+                    <SelectItem value="message">💬 Message</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notification-title">Title *</Label>
+                <Input
+                  id="notification-title"
+                  value={notificationData.title}
+                  onChange={(e) => setNotificationData({ ...notificationData, title: e.target.value })}
+                  placeholder="Important Announcement"
+                  maxLength={60}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notification-message">Message *</Label>
+                <Textarea
+                  id="notification-message"
+                  value={notificationData.message}
+                  onChange={(e) => setNotificationData({ ...notificationData, message: e.target.value })}
+                  placeholder="Your notification message here..."
+                  rows={4}
+                  maxLength={200}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {notificationData.message.length}/200 characters
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notification-link">Link (Optional)</Label>
+                <Input
+                  id="notification-link"
+                  value={notificationData.link}
+                  onChange={(e) => setNotificationData({ ...notificationData, link: e.target.value })}
+                  placeholder="/bets or /profile"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional link for "View" button in notification
+                </p>
+              </div>
+
+              <Button 
+                onClick={handleSendNotification} 
+                disabled={sendingNotification}
+                className="w-full"
+              >
+                {sendingNotification ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Send Notification
+                  </>
+                )}
+              </Button>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-2">Preview:</h4>
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <p className="font-semibold">{notificationData.title || 'Notification Title'}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {notificationData.message || 'Your message will appear here...'}
+                  </p>
+                  {notificationData.link && (
+                    <Button variant="link" size="sm" className="mt-2 px-0">
+                      View →
+                    </Button>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

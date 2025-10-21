@@ -3,11 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Download, Loader2, Users, TrendingUp, Database, Activity } from 'lucide-react';
+import { Download, Loader2, Users, TrendingUp, Database, Activity, Trash2, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface User {
   id: string;
@@ -51,6 +55,15 @@ export const AdminDashboard = () => {
     totalInfluencers: 0,
     totalPicks: 0,
   });
+  const [newUserDialog, setNewUserDialog] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    email: '',
+    password: '',
+    username: '',
+    displayName: '',
+  });
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const [creatingUser, setCreatingUser] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -170,6 +183,73 @@ export const AdminDashboard = () => {
       });
     } finally {
       setScraping(false);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUserData.email || !newUserData.password || !newUserData.username) {
+      toast({
+        title: "Validation Error",
+        description: "Email, password, and username are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreatingUser(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: newUserData
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "User Created!",
+        description: `Successfully created user ${newUserData.username}`,
+      });
+
+      setNewUserDialog(false);
+      setNewUserData({ email: '', password: '', username: '', displayName: '' });
+      loadUsers();
+      loadStats();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create user",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, username: string) => {
+    setDeletingUser(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "User Deleted",
+        description: `Successfully deleted user ${username}`,
+      });
+
+      loadUsers();
+      loadStats();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete user",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingUser(null);
     }
   };
 
@@ -351,8 +431,83 @@ export const AdminDashboard = () => {
         <TabsContent value="users" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>All Users ({users.length})</CardTitle>
-              <CardDescription>Complete list of registered users</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>All Users ({users.length})</CardTitle>
+                  <CardDescription>Complete list of registered users</CardDescription>
+                </div>
+                <Dialog open={newUserDialog} onOpenChange={setNewUserDialog}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Add User
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New User</DialogTitle>
+                      <DialogDescription>
+                        Add a new user account to the platform
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="username">Username *</Label>
+                        <Input
+                          id="username"
+                          value={newUserData.username}
+                          onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
+                          placeholder="johndoe"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={newUserData.email}
+                          onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                          placeholder="john@example.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password *</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={newUserData.password}
+                          onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                          placeholder="••••••••"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="displayName">Display Name</Label>
+                        <Input
+                          id="displayName"
+                          value={newUserData.displayName}
+                          onChange={(e) => setNewUserData({ ...newUserData, displayName: e.target.value })}
+                          placeholder="John Doe"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setNewUserDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleCreateUser} disabled={creatingUser}>
+                        {creatingUser ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating...
+                          </>
+                        ) : (
+                          'Create User'
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[500px]">
@@ -369,15 +524,51 @@ export const AdminDashboard = () => {
                         <p className="font-medium truncate">{user.display_name || user.username || 'Unknown'}</p>
                         <p className="text-sm text-muted-foreground truncate">@{user.username || 'no-username'}</p>
                       </div>
-                      <div className="text-right">
-                        {user.bettor_level && (
-                          <Badge variant="outline" className="mb-1">
-                            {user.bettor_level}
-                          </Badge>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          {user.bettor_level && (
+                            <Badge variant="outline" className="mb-1">
+                              {user.bettor_level}
+                            </Badge>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={deletingUser === user.user_id}
+                            >
+                              {deletingUser === user.user_id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete User</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete {user.display_name || user.username}? 
+                                This action cannot be undone and will permanently delete their account and all associated data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(user.user_id, user.username || 'user')}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   ))}

@@ -25,7 +25,7 @@ interface Server {
 interface Channel {
   id: string;
   name: string;
-  type: string;
+  type: 'public' | 'group' | 'direct';
   created_by: string;
 }
 
@@ -397,14 +397,16 @@ const DiscordChat: React.FC = () => {
           <ChatArea
             channelName={selectedChannel.name}
             channelId={selectedChannel.id}
-            messages={messages}
             currentUserId={user?.id || ''}
-            onSendMessage={sendMessage}
           />
         )}
         
         {selectedServer && (
-          <MemberList members={members} onlineMembers={onlineMembers} />
+          <MemberList 
+            members={members} 
+            channelId={selectedChannel?.id || ''} 
+            currentUserId={user?.id || ''} 
+          />
         )}
       </div>
 

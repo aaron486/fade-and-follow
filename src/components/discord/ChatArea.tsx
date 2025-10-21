@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Hash, Plus, Send } from 'lucide-react';
+import { Hash, Plus, Send, Image as ImageIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useRealtimeMessages } from '@/hooks/useRealtimeMessages';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 
 interface Message {
   id: string;
@@ -20,20 +24,22 @@ interface Message {
 interface ChatAreaProps {
   channelName: string;
   channelId: string;
-  messages: Message[];
   currentUserId: string;
-  onSendMessage: (content: string) => void;
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({
   channelName,
   channelId,
-  messages,
   currentUserId,
-  onSendMessage
 }) => {
   const [messageContent, setMessageContent] = useState('');
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  
+  const { messages, loading } = useRealtimeMessages(channelId);
+  const { typingUsers, setTyping } = useTypingIndicator(channelId, currentUserId);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -41,10 +47,84 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     }
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!messageContent.trim()) return;
-    onSendMessage(messageContent);
-    setMessageContent('');
+
+    const { error } = await supabase.from('messages').insert({
+      channel_id: channelId,
+      sender_id: currentUserId,
+      content: messageContent,
+      message_type: 'text',
+    });
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send message',
+        variant: 'destructive',
+      });
+    } else {
+      setMessageContent('');
+      setTyping(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file',
+        description: 'Please upload an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${currentUserId}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError, data } = await supabase.storage
+      .from('bet-screenshots')
+      .upload(fileName, file);
+
+    if (uploadError) {
+      toast({
+        title: 'Upload failed',
+        description: uploadError.message,
+        variant: 'destructive',
+      });
+      setUploading(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('bet-screenshots')
+      .getPublicUrl(fileName);
+
+    const { error: messageError } = await supabase.from('messages').insert({
+      channel_id: channelId,
+      sender_id: currentUserId,
+      content: 'Image',
+      message_type: 'image',
+      image_url: publicUrl,
+    });
+
+    if (messageError) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send image',
+        variant: 'destructive',
+      });
+    }
+
+    setUploading(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -52,6 +132,11 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessageContent(e.target.value);
+    setTyping(e.target.value.length > 0);
   };
 
   return (
@@ -65,7 +150,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
-          {messages.length === 0 ? (
+          {loading ? (
+            <div className="text-center text-[#949ba4] mt-8">Loading messages...</div>
+          ) : messages.length === 0 ? (
             <div className="text-center text-[#949ba4] mt-8">
               <Hash className="w-16 h-16 mx-auto mb-2 opacity-50" />
               <p className="text-lg font-semibold">Welcome to #{channelName}</p>
@@ -108,11 +195,25 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                         </span>
                       </div>
                     )}
-                    <p className="text-[#dbdee1] text-sm break-words">{message.content}</p>
+                    {message.message_type === 'image' && message.image_url ? (
+                      <img
+                        src={message.image_url}
+                        alt="Uploaded image"
+                        className="max-w-md rounded-lg mt-1 cursor-pointer hover:opacity-90"
+                        onClick={() => window.open(message.image_url, '_blank')}
+                      />
+                    ) : (
+                      <p className="text-[#dbdee1] text-sm break-words">{message.content}</p>
+                    )}
                   </div>
                 </div>
               );
             })
+          )}
+          {typingUsers.length > 0 && (
+            <div className="text-sm text-[#949ba4] italic pl-4">
+              {typingUsers.map((u) => u.profiles?.display_name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+            </div>
           )}
         </div>
       </ScrollArea>
@@ -120,23 +221,33 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       {/* Message Input */}
       <div className="p-4">
         <div className="bg-[#383a40] rounded-lg flex items-center gap-2 px-4 py-2.5">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
             className="h-6 w-6 text-[#b5bac1] hover:text-white"
           >
-            <Plus className="w-5 h-5" />
+            <ImageIcon className="w-5 h-5" />
           </Button>
           <Input
             value={messageContent}
-            onChange={(e) => setMessageContent(e.target.value)}
+            onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder={`Message #${channelName}`}
+            disabled={uploading}
             className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder:text-[#6d6f78]"
           />
           <Button
             onClick={handleSend}
-            disabled={!messageContent.trim()}
+            disabled={!messageContent.trim() || uploading}
             variant="ghost"
             size="icon"
             className="h-6 w-6 text-[#b5bac1] hover:text-white disabled:opacity-50"

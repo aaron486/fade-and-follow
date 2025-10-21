@@ -382,6 +382,8 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_url: string | null
+          message_type: string | null
           sender_id: string
           updated_at: string
         }
@@ -390,6 +392,8 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
+          message_type?: string | null
           sender_id: string
           updated_at?: string
         }
@@ -398,6 +402,8 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
+          message_type?: string | null
           sender_id?: string
           updated_at?: string
         }
@@ -811,6 +817,38 @@ export type Database = {
         }
         Relationships: []
       }
+      typing_status: {
+        Row: {
+          channel_id: string
+          id: string
+          is_typing: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          id?: string
+          is_typing?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          id?: string
+          is_typing?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "typing_status_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_records: {
         Row: {
           created_at: string
@@ -930,7 +968,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
-      chat_type: "direct" | "group"
+      chat_type: "direct" | "group" | "public"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1059,7 +1097,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
-      chat_type: ["direct", "group"],
+      chat_type: ["direct", "group", "public"],
     },
   },
 } as const

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Crown, User } from 'lucide-react';
+import { Crown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+import { usePresence } from '@/hooks/usePresence';
 
 interface Member {
   id: string;
@@ -17,10 +17,12 @@ interface Member {
 
 interface MemberListProps {
   members: Member[];
-  onlineMembers: string[];
+  channelId: string;
+  currentUserId: string;
 }
 
-export const MemberList: React.FC<MemberListProps> = ({ members, onlineMembers }) => {
+export const MemberList: React.FC<MemberListProps> = ({ members, channelId, currentUserId }) => {
+  const onlineMembers = usePresence(channelId, currentUserId);
   const adminMembers = members.filter(m => m.role === 'admin');
   const regularMembers = members.filter(m => m.role === 'member');
 

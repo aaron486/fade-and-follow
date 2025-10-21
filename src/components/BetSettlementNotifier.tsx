@@ -1,15 +1,14 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { createNotification } from '@/utils/notifications';
 
 /**
- * Component that listens for bet settlements and shows notifications
- * Add this to your main Dashboard or App component
+ * Component that listens for bet settlements and creates notifications
+ * This works alongside NotificationListener to show toast and push notifications
  */
 export const BetSettlementNotifier = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!user) return;
@@ -25,7 +24,7 @@ export const BetSettlementNotifier = () => {
           table: 'bets',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
+        async (payload) => {
           const oldBet = payload.old;
           const newBet = payload.new;
 
@@ -37,10 +36,13 @@ export const BetSettlementNotifier = () => {
               push: '🔄'
             }[newBet.status] || '📊';
 
-            toast({
+            // Create notification in database (will trigger real-time toast)
+            await createNotification({
+              userId: user.id,
               title: `${statusEmoji} Bet Settled!`,
-              description: `${newBet.event_name}: ${newBet.selection} → ${newBet.status.toUpperCase()}`,
-              duration: 5000,
+              message: `${newBet.event_name}: ${newBet.selection} → ${newBet.status.toUpperCase()}`,
+              type: 'bet_settlement',
+              link: '/bets',
             });
           }
         }
@@ -50,7 +52,7 @@ export const BetSettlementNotifier = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, toast]);
+  }, [user]);
 
   return null; // This component doesn't render anything
 };

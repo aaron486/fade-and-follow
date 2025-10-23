@@ -60,19 +60,10 @@ const Auth = () => {
         errors.email = emailResult.error.issues[0].message;
       }
     } else {
-      // Signin validation: username/email and password
-      if (!username) {
-        errors.username = 'Username or email is required';
-      } else if (username.includes('@')) {
-        const emailResult = emailSchema.safeParse(username);
-        if (!emailResult.success) {
-          errors.username = emailResult.error.issues[0].message;
-        }
-      } else {
-        const usernameResult = usernameSchema.safeParse(username);
-        if (!usernameResult.success) {
-          errors.username = usernameResult.error.issues[0].message;
-        }
+      // Signin validation: email and password
+      const emailResult = emailSchema.safeParse(username);
+      if (!emailResult.success) {
+        errors.username = emailResult.error.issues[0].message;
       }
     }
 
@@ -111,14 +102,7 @@ const Auth = () => {
     setValidationErrors({});
     
     try {
-      let email = username;
-      
-      // If input doesn't contain @, it's a username - convert to email format
-      if (!username.includes('@')) {
-        email = `${username.toLowerCase()}@fadebet.app`;
-      }
-      
-      await signIn(email, password);
+      await signIn(username, password);
     } catch (error) {
       // Error is handled by auth context
     } finally {
@@ -398,11 +382,11 @@ const Auth = () => {
               <CardContent>
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-username">Username or Email</Label>
+                    <Label htmlFor="signin-email">Email</Label>
                     <Input
-                      id="signin-username"
-                      type="text"
-                      placeholder="Enter your username or email"
+                      id="signin-email"
+                      type="email"
+                      placeholder="Enter your email"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
@@ -414,9 +398,6 @@ const Auth = () => {
                         <span>{validationErrors.username}</span>
                       </div>
                     )}
-                    <p className="text-xs text-muted-foreground">
-                      Existing users can use their email
-                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signin-password">Password</Label>

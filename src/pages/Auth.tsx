@@ -164,6 +164,7 @@ const Auth = () => {
           const { data: { session } } = await supabase.auth.getSession();
           
           if (session?.user) {
+            setLoading(false);
             setSignupStep('teams');
             fetchTeams();
           } else if (attempts < 10) {
@@ -171,6 +172,7 @@ const Auth = () => {
             setTimeout(checkSession, 500);
           } else {
             // Fallback: proceed anyway after 5 seconds
+            setLoading(false);
             toast({
               title: "Session delay",
               description: "Proceeding to team selection...",
@@ -180,11 +182,11 @@ const Auth = () => {
           }
         };
         
-        checkSession();
+        await checkSession();
+      } else {
+        setLoading(false);
       }
     } catch (error) {
-      // Error is handled by auth context
-    } finally {
       setLoading(false);
     }
   };

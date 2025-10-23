@@ -158,11 +158,29 @@ const Auth = () => {
       });
       
       if (!result.error) {
-        // Wait a bit for auth state to update
-        setTimeout(() => {
-          setSignupStep('teams');
-          fetchTeams();
-        }, 500);
+        // Wait for session to be established before proceeding
+        let attempts = 0;
+        const checkSession = async () => {
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session?.user) {
+            setSignupStep('teams');
+            fetchTeams();
+          } else if (attempts < 10) {
+            attempts++;
+            setTimeout(checkSession, 500);
+          } else {
+            // Fallback: proceed anyway after 5 seconds
+            toast({
+              title: "Session delay",
+              description: "Proceeding to team selection...",
+            });
+            setSignupStep('teams');
+            fetchTeams();
+          }
+        };
+        
+        checkSession();
       }
     } catch (error) {
       // Error is handled by auth context
@@ -214,6 +232,8 @@ const Auth = () => {
         description: `You've selected ${selectedTeams.length} team${selectedTeams.length !== 1 ? 's' : ''}`,
       });
 
+      // Wait a moment for auth context to fully update before navigating
+      await new Promise(resolve => setTimeout(resolve, 1000));
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
       toast({
@@ -226,7 +246,9 @@ const Auth = () => {
     }
   };
 
-  const handleSkipTeams = () => {
+  const handleSkipTeams = async () => {
+    // Wait a moment for auth context to fully update before navigating
+    await new Promise(resolve => setTimeout(resolve, 1000));
     navigate('/dashboard', { replace: true });
   };
 

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-image.jpg";
-import fadeLogo from "@/assets/fade-logo.png";
+import fadeLogo from "@/assets/fade-logo.jpg";
 
 export const Hero = () => {
   return (

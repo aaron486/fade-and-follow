@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, Check } from 'lucide-react';
 import { useAuth, emailSchema, passwordSchema, usernameSchema } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import fadeLogo from "@/assets/fade-logo.png";
+import fadeLogo from "@/assets/fade-logo.jpg";
 import { useToast } from '@/hooks/use-toast';
 
 interface Team {

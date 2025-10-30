@@ -1,4 +1,4 @@
-import fadeLogo from "@/assets/fade-logo.png";
+import fadeLogo from "@/assets/fade-logo.jpg";
 
 export const Footer = () => {
   return (

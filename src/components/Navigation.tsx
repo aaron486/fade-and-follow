@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, User, MessageSquare, Newspaper, UserPlus } from "lucide-react";
-import fadeLogo from "@/assets/fade-logo.png";
+import fadeLogo from "@/assets/fade-logo.jpg";
 
 export const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

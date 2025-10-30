@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Copy, Share2, MessageCircle, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import fadeLogo from '@/assets/fade-logo.png';
+import fadeLogo from '@/assets/fade-logo.jpg';
 
 interface ShareableBetCardProps {
   bet: {
